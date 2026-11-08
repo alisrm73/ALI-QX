@@ -221,3 +221,35 @@ test("lowers PROCESS.ADD into a NUM load-add-store sequence in QIR 1.0", () => {
   const storeIndex = instructions.findIndex((inst, index) => index > addIndex && inst.opcode === "STORE_GLOBAL");
   assert.ok(loadIndex >= 0 && addIndex > loadIndex && storeIndex > addIndex);
 });
+
+test("lowers UI.SHOW and UI.TEXT into compatible QIR 1.2 effect calls", () => {
+  const qir = compile([
+    'UI.TEXT("Hello QX")',
+    "DATA.CREATE(items, [1, 2])",
+    "UI.SHOW(items)",
+    "UI.SHOW(NULL)"
+  ].join("\n"));
+  assert.equal(qir.version, "1.2");
+  const calls = qir.initializer.blocks.flatMap(block => block.instructions)
+    .filter(inst => inst.opcode === "COMMAND_CALL");
+  assert.deepEqual(calls.map(inst => inst.operands.command), ["UI.TEXT", "UI.SHOW", "UI.SHOW"]);
+  assert.ok(calls.every(inst => !inst.result && !inst.type));
+  assert.deepEqual(validateQIR(parseQIR(serializeQIR(qir))), []);
+});
+
+test("QIR 1.2 retains DATA list extension operations", () => {
+  const qir = compile([
+    "DATA.CREATE(items, [1])",
+    "DATA.CREATE(added, DATA.ADD(items, 2))",
+    'UI.TEXT("items updated")'
+  ].join("\n"));
+  assert.equal(qir.version, "1.2");
+  assert.deepEqual(validateQIR(qir), []);
+});
+
+test("QIR 1.1 rejects UI output commands", () => {
+  const qir = compile('UI.TEXT("hello")');
+  const bad = JSON.parse(JSON.stringify(qir));
+  bad.version = "1.1";
+  assert.ok(validateQIR(bad).some(item => item.code === "QIR_E_COMMAND_SIGNATURE" || item.code === "QIR_E_COMMAND_NOT_ALLOWED"));
+});
