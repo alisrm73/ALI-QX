@@ -8,37 +8,54 @@ This directory contains the first executable QX V1 language-core slice, implemen
 
 ## Run the tests
 
-~~~sh
+```sh
 npm test
-~~~
+```
 
 ## API
 
-~~~js
+```js
 import { tokenize, parse } from "./src/index.js";
 
 const tokens = tokenize('DATA.CREATE(name, "Ali")');
 const ast = parse('DATA.CREATE(name, "Ali")');
-~~~
+```
 
 ## Implemented
 
 - Tokenization of domains, command names, punctuation, numeric/string literals, lists, comments, operators, and line boundaries.
 - English and Arabic aliases for V1 control keywords and Boolean/null literals.
-- NFC normalization, XID identifier properties, Arabic/Latin script separation, and rejection of default-ignorable characters.
+- Pinned Unicode 18.0.0 XID_Start, XID_Continue, Letter, Latin/Arabic Script, and Default_Ignorable_Code_Point properties.
+- Unicode 18.0.0 NFC normalization using ECMAScript canonical decomposition/composition with pinned Unicode 18.0.0 combining classes.
 - Parsing of domain commands, qualified command calls as expressions, function calls, expressions, list literals, IF/ELSE/END, WHILE/END, and FUNCTION/RETURN/END.
 - Qualified command calls use the AST node `CommandCallExpression`, containing `domain`, `command`, `args`, and source `location`.
 - Top-level-only function declarations and RETURN statements restricted to function bodies.
 - AST nodes with source locations and stable lexer/parser error codes.
-- Automated tests for Arabic/English input, nested qualified calls, expressions, blocks, malformed syntax, comments, escapes, and CRLF locations.
+- Automated tests for Arabic/English input, Unicode 18.0.0 identifiers, NFC, nested qualified calls, expressions, blocks, malformed syntax, comments, escapes, and CRLF locations.
+
+## Unicode 18.0.0 data provenance and regeneration
+
+The generated tables in `src/unicode-data.js` are derived from the official Unicode Character Database 18.0.0. The source archive SHA-256 and hashes of the source files are recorded in `src/unicode-data-metadata.json`.
+
+To regenerate the tables from an extracted Unicode 18.0.0 UCD directory:
+
+```sh
+python3 scripts/generate-unicode-data.py /path/to/UCD --out-dir src
+```
+
+The generator rejects a source directory whose `ReadMe.txt` does not identify Unicode 18.0.0. It also checks that Unicode 17/18 additions introduce no canonical decomposition mappings, which is required by the normalization strategy. Do not hand-edit `src/unicode-data.js`.
+
+To run the official Unicode NFC conformance file:
+
+```sh
+node scripts/verify-unicode-normalization.mjs /path/to/NormalizationTest.txt
+```
+
+The Unicode 18.0.0 `NormalizationTest.txt` was run during this update: **100,855 NFC checks passed, 0 failed**. The regular project test suite also covers representative canonical composition, Unicode 18 combining-mark reordering, and algorithmic Hangul composition.
 
 ## Not implemented in this phase
 
 Semantic analysis, symbol tables, duplicate-name checks, type checking, command signature validation, QIR, VM, Web Backend, and execution are not implemented. A successful parse means only that the source matches the implemented grammar; it does not prove semantic correctness.
-
-## Unicode compatibility note
-
-Identifier properties currently come from the JavaScript runtime. Node.js 22.16.0 reports Unicode 16.0. The QX V1 specification targets Unicode 18.0.0, so exact Unicode 18.0 identifier conformance remains open until the implementation uses pinned Unicode 18.0 tables. The lexer exposes the runtime version as Lexer.unicodeVersion.
 
 ## Diagnostics note
 
@@ -46,10 +63,10 @@ Diagnostics currently provide stable codes and English messages with source posi
 
 ## Qualified command expression compatibility slice
 
-The parser now recognizes a domain-qualified command call wherever an expression is accepted, including nested arguments, list elements, and binary expressions. For example:
+The parser recognizes a domain-qualified command call wherever an expression is accepted, including nested arguments, list elements, and binary expressions. For example:
 
-~~~qx
+```qx
 DATA.CREATE(item, DATA.GET(items, 0))
-~~~
+```
 
 This is a syntax/AST capability only. Semantic validation of command availability, signatures, return types, and permissions remains part of the semantic-analysis phase.
