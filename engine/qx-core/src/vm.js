@@ -299,6 +299,7 @@ export function runQIR(module, options = {}) {
   }
   return Object.freeze({
     globals: Object.freeze(resultGlobals),
+    outputs: Object.freeze(outputs.map(item => Object.freeze({ ...item }))),
     instructionCount: state.instructions
   });
 }
