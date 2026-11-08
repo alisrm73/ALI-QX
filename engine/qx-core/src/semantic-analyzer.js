@@ -113,6 +113,15 @@ export function analyze(program) {
           report("QX3045", cmd.id + " is a UI statement and cannot be used as an expression", node);
           node.args.forEach(a => expression(a, scope)); out = concrete("ERROR"); break;
         }
+        if (cmd.id === "INTEGRATION.REQUEST") {
+          if (node.args.length !== 3) {
+            report("QX3050", "INTEGRATION.REQUEST expects connector, operation, and JSON payload text", node);
+            node.args.forEach(a => expression(a, scope)); out = concrete("ERROR"); break;
+          }
+          node.args.forEach((arg, index) =>
+            constrain(expression(arg, scope), ["TXT"], arg, "QX3051", "INTEGRATION.REQUEST argument " + (index + 1) + " must be TXT"));
+          out = concrete("TXT"); break;
+        }
         report("QX3012", "This command has no approved value-returning expression contract", node); node.args.forEach(a => expression(a, scope)); out = concrete("ERROR"); break;
       }
       case "CallExpression": {
@@ -184,6 +193,11 @@ export function analyze(program) {
       }
       const value = expression(node.args[0], scope);
       if (cmd.id === "UI.TEXT") constrain(value, ["TXT"], node.args[0], "QX3047", "UI.TEXT expects TXT");
+      return;
+    }
+    if (cmd.id === "INTEGRATION.REQUEST") {
+      report("QX3052", "INTEGRATION.REQUEST is a value-returning expression and cannot be used as a command statement", node);
+      node.args.forEach(a => expression(a, scope));
       return;
     }
     if (!["DATA.CREATE", "DATA.SET", "DATA.SET_GLOBAL"].includes(cmd.id) && !cmd.enabled) {
