@@ -42,7 +42,7 @@ if (semantic.valid) {
 - Automated tests for Arabic/English input, Unicode 18.0.0 identifiers, NFC, nested qualified calls, expressions, blocks, malformed syntax, comments, escapes, and CRLF locations.
 - AST-to-QIR lowering for constants, variables, lists, unary/binary expressions, function calls, approved command calls, IF/ELSE, WHILE, and RETURN.
 - Explicit control-flow blocks and terminators; AND/OR lower through conditional branches to preserve short-circuit evaluation.
-- QIR validation for module/function/block structure, opcode contracts, value types, variable storage, control-flow targets, dominance, source locations, definite initialization in emitted block order, and global reads at initializer call sites.
+- QIR validation for module/function/block structure, opcode contracts, value types, variable storage, control-flow targets, dominance, source locations, control-flow-aware definite-assignment dataflow, and global reads at initializer call sites.
 - Canonical JSON serialization and validated QIR parsing; QIR remains pinned to Unicode 18.0.0.
 
 ## Unicode 18.0.0 data provenance and regeneration

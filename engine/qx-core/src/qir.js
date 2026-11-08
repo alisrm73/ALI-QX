@@ -376,6 +376,7 @@ export function validateQIR(module) {
     globalIds.add(global.id); globalNames.add(global.name);
   }
   const functionById = new Map(functions.map(fn => [fn.id, fn]));
+  const flowByFunction = new Map();
   for (const fn of functions) {
     if (!fn || functionIds.has(fn.id) || !Array.isArray(fn.blocks) || !fn.blocks.length) {
       report("QIR_E_FUNCTION_SCHEMA", "Invalid function or duplicate function id"); continue;
@@ -385,6 +386,7 @@ export function validateQIR(module) {
     if (!blocks.has(fn.entry_block)) report("QIR_E_ENTRY_BLOCK", "Entry block does not exist", null, { function: fn.id });
     const valueTypes = new Map(), instructionIds = new Set(), variableTypes = new Map();
     const definedVariables = new Set();
+    for (const global of module.globals ?? []) { variableTypes.set(global.id, global.type); definedVariables.add(global.id); }
     for (const global of module.globals ?? []) { variableTypes.set(global.id, global.type); definedVariables.add(global.id); }
     for (const global of module.globals ?? []) { variableTypes.set(global.id, global.type); definedVariables.add(global.id); }
     for (const global of module.globals ?? []) { variableTypes.set(global.id, global.type); definedVariables.add(global.id); }
@@ -460,6 +462,52 @@ export function validateQIR(module) {
       }
     }
     const initializedVariables = new Set(fn.id === "fn_0" ? [] : globalIds);
+    // Forward must-analysis: a variable is initialized at a block only if every
+    // reachable predecessor initializes it before control reaches that block.
+    const trackedVariables = new Set();
+    for (const block of fn.blocks) for (const inst of block.instructions) {
+      if (inst.opcode === "DECLARE" && inst.operands?.storage === "local") trackedVariables.add(inst.operands.variable);
+    }
+    if (fn.id === "fn_0") for (const global of globalIds) trackedVariables.add(global);
+    const universe = new Set(trackedVariables);
+    const inStates = new Map(), outStates = new Map();
+    for (const id of reachable) {
+      inStates.set(id, id === fn.entry_block ? new Set() : new Set(universe));
+      outStates.set(id, new Set(universe));
+    }
+    const transferBlock = (blockId, input) => {
+      const state = new Set(input);
+      for (const inst of blocks.get(blockId)?.instructions ?? []) {
+        const op = inst.operands ?? {};
+        if (inst.opcode === "DECLARE" && trackedVariables.has(op.variable)) {
+          if (op.parameter === true) state.add(op.variable);
+          else state.delete(op.variable);
+        } else if ((inst.opcode === "STORE_LOCAL" || inst.opcode === "STORE_GLOBAL") && trackedVariables.has(op.variable)) {
+          state.add(op.variable);
+        }
+      }
+      return state;
+    };
+    const sameSet = (a, b) => a.size === b.size && [...a].every(value => b.has(value));
+    let flowChanged = true, flowRounds = 0;
+    while (flowChanged && flowRounds++ < Math.max(4, reachable.size * 4)) {
+      flowChanged = false;
+      for (const id of reachable) {
+        let nextIn;
+        if (id === fn.entry_block) nextIn = new Set();
+        else {
+          const preds = predecessorsOf(id);
+          nextIn = preds.length ? new Set(outStates.get(preds[0])) : new Set();
+          for (const pred of preds.slice(1)) nextIn = new Set([...nextIn].filter(value => outStates.get(pred).has(value)));
+        }
+        const nextOut = transferBlock(id, nextIn);
+        if (!sameSet(inStates.get(id), nextIn) || !sameSet(outStates.get(id), nextOut)) {
+          inStates.set(id, nextIn); outStates.set(id, nextOut); flowChanged = true;
+        }
+      }
+    }
+    flowByFunction.set(fn.id, { trackedVariables, inStates });
+
     for (const block of fn.blocks) {
       const seen = new Set();
       for (const inst of block.instructions) {
@@ -474,27 +522,20 @@ export function validateQIR(module) {
         if (inst.opcode === "BRANCH") refs.push(op.condition);
         for (const ref of refs) if (typeof ref === "string" && ref.startsWith("v_") && !valueTypes.has(ref))
           report("QIR_E_UNDEFINED_VALUE", "Use of undefined value " + ref, inst.source, { function: fn.id, block: block.id });
-        if (inst.opcode === "DECLARE") {
+        if (inst.opcode === "DECLARE" && op.parameter === true) initializedVariables.add(op.variable);
+        if (inst.opcode === "LOAD") {
+          if (!definedVariables.has(op.variable)) report("QIR_E_UNDECLARED_VARIABLE", "LOAD before DECLARE", inst.source);
+          else if (flow?.trackedVariables.has(op.variable) && !initializedVariables.has(op.variable))
+            report("QIR_E_UNINITIALIZED_LOAD", "Variable may be read before initialization on every incoming path", inst.source);
+        }
+        if (["STORE_LOCAL","STORE_GLOBAL"].includes(inst.opcode) && !definedVariables.has(op.variable))
+          report("QIR_E_UNDECLARED_VARIABLE", "STORE before DECLARE", inst.source);
+        if (inst.opcode === "DECLARE" && flow?.trackedVariables.has(op.variable)) {
           if (op.parameter === true) initializedVariables.add(op.variable);
           else initializedVariables.delete(op.variable);
         }
-        if (inst.opcode === "LOAD") {
-          if (!definedVariables.has(op.variable)) report("QIR_E_UNDECLARED_VARIABLE", "LOAD before DECLARE", inst.source);
-          else if ((fn.id === "fn_0" || !globalIds.has(op.variable)) && !initializedVariables.has(op.variable))
-            report("QIR_E_UNINITIALIZED_LOAD", "Variable may be read before initialization", inst.source);
-        }
-        if (["STORE_LOCAL","STORE_GLOBAL"].includes(inst.opcode)) {
-          if (!definedVariables.has(op.variable)) report("QIR_E_UNDECLARED_VARIABLE", "STORE before DECLARE", inst.source);
+        if (["STORE_LOCAL","STORE_GLOBAL"].includes(inst.opcode) && flow?.trackedVariables.has(op.variable))
           initializedVariables.add(op.variable);
-        }
-        if (inst.opcode === "CALL" && fn.id === "fn_0") {
-          const target = functionById.get(op.function);
-          const reads = new Set();
-          for (const targetBlock of target?.blocks ?? []) for (const targetInst of targetBlock.instructions ?? [])
-            if (targetInst.opcode === "LOAD" && globalIds.has(targetInst.operands?.variable)) reads.add(targetInst.operands.variable);
-          for (const global of reads) if (!initializedVariables.has(global))
-            report("QIR_E_GLOBAL_READ_BEFORE_CALL", "Function may read a global before it is initialized", inst.source, { global });
-        }
         if (inst.opcode === "BRANCH" && valueTypes.get(op.condition) !== "BOOL") report("QIR_E_BRANCH_TYPE", "BRANCH condition must be BOOL", inst.source);
         if (inst.opcode === "LOAD" && !variableTypes.has(op.variable)) report("QIR_E_UNDECLARED_VARIABLE", "LOAD references an unknown variable", inst.source);
         if (inst.opcode === "STORE_LOCAL" && globalIds.has(op.variable)) report("QIR_E_STORAGE_KIND", "STORE_LOCAL cannot write a global", inst.source);
@@ -543,6 +584,38 @@ export function validateQIR(module) {
       }
     }
   }
+  // Compute transitive global-read requirements across function calls.
+  const requiredGlobals = new Map();
+  for (const fn of functions) {
+    const reads = new Set();
+    for (const block of fn.blocks ?? []) for (const inst of block.instructions ?? [])
+      if (inst.opcode === "LOAD" && globalIds.has(inst.operands?.variable)) reads.add(inst.operands.variable);
+    requiredGlobals.set(fn.id, reads);
+  }
+  let readsChanged = true, readsRounds = 0;
+  while (readsChanged && readsRounds++ < functions.length * 4 + 4) {
+    readsChanged = false;
+    for (const fn of functions) {
+      const reads = requiredGlobals.get(fn.id);
+      for (const block of fn.blocks ?? []) for (const inst of block.instructions ?? []) {
+        if (inst.opcode !== "CALL") continue;
+        for (const global of requiredGlobals.get(inst.operands?.function) ?? [])
+          if (!reads.has(global)) { reads.add(global); readsChanged = true; }
+      }
+    }
+  }
+  const initFlow = flowByFunction.get(module.initializer.id);
+  for (const block of module.initializer.blocks ?? []) {
+    let state = new Set(initFlow?.inStates.get(block.id) ?? []);
+    for (const inst of block.instructions ?? []) {
+      const op = inst.operands ?? {};
+      if (inst.opcode === "CALL") for (const global of requiredGlobals.get(op.function) ?? [])
+        if (!state.has(global)) report("QIR_E_GLOBAL_READ_BEFORE_CALL", "Function may read a global before it is initialized", inst.source, { global });
+      if (inst.opcode === "DECLARE" && globalIds.has(op.variable)) state.delete(op.variable);
+      else if (inst.opcode === "STORE_GLOBAL" && globalIds.has(op.variable)) state.add(op.variable);
+    }
+  }
+
   for (const fn of functions) {
     for (const block of fn.blocks ?? []) for (const inst of block.instructions ?? []) {
       if (inst.opcode === "CALL" && !functionById.has(inst.operands?.function))
