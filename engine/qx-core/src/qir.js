@@ -1,0 +1,552 @@
+import { resolveCommand } from "./command-registry.js";
+
+const VALUE_TYPES = new Set(["NUM", "TXT", "BOOL", "LIST", "NULL"]);
+const locationOf = node => {
+  const value = node?.location ?? { line: 1, column: 1, offset: 0 };
+  return { line: value.line, column: value.column, offset: value.offset };
+};
+const fail = (code, message, node = null) => {
+  const error = new Error(message);
+  error.name = "QIRDiagnostic";
+  error.code = code;
+  error.location = locationOf(node);
+  throw error;
+};
+
+function inferExpression(node, variables, functions) {
+  if (!node) return "NULL";
+  switch (node.type) {
+    case "NumberLiteral": return "NUM";
+    case "StringLiteral": return "TXT";
+    case "BooleanLiteral": return "BOOL";
+    case "NullLiteral": return "NULL";
+    case "Identifier": {
+      const found = variables.get(node.name);
+      if (!found) fail("QIR_E_UNKNOWN_VARIABLE", "Unknown variable " + node.name, node);
+      return found.type;
+    }
+    case "GroupExpression": return inferExpression(node.expression, variables, functions);
+    case "ListLiteral": node.elements.forEach(item => inferExpression(item, variables, functions)); return "LIST";
+    case "UnaryExpression": return node.operator === "NOT" ? "BOOL" : "NUM";
+    case "BinaryExpression":
+      if (["AND", "OR", "==", "!=", ">", ">=", "<", "<="].includes(node.operator)) return "BOOL";
+      if (node.operator === "+" && inferExpression(node.left, variables, functions) === "TXT") return "TXT";
+      return "NUM";
+    case "CallExpression": {
+      const name = node.callee?.name;
+      const fn = functions.get(name);
+      if (!fn) fail("QIR_E_UNKNOWN_FUNCTION", "Unknown function " + name, node);
+      return fn.returnType;
+    }
+    case "CommandCallExpression": {
+      const cmd = resolveCommand(node.domain, node.command);
+      if (cmd?.id !== "DATA.COUNT") fail("QIR_E_COMMAND_NOT_ALLOWED", "Only DATA.COUNT returns a QIR expression value", node);
+      return "NUM";
+    }
+    default: fail("QIR_E_UNSUPPORTED_AST", "Unsupported expression " + node.type, node);
+  }
+}
+
+class FunctionBuilder {
+  constructor(owner, descriptor) {
+    this.owner = owner;
+    this.descriptor = descriptor;
+    this.id = descriptor.id;
+    this.variables = new Map();
+    this.blocks = [];
+    this.blockCounter = 0;
+    this.instructionCounter = 0;
+    this.valueCounter = 0;
+    this.variableCounter = 0;
+    this.current = this.newBlock();
+    this.entry = this.current.id;
+    this.tempCounter = 0;
+    for (const param of descriptor.parameters) {
+      const variable = this.addVariable(param.name, param.type, "local", true);
+      this.emit("DECLARE", { variable: variable.id, name: param.name, storage: "local", declared_type: param.type, parameter: true }, null, null, param.node);
+    }
+  }
+  newBlock() {
+    const block = { id: "bb_" + this.blockCounter++, instructions: [] };
+    this.blocks.push(block);
+    return block;
+  }
+  emit(opcode, operands = {}, type = null, result = null, node = null) {
+    const instruction = {
+      id: "inst_" + this.instructionCounter++,
+      opcode,
+      ...(result ? { result, type } : {}),
+      operands,
+      source: locationOf(node)
+    };
+    this.current.instructions.push(instruction);
+    return result;
+  }
+  value() { return "v_" + this.valueCounter++; }
+  terminate(opcode, operands, node) {
+    if (!this.current) fail("QIR_E_NO_CURRENT_BLOCK", "No active basic block", node);
+    if (this.current.instructions.length && ["BRANCH", "JUMP", "RETURN"].includes(this.current.instructions.at(-1).opcode))
+      fail("QIR_E_DOUBLE_TERMINATOR", "Basic block already terminated", node);
+    this.emit(opcode, operands, null, null, node);
+    this.current = null;
+  }
+  switchTo(block) { this.current = block; }
+  addVariable(name, type, storage = "local", parameter = false) {
+    const id = storage === "global" ? this.owner.globalsByName.get(name)?.id : "var_" + this.id + "_" + this.variableCounter++;
+    if (!id) fail("QIR_E_UNKNOWN_VARIABLE", "Missing global declaration " + name);
+    const value = { id, name, type, storage, parameter };
+    this.variables.set(name, value);
+    return value;
+  }
+  ensureActive(node) {
+    if (!this.current) {
+      this.current = this.newBlock();
+      this.terminate("JUMP", { target: this.current.id }, node);
+    }
+  }
+  lowerExpression(node) {
+    switch (node.type) {
+      case "NumberLiteral": {
+        const result = this.value(); this.emit("CONST_NUM", { value: node.value }, "NUM", result, node); return { value: result, type: "NUM" };
+      }
+      case "StringLiteral": {
+        const result = this.value(); this.emit("CONST_TXT", { value: node.value }, "TXT", result, node); return { value: result, type: "TXT" };
+      }
+      case "BooleanLiteral": {
+        const result = this.value(); this.emit("CONST_BOOL", { value: node.value }, "BOOL", result, node); return { value: result, type: "BOOL" };
+      }
+      case "NullLiteral": {
+        const result = this.value(); this.emit("CONST_NULL", {}, "NULL", result, node); return { value: result, type: "NULL" };
+      }
+      case "Identifier": {
+        const variable = this.variables.get(node.name) ?? this.owner.globalVariable(node.name, this);
+        if (!variable) fail("QIR_E_UNKNOWN_VARIABLE", "Unknown variable " + node.name, node);
+        const result = this.value(); this.emit("LOAD", { variable: variable.id }, variable.type, result, node); return { value: result, type: variable.type };
+      }
+      case "GroupExpression": return this.lowerExpression(node.expression);
+      case "ListLiteral": {
+        const elements = node.elements.map(item => this.lowerExpression(item).value);
+        const result = this.value(); this.emit("MAKE_LIST", { elements }, "LIST", result, node); return { value: result, type: "LIST" };
+      }
+      case "UnaryExpression": {
+        const arg = this.lowerExpression(node.argument);
+        const result = this.value(); this.emit("UNARY", { operator: node.operator, value: arg.value }, node.operator === "NOT" ? "BOOL" : "NUM", result, node);
+        return { value: result, type: node.operator === "NOT" ? "BOOL" : "NUM" };
+      }
+      case "BinaryExpression": return ["AND", "OR"].includes(node.operator) ? this.lowerShortCircuit(node) : this.lowerBinary(node);
+      case "CallExpression": {
+        const fn = this.owner.functionsByName.get(node.callee.name);
+        if (!fn) fail("QIR_E_UNKNOWN_FUNCTION", "Unknown function " + node.callee.name, node);
+        const args = node.args.map(arg => this.lowerExpression(arg).value);
+        if (fn.returnType === "NULL") {
+          this.emit("CALL", { function: fn.id, arguments: args }, null, null, node);
+          return { value: null, type: "NULL" };
+        }
+        const result = this.value(); this.emit("CALL", { function: fn.id, arguments: args }, fn.returnType, result, node);
+        return { value: result, type: fn.returnType };
+      }
+      case "CommandCallExpression": {
+        const cmd = resolveCommand(node.domain, node.command);
+        if (cmd?.id !== "DATA.COUNT" || node.args.length !== 1) fail("QIR_E_COMMAND_NOT_ALLOWED", "Only DATA.COUNT with one argument is allowed as a value", node);
+        const arg = this.lowerExpression(node.args[0]);
+        const result = this.value(); this.emit("COMMAND_CALL", { command: "DATA.COUNT", arguments: [arg.value] }, "NUM", result, node);
+        return { value: result, type: "NUM" };
+      }
+      default: fail("QIR_E_UNSUPPORTED_AST", "Unsupported expression " + node.type, node);
+    }
+  }
+  lowerBinary(node) {
+    const left = this.lowerExpression(node.left), right = this.lowerExpression(node.right);
+    const result = this.value();
+    const type = ["==", "!=", ">", ">=", "<", "<="].includes(node.operator) ? "BOOL" :
+      node.operator === "+" && left.type === "TXT" ? "TXT" : "NUM";
+    this.emit("BINARY", { operator: node.operator, left: left.value, right: right.value }, type, result, node);
+    return { value: result, type };
+  }
+  lowerShortCircuit(node) {
+    const left = this.lowerExpression(node.left);
+    const tempName = "$qir_sc_" + this.tempCounter++;
+    const temp = this.addVariable(tempName, "BOOL");
+    this.emit("DECLARE", { variable: temp.id, name: tempName, storage: "local", declared_type: "BOOL", generated: true }, null, null, node);
+    const evalRight = this.newBlock(), shortcut = this.newBlock(), merge = this.newBlock();
+    if (node.operator === "AND") this.terminate("BRANCH", { condition: left.value, true_target: evalRight.id, false_target: shortcut.id }, node);
+    else this.terminate("BRANCH", { condition: left.value, true_target: shortcut.id, false_target: evalRight.id }, node);
+    this.switchTo(shortcut);
+    const constant = this.value();
+    this.emit("CONST_BOOL", { value: node.operator === "OR" }, "BOOL", constant, node);
+    this.emit("STORE_LOCAL", { variable: temp.id, value: constant }, null, null, node);
+    this.terminate("JUMP", { target: merge.id }, node);
+    this.switchTo(evalRight);
+    const right = this.lowerExpression(node.right);
+    this.emit("STORE_LOCAL", { variable: temp.id, value: right.value }, null, null, node);
+    this.terminate("JUMP", { target: merge.id }, node);
+    this.switchTo(merge);
+    const result = this.value(); this.emit("LOAD", { variable: temp.id }, "BOOL", result, node);
+    return { value: result, type: "BOOL" };
+  }
+  store(variable, value, node) {
+    if (variable.storage === "global") this.emit("STORE_GLOBAL", { variable: variable.id, value }, null, null, node);
+    else this.emit("STORE_LOCAL", { variable: variable.id, value }, null, null, node);
+  }
+  lowerCommand(node) {
+    const command = resolveCommand(node.domain, node.command);
+    if (!command) fail("QIR_E_UNKNOWN_COMMAND", "Unknown command", node);
+    const args = node.args;
+    switch (command.id) {
+      case "DATA.CREATE": {
+        if (args.length !== 2 || args[0].type !== "Identifier") fail("QIR_E_BAD_COMMAND_ARGUMENTS", "DATA.CREATE expects identifier and value", node);
+        const value = this.lowerExpression(args[1]);
+        if (value.type === "NULL") fail("QIR_E_NULL_VARIABLE", "Cannot infer variable type from NULL", args[1]);
+        const storage = this.descriptor.kind === "module_initializer" ? "global" : "local";
+        const variable = this.addVariable(args[0].name, value.type, storage);
+        this.emit("DECLARE", { variable: variable.id, name: variable.name, storage, declared_type: value.type }, null, null, node);
+        this.store(variable, value.value, node); return;
+      }
+      case "DATA.SET":
+      case "DATA.SET_GLOBAL":
+      case "PROCESS.CALCULATE":
+      case "PROCESS.COMPARE": {
+        if (args.length !== 2 || args[0].type !== "Identifier") fail("QIR_E_BAD_COMMAND_ARGUMENTS", command.id + " expects target and value", node);
+        const variable = this.variables.get(args[0].name) ?? this.owner.globalVariable(args[0].name, this);
+        if (!variable) fail("QIR_E_UNKNOWN_VARIABLE", "Unknown target " + args[0].name, args[0]);
+        if (command.id === "DATA.SET_GLOBAL" && variable.storage !== "global") fail("QIR_E_GLOBAL_REQUIRED", "DATA.SET_GLOBAL requires a global", args[0]);
+        if (command.id === "DATA.SET" && variable.storage === "global" && this.descriptor.kind !== "module_initializer")
+          fail("QIR_E_GLOBAL_WRITE", "Use DATA.SET_GLOBAL inside functions", node);
+        const value = this.lowerExpression(args[1]);
+        const expected = command.id === "PROCESS.CALCULATE" ? "NUM" : command.id === "PROCESS.COMPARE" ? "BOOL" : variable.type;
+        if (value.type !== expected || variable.type !== expected) fail("QIR_E_TYPE_MISMATCH", "Stored value type mismatch", node);
+        this.store(variable, value.value, node); return;
+      }
+      case "DATA.COUNT": {
+        if (args.length !== 1) fail("QIR_E_BAD_COMMAND_ARGUMENTS", "DATA.COUNT expects one argument", node);
+        const value = this.lowerExpression(args[0]);
+        this.emit("COMMAND_CALL", { command: "DATA.COUNT", arguments: [value.value] }, null, null, node); return;
+      }
+      default: fail("QIR_E_COMMAND_NOT_ALLOWED", "Command has no approved QIR lowering: " + command.id, node);
+    }
+  }
+  lowerStatement(node) {
+    if (!this.current) return;
+    switch (node.type) {
+      case "CommandStatement": return this.lowerCommand(node);
+      case "ExpressionStatement": {
+        if (node.expression.type === "CallExpression" && this.owner.functionsByName.get(node.expression.callee.name)?.returnType === "NULL") {
+          const fn = this.owner.functionsByName.get(node.expression.callee.name);
+          const args = node.expression.args.map(arg => this.lowerExpression(arg).value);
+          this.emit("CALL", { function: fn.id, arguments: args }, null, null, node); return;
+        }
+        this.lowerExpression(node.expression); return;
+      }
+      case "ReturnStatement": {
+        const value = this.lowerExpression(node.argument);
+        this.terminate("RETURN", { value: value.value }, node); return;
+      }
+      case "IfStatement": {
+        const condition = this.lowerExpression(node.test);
+        const yes = this.newBlock(), no = this.newBlock(), merge = this.newBlock();
+        this.terminate("BRANCH", { condition: condition.value, true_target: yes.id, false_target: no.id }, node);
+        this.switchTo(yes); node.consequent.forEach(statement => this.lowerStatement(statement));
+        const yesFalls = !!this.current;
+        if (yesFalls) this.terminate("JUMP", { target: merge.id }, node);
+        this.switchTo(no); (node.alternate ?? []).forEach(statement => this.lowerStatement(statement));
+        const noFalls = !!this.current;
+        if (noFalls) this.terminate("JUMP", { target: merge.id }, node);
+        if (yesFalls || noFalls) this.switchTo(merge);
+        else { this.blocks.splice(this.blocks.indexOf(merge), 1); this.current = null; }
+        return;
+      }
+      case "WhileStatement": {
+        const conditionBlock = this.newBlock(), bodyBlock = this.newBlock(), exitBlock = this.newBlock();
+        this.terminate("JUMP", { target: conditionBlock.id }, node);
+        this.switchTo(conditionBlock);
+        const condition = this.lowerExpression(node.test);
+        this.terminate("BRANCH", { condition: condition.value, true_target: bodyBlock.id, false_target: exitBlock.id }, node);
+        this.switchTo(bodyBlock); node.body.forEach(statement => this.lowerStatement(statement));
+        if (this.current) this.terminate("JUMP", { target: conditionBlock.id }, node);
+        this.switchTo(exitBlock); return;
+      }
+      default: fail("QIR_E_UNSUPPORTED_AST", "Unsupported statement " + node.type, node);
+    }
+  }
+  finish(body) {
+    for (const statement of body) this.lowerStatement(statement);
+    if (this.current) {
+      if (this.descriptor.returnType !== "NULL") fail("QIR_E_MISSING_RETURN", "Value-returning function falls through");
+      this.terminate("RETURN", {}, this.descriptor.node);
+    }
+    return {
+      id: this.id, kind: this.descriptor.kind, name: this.descriptor.name,
+      parameters: this.descriptor.parameters.map((param, index) => ({ id: "arg_" + index, name: param.name, type: param.type })),
+      return_type: this.descriptor.returnType, entry_block: this.entry, blocks: this.blocks
+    };
+  }
+}
+
+class ModuleLowerer {
+  constructor(program, analysis) {
+    if (!program || program.type !== "Program" || !Array.isArray(program.body)) fail("QIR_E_BAD_AST", "Expected Program AST");
+    if (!analysis || analysis.valid !== true) fail("QIR_E_SEMANTIC_ERRORS", "QIR lowering requires successful semantic analysis");
+    this.program = program;
+    this.analysis = analysis;
+    this.globals = [];
+    this.globalsByName = new Map();
+    this.functionsByName = new Map();
+    this.functionDescriptors = [];
+    this.collectFunctions();
+    this.collectGlobals();
+  }
+  collectFunctions() {
+    const signatures = new Map(this.analysis.functions.map(fn => [fn.name, fn]));
+    let index = 1;
+    for (const node of this.program.body.filter(item => item.type === "FunctionDeclaration")) {
+      const signature = signatures.get(node.name);
+      if (!signature) fail("QIR_E_FUNCTION_SIGNATURE", "Missing semantic signature for " + node.name, node);
+      const descriptor = {
+        id: "fn_" + index++, kind: "function", name: node.name, node,
+        returnType: signature.returnType,
+        parameters: node.params.map((param, i) => ({ node: param, name: param.name, type: signature.parameters[i]?.type }))
+      };
+      if (descriptor.parameters.some(param => !VALUE_TYPES.has(param.type)) || !VALUE_TYPES.has(descriptor.returnType))
+        fail("QIR_E_FUNCTION_SIGNATURE", "Unresolved function signature", node);
+      this.functionsByName.set(node.name, descriptor);
+      this.functionDescriptors.push(descriptor);
+    }
+  }
+  collectGlobals() {
+    const variables = new Map();
+    const functions = new Map([...this.functionsByName].map(([name, fn]) => [name, fn]));
+    for (const node of this.program.body) {
+      if (node.type !== "CommandStatement") continue;
+      const command = resolveCommand(node.domain, node.command);
+      if (command?.id !== "DATA.CREATE" || node.args[0]?.type !== "Identifier" || node.args.length !== 2) continue;
+      const type = inferExpression(node.args[1], variables, functions);
+      if (!VALUE_TYPES.has(type) || type === "NULL") fail("QIR_E_NULL_VARIABLE", "Cannot infer global type", node);
+      const id = "var_" + this.globals.length;
+      const item = { id, name: node.args[0].name, type, storage: "global" };
+      this.globals.push(item); this.globalsByName.set(item.name, item); variables.set(item.name, item);
+    }
+  }
+  globalVariable(name, builder) {
+    const global = this.globalsByName.get(name);
+    if (!global) return null;
+    const local = builder.variables.get(name);
+    if (local) return local;
+    return builder.addVariable(name, global.type, "global");
+  }
+  lower() {
+    const initializerDescriptor = { id: "fn_0", kind: "module_initializer", name: null, parameters: [], returnType: "NULL", node: this.program };
+    const initializerBuilder = new FunctionBuilder(this, initializerDescriptor);
+    const topLevel = this.program.body.filter(node => node.type !== "FunctionDeclaration");
+    const initializer = initializerBuilder.finish(topLevel);
+    const functions = this.functionDescriptors.map(descriptor => {
+      const builder = new FunctionBuilder(this, descriptor);
+      return builder.finish(descriptor.node.body);
+    });
+    return {
+      format: "QIR", version: "1.0", module_id: "module_0", unicode_version: "18.0.0",
+      globals: this.globals, initializer, functions
+    };
+  }
+}
+
+export function lowerToQIR(program, semanticAnalysis) {
+  const module = new ModuleLowerer(program, semanticAnalysis).lower();
+  const diagnostics = validateQIR(module);
+  if (diagnostics.length) {
+    const error = new Error(diagnostics[0].message);
+    error.name = "QIRValidationError";
+    error.diagnostics = diagnostics;
+    throw error;
+  }
+  return module;
+}
+
+export function validateQIR(module) {
+  const diagnostics = [];
+  const report = (code, message, location = null, extra = {}) =>
+    diagnostics.push({ code, severity: "ERROR", message, location, ...extra });
+  if (!module || module.format !== "QIR" || module.version !== "1.0" || module.unicode_version !== "18.0.0") {
+    report("QIR_E_SCHEMA", "Invalid QIR module header"); return diagnostics;
+  }
+  const functions = [module.initializer, ...(module.functions ?? [])];
+  const functionIds = new Set(), globalIds = new Set(), globalNames = new Set();
+  for (const global of module.globals ?? []) {
+    if (!global?.id || globalIds.has(global.id) || globalNames.has(global.name) || !VALUE_TYPES.has(global.type) || global.storage !== "global")
+      report("QIR_E_GLOBAL_SCHEMA", "Invalid or duplicate global declaration");
+    globalIds.add(global.id); globalNames.add(global.name);
+  }
+  const functionById = new Map(functions.map(fn => [fn.id, fn]));
+  for (const fn of functions) {
+    if (!fn || functionIds.has(fn.id) || !Array.isArray(fn.blocks) || !fn.blocks.length) {
+      report("QIR_E_FUNCTION_SCHEMA", "Invalid function or duplicate function id"); continue;
+    }
+    functionIds.add(fn.id);
+    const blocks = new Map(fn.blocks.map(block => [block.id, block]));
+    if (!blocks.has(fn.entry_block)) report("QIR_E_ENTRY_BLOCK", "Entry block does not exist", null, { function: fn.id });
+    const valueTypes = new Map(), instructionIds = new Set(), variableTypes = new Map();
+    const definedVariables = new Set();
+    for (const global of module.globals ?? []) { variableTypes.set(global.id, global.type); definedVariables.add(global.id); }
+    for (const global of module.globals ?? []) { variableTypes.set(global.id, global.type); definedVariables.add(global.id); }
+    const predecessors = new Map(fn.blocks.map(block => [block.id, new Set()]));
+    for (const block of fn.blocks) {
+      if (!Array.isArray(block.instructions) || !block.instructions.length) {
+        report("QIR_E_EMPTY_BLOCK", "Basic block must end with a terminator", null, { function: fn.id, block: block.id }); continue;
+      }
+      for (let i = 0; i < block.instructions.length; i++) {
+        const inst = block.instructions[i];
+        if (!inst.id || instructionIds.has(inst.id)) report("QIR_E_INSTRUCTION_ID", "Duplicate or missing instruction id", inst.source, { function: fn.id, block: block.id });
+        instructionIds.add(inst.id);
+        const terminal = ["BRANCH", "JUMP", "RETURN"].includes(inst.opcode);
+        if (terminal && i !== block.instructions.length - 1) report("QIR_E_TERMINATOR_POSITION", "Terminator must be last", inst.source, { function: fn.id, block: block.id });
+        if (i === block.instructions.length - 1 && !terminal) report("QIR_E_MISSING_TERMINATOR", "Block must end with BRANCH, JUMP, or RETURN", inst.source, { function: fn.id, block: block.id });
+        if (inst.result) {
+          if (valueTypes.has(inst.result) || !VALUE_TYPES.has(inst.type)) report("QIR_E_VALUE_TYPE", "Duplicate value or invalid result type", inst.source, { function: fn.id, block: block.id });
+          valueTypes.set(inst.result, inst.type);
+        }
+        if (inst.opcode === "DECLARE") {
+          const { variable, declared_type: type, storage } = inst.operands ?? {};
+          if (!variable || !VALUE_TYPES.has(type) || !["local", "global"].includes(storage)) report("QIR_E_DECLARE", "Invalid DECLARE", inst.source);
+          else { variableTypes.set(variable, type); definedVariables.add(variable); }
+        }
+        if (inst.opcode === "BRANCH") {
+          const { true_target, false_target } = inst.operands ?? {};
+          if (blocks.has(true_target)) predecessors.get(true_target).add(block.id); else report("QIR_E_BRANCH_TARGET", "Invalid true branch target", inst.source);
+          if (blocks.has(false_target)) predecessors.get(false_target).add(block.id); else report("QIR_E_BRANCH_TARGET", "Invalid false branch target", inst.source);
+        }
+        if (inst.opcode === "JUMP") {
+          const target = inst.operands?.target;
+          if (blocks.has(target)) predecessors.get(target).add(block.id); else report("QIR_E_JUMP_TARGET", "Invalid jump target", inst.source);
+        }
+        if (inst.opcode === "RETURN") {
+          const hasValue = Object.hasOwn(inst.operands ?? {}, "value");
+          if (fn.return_type === "NULL" && hasValue) report("QIR_E_RETURN_TYPE", "Procedure cannot return a value", inst.source);
+          if (fn.return_type !== "NULL" && !hasValue) report("QIR_E_RETURN_TYPE", "Function must return a value", inst.source);
+        }
+        if (!["CONST_NUM","CONST_TXT","CONST_BOOL","CONST_NULL","DECLARE","LOAD","STORE_LOCAL","STORE_GLOBAL","UNARY","BINARY","MAKE_LIST","CALL","COMMAND_CALL","BRANCH","JUMP","RETURN"].includes(inst.opcode))
+          report("QIR_E_UNKNOWN_OPCODE", "Unknown opcode " + inst.opcode, inst.source);
+      }
+    }
+    const reachable = new Set([fn.entry_block]), queue = [fn.entry_block];
+    while (queue.length) {
+      const id = queue.shift(), block = blocks.get(id); if (!block) continue;
+      const term = block.instructions.at(-1);
+      const targets = term?.opcode === "JUMP" ? [term.operands.target] :
+        term?.opcode === "BRANCH" ? [term.operands.true_target, term.operands.false_target] : [];
+      for (const target of targets) if (blocks.has(target) && !reachable.has(target)) { reachable.add(target); queue.push(target); }
+    }
+    const predecessorsOf = id => [...(predecessors.get(id) ?? [])].filter(p => reachable.has(p));
+    const dominators = new Map();
+    for (const id of reachable) dominators.set(id, id === fn.entry_block ? new Set([id]) : new Set(reachable));
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const id of reachable) {
+        if (id === fn.entry_block) continue;
+        const preds = predecessorsOf(id);
+        let next = preds.length ? new Set(dominators.get(preds[0])) : new Set();
+        for (const pred of preds.slice(1)) next = new Set([...next].filter(value => dominators.get(pred).has(value)));
+        next.add(id);
+        const old = dominators.get(id);
+        if (old.size !== next.size || [...old].some(value => !next.has(value))) { dominators.set(id, next); changed = true; }
+      }
+    }
+    for (const block of fn.blocks) {
+      const seen = new Set();
+      for (const inst of block.instructions) {
+        const refs = [];
+        const op = inst.operands ?? {};
+        if (inst.opcode === "LOAD") refs.push(op.variable);
+        if (inst.opcode === "STORE_LOCAL" || inst.opcode === "STORE_GLOBAL") refs.push(op.variable);
+        if (inst.opcode === "UNARY") refs.push(op.value);
+        if (inst.opcode === "BINARY") refs.push(op.left, op.right);
+        if (inst.opcode === "MAKE_LIST") refs.push(...(op.elements ?? []));
+        if (inst.opcode === "CALL" || inst.opcode === "COMMAND_CALL") refs.push(...(op.arguments ?? []));
+        if (inst.opcode === "BRANCH") refs.push(op.condition);
+        for (const ref of refs) if (typeof ref === "string" && ref.startsWith("v_") && !valueTypes.has(ref))
+          report("QIR_E_UNDEFINED_VALUE", "Use of undefined value " + ref, inst.source, { function: fn.id, block: block.id });
+        if (inst.opcode === "LOAD" && !definedVariables.has(op.variable)) report("QIR_E_UNDECLARED_VARIABLE", "LOAD before DECLARE", inst.source);
+        if (["STORE_LOCAL","STORE_GLOBAL"].includes(inst.opcode) && !definedVariables.has(op.variable)) report("QIR_E_UNDECLARED_VARIABLE", "STORE before DECLARE", inst.source);
+        if (inst.opcode === "BRANCH" && valueTypes.get(op.condition) !== "BOOL") report("QIR_E_BRANCH_TYPE", "BRANCH condition must be BOOL", inst.source);
+        if (inst.opcode === "LOAD" && !variableTypes.has(op.variable)) report("QIR_E_UNDECLARED_VARIABLE", "LOAD references an unknown variable", inst.source);
+        if (inst.opcode === "STORE_LOCAL" && globalIds.has(op.variable)) report("QIR_E_STORAGE_KIND", "STORE_LOCAL cannot write a global", inst.source);
+        if (inst.opcode === "STORE_GLOBAL" && !globalIds.has(op.variable)) report("QIR_E_STORAGE_KIND", "STORE_GLOBAL requires a module global", inst.source);
+        if (inst.opcode === "STORE_LOCAL" || inst.opcode === "STORE_GLOBAL") {
+          if (!valueTypes.has(op.value) || variableTypes.get(op.variable) !== valueTypes.get(op.value)) report("QIR_E_STORE_TYPE", "Stored value type does not match variable type", inst.source);
+        }
+        if (inst.opcode === "UNARY") {
+          const expected = op.operator === "NOT" ? "BOOL" : "NUM";
+          if (valueTypes.get(op.value) !== expected || inst.type !== expected) report("QIR_E_UNARY_TYPE", "Invalid unary operand or result type", inst.source);
+        }
+        if (inst.opcode === "BINARY") {
+          const left = valueTypes.get(op.left), right = valueTypes.get(op.right);
+          const comparisons = ["==", "!=", ">", ">=", "<", "<="];
+          const valid = op.operator === "+" ? left === right && ["NUM", "TXT"].includes(left) :
+            ["AND", "OR"].includes(op.operator) ? left === "BOOL" && right === "BOOL" :
+            ["==", "!="].includes(op.operator) ? left === right && ["NUM", "TXT", "BOOL", "LIST"].includes(left) :
+            comparisons.includes(op.operator) ? left === right && ["NUM", "TXT"].includes(left) :
+            ["-", "*", "/", "%"].includes(op.operator) ? left === "NUM" && right === "NUM" : false;
+          const expected = comparisons.includes(op.operator) || ["AND", "OR"].includes(op.operator) ? "BOOL" : op.operator === "+" && left === "TXT" ? "TXT" : "NUM";
+          if (!valid || inst.type !== expected) report("QIR_E_BINARY_TYPE", "Invalid binary operand or result types", inst.source);
+        }
+        if (inst.opcode === "COMMAND_CALL" && op.command === "DATA.COUNT") {
+          const args = op.arguments ?? [];
+          if (args.length !== 1 || valueTypes.get(args[0]) !== "LIST" || (inst.result && inst.type !== "NUM")) report("QIR_E_COMMAND_SIGNATURE", "DATA.COUNT requires one LIST and returns NUM", inst.source);
+        }
+        if (inst.result) seen.add(inst.result);
+      }
+    }
+    for (const block of fn.blocks) {
+      if (!reachable.has(block.id)) continue;
+      for (const inst of block.instructions) {
+        const op = inst.operands ?? {};
+        const refs = [];
+        if (inst.opcode === "UNARY") refs.push(op.value);
+        if (inst.opcode === "BINARY") refs.push(op.left, op.right);
+        if (inst.opcode === "MAKE_LIST") refs.push(...(op.elements ?? []));
+        if (inst.opcode === "CALL" || inst.opcode === "COMMAND_CALL") refs.push(...(op.arguments ?? []));
+        if (inst.opcode === "BRANCH") refs.push(op.condition);
+        for (const ref of refs) {
+          if (!valueTypes.has(ref)) continue;
+          const defBlock = fn.blocks.find(candidate => candidate.instructions.some(item => item.result === ref));
+          if (defBlock && !dominators.get(block.id)?.has(defBlock.id))
+            report("QIR_E_DOMINANCE", "Value definition does not dominate use", inst.source, { function: fn.id, block: block.id });
+        }
+      }
+    }
+  }
+  for (const fn of functions) {
+    for (const block of fn.blocks ?? []) for (const inst of block.instructions ?? []) {
+      if (inst.opcode === "CALL" && !functionById.has(inst.operands?.function))
+        report("QIR_E_CALL_TARGET", "CALL references an unknown function", inst.source);
+      if (inst.opcode === "COMMAND_CALL" && inst.operands?.command !== "DATA.COUNT")
+        report("QIR_E_COMMAND_NOT_ALLOWED", "Only DATA.COUNT may be emitted as COMMAND_CALL", inst.source);
+    }
+  }
+  return diagnostics;
+}
+
+export function serializeQIR(module) {
+  const diagnostics = validateQIR(module);
+  if (diagnostics.length) {
+    const error = new Error(diagnostics[0].message);
+    error.name = "QIRValidationError";
+    error.diagnostics = diagnostics;
+    throw error;
+  }
+  const canonical = value => Array.isArray(value) ? value.map(canonical) : value && typeof value === "object" ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])])) : value;
+  return JSON.stringify(canonical(module));
+}
+
+export function parseQIR(serialized) {
+  let module;
+  try { module = JSON.parse(serialized); }
+  catch (error) { fail("QIR_E_INVALID_JSON", "Invalid QIR JSON: " + error.message); }
+  const diagnostics = validateQIR(module);
+  if (diagnostics.length) {
+    const error = new Error(diagnostics[0].message);
+    error.name = "QIRValidationError";
+    error.diagnostics = diagnostics;
+    throw error;
+  }
+  return module;
+}
