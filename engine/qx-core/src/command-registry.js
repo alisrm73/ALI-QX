@@ -41,7 +41,11 @@ export const COMMAND_REGISTRY = Object.freeze(definitions.map(([domain, name, ar
       Object.freeze({ domain, command: name }),
       Object.freeze({ domain: COMMAND_DOMAINS.find(item => item.id === domain).aliases[1], command: arabicName })
     ]),
-    signature: domain === "DATA" && name === "COUNT"
+    signature: domain === "DATA" && name === "ADD"
+      ? Object.freeze({ parameters: Object.freeze([{ name: "list", type: "LIST" }, { name: "value", types: Object.freeze(["NUM", "TXT", "BOOL", "LIST", "NULL"]) }]), result: Object.freeze({ kind: "value", type: "LIST" }) })
+      : domain === "DATA" && name === "REMOVE"
+        ? Object.freeze({ parameters: Object.freeze([{ name: "list", type: "LIST" }, { name: "index", type: "NUM", integer: true, minimum: 0 }]), result: Object.freeze({ kind: "value", type: "LIST" }) })
+        : domain === "DATA" && name === "COUNT"
       ? Object.freeze({
           parameters: Object.freeze([{ name: "list", type: "LIST" }]),
           result: Object.freeze({ kind: "value", type: "NUM" })
@@ -63,11 +67,11 @@ export const COMMAND_REGISTRY = Object.freeze(definitions.map(([domain, name, ar
               result: Object.freeze({ kind: "stored", target: "target", type: "BOOL" })
             })
           : null,
-    signatureStatus: (domain === "DATA" && name === "COUNT") ||
+    signatureStatus: (domain === "DATA" && ["ADD", "REMOVE", "COUNT"].includes(name)) ||
       (domain === "PROCESS" && (name === "CALCULATE" || name === "COMPARE"))
       ? "specified"
       : "pending",
-    enabled: (domain === "DATA" && name === "COUNT") ||
+    enabled: (domain === "DATA" && ["ADD", "REMOVE", "COUNT"].includes(name)) ||
       (domain === "PROCESS" && (name === "CALCULATE" || name === "COMPARE"))
   })
 ));
