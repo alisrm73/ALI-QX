@@ -168,11 +168,11 @@ test("static browser builds reject INTEGRATION.REQUEST without a trusted host br
   );
 });
 
-test("QIR 1.3 browser builds preserve local UI output when no integration is present", () => {
+test("static browser builds remain network-disabled for local UI programs", () => {
   const project = buildWebProject([
     'UI.TEXT("local only")',
     "DATA.CREATE(value, 7)"
-  ].join("\\n"));
+  ].join("\n"));
   assert.equal(project.metadata.qirVersion, "1.2");
   assert.equal(project.metadata.networkAccess, false);
 });
