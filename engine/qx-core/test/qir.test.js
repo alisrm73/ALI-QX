@@ -75,7 +75,7 @@ test("refuses lowering when semantic analysis has errors", () => {
 });
 
 test("validator checks stored value types and definite assignment", () => {
-  const qir = compile("DATA.CREATE(x, 1)\nDATA.SET(x, x + 1)");
+  const qir = compile("DATA.CREATE(x, 1)\nDATA.CREATE(y, x + 1)");
   const badType = JSON.parse(JSON.stringify(qir));
   const constant = badType.initializer.blocks[0].instructions.find(item => item.opcode === "CONST_NUM");
   constant.type = "TXT";

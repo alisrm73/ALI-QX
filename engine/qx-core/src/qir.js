@@ -387,6 +387,7 @@ export function validateQIR(module) {
     const definedVariables = new Set();
     for (const global of module.globals ?? []) { variableTypes.set(global.id, global.type); definedVariables.add(global.id); }
     for (const global of module.globals ?? []) { variableTypes.set(global.id, global.type); definedVariables.add(global.id); }
+    for (const global of module.globals ?? []) { variableTypes.set(global.id, global.type); definedVariables.add(global.id); }
     const predecessors = new Map(fn.blocks.map(block => [block.id, new Set()]));
     for (const block of fn.blocks) {
       if (!Array.isArray(block.instructions) || !block.instructions.length) {
@@ -458,6 +459,7 @@ export function validateQIR(module) {
         if (old.size !== next.size || [...old].some(value => !next.has(value))) { dominators.set(id, next); changed = true; }
       }
     }
+    const initializedVariables = new Set(fn.id === "fn_0" ? [] : globalIds);
     for (const block of fn.blocks) {
       const seen = new Set();
       for (const inst of block.instructions) {
@@ -472,8 +474,27 @@ export function validateQIR(module) {
         if (inst.opcode === "BRANCH") refs.push(op.condition);
         for (const ref of refs) if (typeof ref === "string" && ref.startsWith("v_") && !valueTypes.has(ref))
           report("QIR_E_UNDEFINED_VALUE", "Use of undefined value " + ref, inst.source, { function: fn.id, block: block.id });
-        if (inst.opcode === "LOAD" && !definedVariables.has(op.variable)) report("QIR_E_UNDECLARED_VARIABLE", "LOAD before DECLARE", inst.source);
-        if (["STORE_LOCAL","STORE_GLOBAL"].includes(inst.opcode) && !definedVariables.has(op.variable)) report("QIR_E_UNDECLARED_VARIABLE", "STORE before DECLARE", inst.source);
+        if (inst.opcode === "DECLARE") {
+          if (op.parameter === true) initializedVariables.add(op.variable);
+          else initializedVariables.delete(op.variable);
+        }
+        if (inst.opcode === "LOAD") {
+          if (!definedVariables.has(op.variable)) report("QIR_E_UNDECLARED_VARIABLE", "LOAD before DECLARE", inst.source);
+          else if ((fn.id === "fn_0" || !globalIds.has(op.variable)) && !initializedVariables.has(op.variable))
+            report("QIR_E_UNINITIALIZED_LOAD", "Variable may be read before initialization", inst.source);
+        }
+        if (["STORE_LOCAL","STORE_GLOBAL"].includes(inst.opcode)) {
+          if (!definedVariables.has(op.variable)) report("QIR_E_UNDECLARED_VARIABLE", "STORE before DECLARE", inst.source);
+          initializedVariables.add(op.variable);
+        }
+        if (inst.opcode === "CALL" && fn.id === "fn_0") {
+          const target = functionById.get(op.function);
+          const reads = new Set();
+          for (const targetBlock of target?.blocks ?? []) for (const targetInst of targetBlock.instructions ?? [])
+            if (targetInst.opcode === "LOAD" && globalIds.has(targetInst.operands?.variable)) reads.add(targetInst.operands.variable);
+          for (const global of reads) if (!initializedVariables.has(global))
+            report("QIR_E_GLOBAL_READ_BEFORE_CALL", "Function may read a global before it is initialized", inst.source, { global });
+        }
         if (inst.opcode === "BRANCH" && valueTypes.get(op.condition) !== "BOOL") report("QIR_E_BRANCH_TYPE", "BRANCH condition must be BOOL", inst.source);
         if (inst.opcode === "LOAD" && !variableTypes.has(op.variable)) report("QIR_E_UNDECLARED_VARIABLE", "LOAD references an unknown variable", inst.source);
         if (inst.opcode === "STORE_LOCAL" && globalIds.has(op.variable)) report("QIR_E_STORAGE_KIND", "STORE_LOCAL cannot write a global", inst.source);
