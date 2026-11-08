@@ -63,8 +63,9 @@ export class Lexer {
     const raw = this.source.slice(start.offset, this.i); this.add("NUMBER", Number(raw), start, raw);
   }
   identifier() {
-    const start = this.loc(); this.take(); while (this.peek() !== null && ID_CONTINUE.test(this.peek())) this.take();
+    const start = this.loc(), first = this.peek(); this.take(); while (this.peek() !== null && ID_CONTINUE.test(this.peek())) this.take();
     const raw = this.source.slice(start.offset, this.i); let script = null;
+    if (!LETTER.test(first) || (!LATIN.test(first) && !ARABIC.test(first))) this.error("QX1008", "Identifiers must start with an Arabic or Latin letter", start);
     for (const ch of raw) {
       if (INVISIBLE.test(ch)) this.error("QX1007", "Invisible characters are not allowed in identifiers", start);
       if (LETTER.test(ch)) {
