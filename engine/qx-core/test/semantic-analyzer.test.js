@@ -75,7 +75,7 @@ test("validates UI.SHOW and UI.TEXT statement contracts", () => {
     "UI.SHOW(items)",
     "UI.SHOW(TRUE)",
     "UI.SHOW(NULL)"
-  ].join("\\n"));
+  ].join("\n"));
   assert.equal(result.valid, true, JSON.stringify(result.diagnostics));
 
   const badText = check("UI.TEXT(42)");
