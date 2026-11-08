@@ -44,7 +44,7 @@ function cloneValue(value) {
   return Array.isArray(value) ? value.map(cloneValue) : value;
 }
 
-export function runQIR(module, options = {}) {
+function createQIRExecution(module, options = {}) {
   const diagnostics = validateQIR(module);
   if (diagnostics.length) {
     const error = new Error(diagnostics[0].message);
@@ -59,6 +59,9 @@ export function runQIR(module, options = {}) {
   const globals = new Map(module.globals.map(item => [item.id, UNINITIALIZED]));
   const state = { instructions: 0 };
   const outputs = [];
+  const integrationBroker = options.integrationBroker;
+  const usesIntegration = [module.initializer, ...module.functions].some(fn =>
+    fn.blocks.some(block => block.instructions.some(inst => inst.opcode === "COMMAND_CALL" && inst.operands?.command === "INTEGRATION.REQUEST")));
 
   const runtimeError = (code, message, instruction, context) =>
     new QXVMError(code, message, instruction, context);
@@ -159,7 +162,7 @@ export function runQIR(module, options = {}) {
     }
   }
 
-  function executeFunction(fn, args, depth) {
+  function* executeFunction(fn, args, depth) {
     if (depth > limits.maxCallDepth)
       throw new QXVMError("QX_VM_CALL_DEPTH_LIMIT", "Maximum function call depth exceeded", null, { function: fn.id });
 
@@ -229,7 +232,7 @@ export function runQIR(module, options = {}) {
             const target = functions.get(op.function);
             if (!target) throw runtimeError("QX_VM_UNKNOWN_FUNCTION", "Unknown function: " + op.function, instruction, context);
             const callArgs = op.arguments.map(id => cloneValue(readValue(frame, id, instruction)));
-            const result = executeFunction(target, callArgs, depth + 1);
+            const result = yield* executeFunction(target, callArgs, depth + 1);
             if (instruction.result) values.set(instruction.result, result);
             break;
           }
@@ -256,11 +259,31 @@ export function runQIR(module, options = {}) {
               values.set(instruction.result, list.filter((_, itemIndex) => itemIndex !== index).map(cloneValue));
               break;
             }
-            if (op.command === "UI.SHOW" && args.length === 1 && module.version === "1.2") {
+            if (op.command === "INTEGRATION.REQUEST" && args.length === 3 && module.version === "1.3") {
+              if (typeof integrationBroker?.request !== "function")
+                throw runtimeError("QX_VM_INTEGRATION_UNAVAILABLE", "No trusted integration broker was supplied", instruction, context);
+              const connector = ensureString(readValue(frame, args[0], instruction), instruction, frame);
+              const operation = ensureString(readValue(frame, args[1], instruction), instruction, frame);
+              const payloadJson = ensureString(readValue(frame, args[2], instruction), instruction, frame);
+              let response;
+              try {
+                response = yield Promise.resolve(integrationBroker.request(connector, operation, payloadJson));
+              } catch {
+                throw runtimeError("QX_VM_INTEGRATION_FAILED", "Integration request failed", instruction, context);
+              }
+              if (typeof response !== "string")
+                throw runtimeError("QX_VM_INTEGRATION_RESPONSE", "Integration broker returned an invalid response", instruction, context);
+              ensureString(response, instruction, frame);
+              try { JSON.parse(response); }
+              catch { throw runtimeError("QX_VM_INTEGRATION_RESPONSE", "Integration broker returned invalid JSON", instruction, context); }
+              values.set(instruction.result, response);
+              break;
+            }
+            if (op.command === "UI.SHOW" && args.length === 1 && ["1.2", "1.3"].includes(module.version)) {
               outputs.push(Object.freeze({ component: "SHOW", value: cloneValue(readValue(frame, args[0], instruction)), source: instruction.source }));
               break;
             }
-            if (op.command === "UI.TEXT" && args.length === 1 && module.version === "1.2") {
+            if (op.command === "UI.TEXT" && args.length === 1 && ["1.2", "1.3"].includes(module.version)) {
               const value = readValue(frame, args[0], instruction);
               if (typeof value !== "string") throw runtimeError("QX_VM_INVALID_TEXT", "UI.TEXT requires TXT", instruction, context);
               ensureString(value, instruction, frame);
@@ -290,16 +313,51 @@ export function runQIR(module, options = {}) {
     }
   }
 
-  executeFunction(module.initializer, [], 1);
-
-  const resultGlobals = {};
-  for (const global of module.globals) {
-    const value = globals.get(global.id);
-    if (value !== UNINITIALIZED) resultGlobals[global.name] = cloneValue(value);
+  function resultSnapshot() {
+    const resultGlobals = {};
+    for (const global of module.globals) {
+      const value = globals.get(global.id);
+      if (value !== UNINITIALIZED) resultGlobals[global.name] = cloneValue(value);
+    }
+    return Object.freeze({
+      globals: Object.freeze(resultGlobals),
+      outputs: Object.freeze(outputs.map(item => Object.freeze({ ...item }))),
+      instructionCount: state.instructions
+    });
   }
-  return Object.freeze({
-    globals: Object.freeze(resultGlobals),
-    outputs: Object.freeze(outputs.map(item => Object.freeze({ ...item }))),
-    instructionCount: state.instructions
-  });
+
+  function runSync() {
+    if (usesIntegration)
+      throw new QXVMError("QX_VM_ASYNC_REQUIRED", "QIR module uses INTEGRATION.REQUEST; call runQIRAsync", null, { function: module.initializer.id });
+    const generator = executeFunction(module.initializer, [], 1);
+    let step = generator.next();
+    while (!step.done) {
+      if (step.value && typeof step.value.then === "function")
+        throw new QXVMError("QX_VM_ASYNC_REQUIRED", "QIR module requires asynchronous execution", null, { function: module.initializer.id });
+      step = generator.next(step.value);
+    }
+    return resultSnapshot();
+  }
+
+  async function runAsync() {
+    if (usesIntegration && typeof integrationBroker?.request !== "function")
+      throw new QXVMError("QX_VM_INTEGRATION_UNAVAILABLE", "No trusted integration broker was supplied", null, { function: module.initializer.id });
+    const generator = executeFunction(module.initializer, [], 1);
+    let step = generator.next();
+    while (!step.done) {
+      try { step = generator.next(await step.value); }
+      catch (error) { step = generator.throw(error); }
+    }
+    return resultSnapshot();
+  }
+
+  return Object.freeze({ runSync, runAsync });
+}
+
+export function runQIR(module, options = {}) {
+  return createQIRExecution(module, options).runSync();
+}
+
+export async function runQIRAsync(module, options = {}) {
+  return createQIRExecution(module, options).runAsync();
 }
