@@ -29,6 +29,7 @@ test("rejects mixed Arabic and Latin identifier scripts", () => {
 test("rejects unsupported escapes, invisible identifiers, and semicolon terminators", () => {
   assert.throws(() => tokenize('"bad\\q"'), error => error.code === "QX1005");
   assert.throws(() => tokenize("DATA.CREATE(x\u200e, 1)"), error => error.code === "QX1007");
+  assert.equal(tokenize('DATA.CREATE(text, "A\\u200eB")')[6].type, "STRING");
   assert.throws(() => tokenize("DATA.CREATE(x, 1);"), error => error.code === "QX1001");
 });
 
