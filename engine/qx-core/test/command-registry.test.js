@@ -38,7 +38,7 @@ test("does not accept unregistered names, aliases, or cross-domain commands", ()
   assert.equal(resolveCommand("DATA", "إنشاء"), null);
 });
 
-test("records only the three approved V1 command contracts", () => {
+test("records the approved V1 command contracts", () => {
   assert.deepEqual(resolveCommand("DATA", "COUNT").signature, {
     parameters: [{ name: "list", type: "LIST" }],
     result: { kind: "value", type: "NUM" }
@@ -75,7 +75,7 @@ test("records only the three approved V1 command contracts", () => {
   });
 });
 
-test("enables only the three approved commands after semantic validation", () => {
+test("enables only commands with approved semantic contracts", () => {
   const enabled = new Set(["DATA.COUNT", "DATA.ADD", "DATA.REMOVE", "PROCESS.ADD", "PROCESS.CALCULATE", "PROCESS.COMPARE"]);
   for (const command of COMMAND_REGISTRY) {
     assert.equal(command.enabled, enabled.has(command.id));
