@@ -81,9 +81,12 @@ test("requires explicit permissions on every operation", () => {
 
 test("keeps an uncooperative timed-out adapter counted until it settles", async () => {
   let finish;
-  const broker = makeBroker(() => new Promise(resolve => { finish = resolve; }), {
-    limits: { maxConcurrentRequests: 1, timeoutMs: 10 }
-  });
+  let calls = 0;
+  const broker = makeBroker(() => {
+    calls++;
+    if (calls === 1) return new Promise(resolve => { finish = resolve; });
+    return Promise.resolve('{"ok":true}');
+  }, { limits: { maxConcurrentRequests: 1, timeoutMs: 10 } });
   await assert.rejects(broker.request("demo", "lookup", "{}"), error => error.code === "QX_INTEGRATION_TIMEOUT");
   await assert.rejects(broker.request("demo", "lookup", "{}"), error => error.code === "QX_INTEGRATION_BUSY");
   finish('{"late":true}');
