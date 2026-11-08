@@ -170,3 +170,30 @@ test("executes PROCESS.ADD in module and local function scopes", () => {
   assert.equal(globals.count, 3);
   assert.equal(globals.result, 7);
 });
+
+test("executes UI.TEXT and UI.SHOW as ordered output effects", () => {
+  const result = runQIR(compile([
+    'UI.TEXT("Hello from QX")',
+    "DATA.CREATE(items, [1, [2, 3], TRUE])",
+    "UI.SHOW(items)",
+    "UI.SHOW(NULL)"
+  ].join("\n")));
+  assert.deepEqual(result.outputs.map(item => item.component), ["TEXT", "SHOW", "SHOW"]);
+  assert.equal(result.outputs[0].value, "Hello from QX");
+  assert.deepEqual(result.outputs[1].value, [1, [2, 3], true]);
+  assert.equal(result.outputs[2].value, null);
+  assert.equal(result.globals.items.length, 3);
+});
+
+test("collects UI output from called functions in execution order", () => {
+  const result = runQIR(compile([
+    "FUNCTION greet(name)",
+    'UI.TEXT("Hello")',
+    "UI.SHOW(name)",
+    "END",
+    'greet("QX")',
+    'UI.TEXT("Done")'
+  ].join("\n")));
+  assert.deepEqual(result.outputs.map(item => item.component), ["TEXT", "SHOW", "TEXT"]);
+  assert.deepEqual(result.outputs.map(item => item.value), ["Hello", "QX", "Done"]);
+});
