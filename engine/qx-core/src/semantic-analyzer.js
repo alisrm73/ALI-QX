@@ -146,12 +146,16 @@ export function analyze(program) {
       if (cmd.id === "DATA.SET_GLOBAL" && found.scope.kind !== "module") report("QX3021", "DATA.SET_GLOBAL requires an existing module variable", node.args[0]);
       join(found.symbol.cell, expression(node.args[1], scope), node.args[1], "QX3022", "Assigned value has a different type from variable " + node.args[0].name); return;
     }
-    if (["PROCESS.CALCULATE", "PROCESS.COMPARE"].includes(cmd.id)) {
-      const required = cmd.id === "PROCESS.CALCULATE" ? "NUM" : "BOOL";
+    if (["PROCESS.ADD", "PROCESS.CALCULATE", "PROCESS.COMPARE"].includes(cmd.id)) {
+      const required = cmd.id === "PROCESS.COMPARE" ? "BOOL" : "NUM";
       if (node.args.length !== 2 || node.args[0]?.type !== "Identifier") { report("QX3023", cmd.id + " expects a target identifier and an expression", node); node.args.forEach(a => expression(a, scope)); return; }
       const found = scope.lookup(node.args[0].name);
       if (!found) report("QX3003", "Undeclared target: " + node.args[0].name, node.args[0]);
-      else constrain(found.symbol.cell, [required], node.args[0], "QX3024", cmd.id + " target must be " + required);
+      else {
+        constrain(found.symbol.cell, [required], node.args[0], "QX3024", cmd.id + " target must be " + required);
+        if (cmd.id === "PROCESS.ADD" && scope.kind === "function" && found.scope.kind !== "function")
+          report("QX3020", "Use DATA.SET_GLOBAL inside a function to update a module variable", node);
+      }
       constrain(expression(node.args[1], scope), [required], node.args[1], "QX3025", cmd.id + " expression must produce " + required); return;
     }
     if (cmd.id === "DATA.ADD" || cmd.id === "DATA.REMOVE") {
