@@ -101,7 +101,9 @@ test("validator rejects calls before globals read by the callee are initialized"
   ].join("\n"));
   const semantic = analyze(ast);
   assert.equal(semantic.valid, true, JSON.stringify(semantic.diagnostics));
-  const qir = lowerToQIR(ast, semantic);
-  const diagnostics = validateQIR(qir);
-  assert.ok(diagnostics.some(item => item.code === "QIR_E_GLOBAL_READ_BEFORE_CALL"), JSON.stringify({ diagnostics, qir }));
+  assert.throws(
+    () => lowerToQIR(ast, semantic),
+    error => error.name === "QIRValidationError" &&
+      error.diagnostics.some(item => item.code === "QIR_E_GLOBAL_READ_BEFORE_CALL")
+  );
 });
