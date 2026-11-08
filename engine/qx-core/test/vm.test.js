@@ -155,3 +155,18 @@ test("DATA.ADD and DATA.REMOVE enforce list limits and valid zero-based indices"
       error => error instanceof QXVMError && error.code === "QX_VM_LIST_INDEX");
   }
 });
+
+test("executes PROCESS.ADD in module and local function scopes", () => {
+  const module = compile([
+    "DATA.CREATE(count, 1)",
+    "PROCESS.ADD(count, 2)",
+    "FUNCTION increment(value)",
+    "PROCESS.ADD(value, 3)",
+    "RETURN value",
+    "END",
+    "DATA.CREATE(result, increment(4))"
+  ].join("\\n"));
+  const globals = runQIR(module).globals;
+  assert.equal(globals.count, 3);
+  assert.equal(globals.result, 7);
+});
