@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { analyze, lowerToQIR, parse, runQIR, QXVMError } from "../src/index.js";
+import { analyze, lowerToQIR, parse, runQIR, runQIRAsync, createIntegrationBroker, QXVMError } from "../src/index.js";
 
 function compile(source) {
   const ast = parse(source);
@@ -196,4 +196,55 @@ test("collects UI output from called functions in execution order", () => {
   ].join("\n")));
   assert.deepEqual(result.outputs.map(item => item.component), ["TEXT", "SHOW", "TEXT"]);
   assert.deepEqual(result.outputs.map(item => item.value), ["Hello", "QX", "Done"]);
+});
+
+function demoIntegrationBroker(invoke = async ({ payload }) => JSON.stringify({ received: payload })) {
+  return createIntegrationBroker({
+    connectors: {
+      demo: {
+        id: "demo",
+        version: "1.0.0",
+        operations: { lookup: { permissions: ["demo:read"], invoke } }
+      }
+    },
+    grants: [{ connector: "demo", operation: "lookup", permissions: ["demo:read"] }]
+  });
+}
+
+test("executes INTEGRATION.REQUEST asynchronously through a trusted broker, including nested functions", async () => {
+  const module = compile([
+    "FUNCTION lookup(payload)",
+    'RETURN INTEGRATION.REQUEST("demo", "lookup", payload)',
+    "END",
+    'DATA.CREATE(response, lookup("{\\\"id\\\":7}"))'
+  ].join("\n"));
+  assert.equal(module.version, "1.3");
+  const result = await runQIRAsync(module, { integrationBroker: demoIntegrationBroker() });
+  assert.equal(result.globals.response, '{"received":{"id":7}}');
+});
+
+test("requires asynchronous VM execution and a broker before running integration modules", async () => {
+  const module = compile('DATA.CREATE(response, INTEGRATION.REQUEST("demo", "lookup", "{}"))');
+  let calls = 0;
+  const integrationBroker = demoIntegrationBroker(async () => { calls++; return '{"ok":true}'; });
+  assert.throws(() => runQIR(module, { integrationBroker }),
+    error => error instanceof QXVMError && error.code === "QX_VM_ASYNC_REQUIRED");
+  assert.equal(calls, 0);
+  await assert.rejects(runQIRAsync(module),
+    error => error instanceof QXVMError && error.code === "QX_VM_INTEGRATION_UNAVAILABLE");
+});
+
+test("sanitizes integration adapter failures at the VM boundary", async () => {
+  const module = compile('DATA.CREATE(response, INTEGRATION.REQUEST("demo", "lookup", "{}"))');
+  const integrationBroker = demoIntegrationBroker(async () => { throw new Error("private-adapter-secret"); });
+  await assert.rejects(runQIRAsync(module, { integrationBroker }), error =>
+    error instanceof QXVMError && error.code === "QX_VM_INTEGRATION_FAILED" &&
+    !error.message.includes("private-adapter-secret"));
+});
+
+test("rejects non-JSON integration broker responses", async () => {
+  const module = compile('DATA.CREATE(response, INTEGRATION.REQUEST("demo", "lookup", "{}"))');
+  const integrationBroker = demoIntegrationBroker(async () => "<html>not json</html>");
+  await assert.rejects(runQIRAsync(module, { integrationBroker }),
+    error => error instanceof QXVMError && error.code === "QX_VM_INTEGRATION_RESPONSE");
 });
