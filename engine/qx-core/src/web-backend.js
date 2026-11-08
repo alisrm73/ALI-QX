@@ -100,7 +100,13 @@ function browserRun(module, combiningClassEntries) {
           case "BINARY": values.set(i.result,binary(o.operator,read(o.left,i),read(o.right,i),i,ctx));break;
           case "MAKE_LIST": if(o.elements.length>LIMITS.maxListLength)fail("QX_VM_LIST_LIMIT","List limit exceeded",i,ctx);values.set(i.result,o.elements.map(id=>clone(read(id,i))));break;
           case "CALL": {const target=functions.get(o.function);if(!target)fail("QX_VM_UNKNOWN_FUNCTION","Unknown function",i,ctx);const r=execute(target,o.arguments.map(id=>clone(read(id,i))),depth+1);if(i.result)values.set(i.result,r);break;}
-          case "COMMAND_CALL": if(o.command!=="DATA.COUNT"||o.arguments.length!==1)fail("QX_VM_COMMAND_NOT_ALLOWED","Only DATA.COUNT is supported",i,ctx);{const list=read(o.arguments[0],i);if(!Array.isArray(list))fail("QX_VM_COMMAND_ARGUMENT","DATA.COUNT requires LIST",i,ctx);if(i.result)values.set(i.result,list.length);}break;
+          case "COMMAND_CALL": {
+            const args=o.arguments||[];
+            if(o.command==="DATA.COUNT"&&args.length===1){const list=read(args[0],i);if(!Array.isArray(list))fail("QX_VM_COMMAND_ARGUMENT","DATA.COUNT requires LIST",i,ctx);if(i.result)values.set(i.result,list.length);break;}
+            if(o.command==="DATA.ADD"&&args.length===2){const list=read(args[0],i),value=read(args[1],i);if(!Array.isArray(list))fail("QX_VM_COMMAND_ARGUMENT","DATA.ADD requires LIST",i,ctx);if(list.length>=LIMITS.maxListLength)fail("QX_VM_LIST_LIMIT","Maximum list length exceeded",i,ctx);values.set(i.result,[...list.map(clone),clone(value)]);break;}
+            if(o.command==="DATA.REMOVE"&&args.length===2){const list=read(args[0],i),index=read(args[1],i);if(!Array.isArray(list))fail("QX_VM_COMMAND_ARGUMENT","DATA.REMOVE requires LIST",i,ctx);if(!Number.isSafeInteger(index)||index<0||index>=list.length)fail("QX_VM_LIST_INDEX","DATA.REMOVE index must be a valid zero-based integer within the list",i,ctx);values.set(i.result,list.filter((_,n)=>n!==index).map(clone));break;}
+            fail("QX_VM_COMMAND_NOT_ALLOWED","Command is not available in this QIR version",i,ctx);break;
+          }
           case "BRANCH": {const v=read(o.condition,i);if(typeof v!=="boolean")fail("QX_VM_BRANCH_TYPE","BRANCH requires BOOL",i,ctx);blockId=v?o.true_target:o.false_target;transferred=true;break;}
           case "JUMP": blockId=o.target;transferred=true;break;
           case "RETURN": return Object.hasOwn(o,"value")?clone(read(o.value,i)):null;
