@@ -211,3 +211,13 @@ test("QIR 1.0 continues to reject DATA.ADD and DATA.REMOVE command calls", () =>
   });
   assert.ok(validateQIR(bad).some(item => item.code === "QIR_E_COMMAND_SIGNATURE" || item.code === "QIR_E_COMMAND_NOT_ALLOWED"));
 });
+
+test("lowers PROCESS.ADD into a NUM load-add-store sequence in QIR 1.0", () => {
+  const qir = compile("DATA.CREATE(count, 1)\\nPROCESS.ADD(count, 2)");
+  assert.equal(qir.version, "1.0");
+  const instructions = qir.initializer.blocks.flatMap(block => block.instructions);
+  const loadIndex = instructions.findIndex(inst => inst.opcode === "LOAD");
+  const addIndex = instructions.findIndex(inst => inst.opcode === "BINARY" && inst.operands.operator === "+");
+  const storeIndex = instructions.findIndex(inst => inst.opcode === "STORE_GLOBAL");
+  assert.ok(loadIndex >= 0 && addIndex > loadIndex && storeIndex > addIndex);
+});
