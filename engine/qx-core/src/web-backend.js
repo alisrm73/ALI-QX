@@ -106,8 +106,8 @@ function browserRun(module, combiningClassEntries) {
             if(o.command==="DATA.COUNT"&&args.length===1){const list=read(args[0],i);if(!Array.isArray(list))fail("QX_VM_COMMAND_ARGUMENT","DATA.COUNT requires LIST",i,ctx);if(i.result)values.set(i.result,list.length);break;}
             if(o.command==="DATA.ADD"&&args.length===2){const list=read(args[0],i),value=read(args[1],i);if(!Array.isArray(list))fail("QX_VM_COMMAND_ARGUMENT","DATA.ADD requires LIST",i,ctx);if(list.length>=LIMITS.maxListLength)fail("QX_VM_LIST_LIMIT","Maximum list length exceeded",i,ctx);values.set(i.result,[...list.map(clone),clone(value)]);break;}
             if(o.command==="DATA.REMOVE"&&args.length===2){const list=read(args[0],i),index=read(args[1],i);if(!Array.isArray(list))fail("QX_VM_COMMAND_ARGUMENT","DATA.REMOVE requires LIST",i,ctx);if(!Number.isSafeInteger(index)||index<0||index>=list.length)fail("QX_VM_LIST_INDEX","DATA.REMOVE index must be a valid zero-based integer within the list",i,ctx);values.set(i.result,list.filter((_,n)=>n!==index).map(clone));break;}
-            if(o.command==="UI.SHOW"&&args.length===1&&module.version==="1.2"){outputs.push({component:"SHOW",value:clone(read(args[0],i)),source:i.source});break;}
-            if(o.command==="UI.TEXT"&&args.length===1&&module.version==="1.2"){const value=read(args[0],i);if(typeof value!=="string"||value.length>LIMITS.maxStringLength)fail("QX_VM_INVALID_TEXT","UI.TEXT requires bounded TXT",i,ctx);outputs.push({component:"TEXT",value,source:i.source});break;}
+            if(o.command==="UI.SHOW"&&args.length===1&&["1.2","1.3"].includes(module.version)){outputs.push({component:"SHOW",value:clone(read(args[0],i)),source:i.source});break;}
+            if(o.command==="UI.TEXT"&&args.length===1&&["1.2","1.3"].includes(module.version)){const value=read(args[0],i);if(typeof value!=="string"||value.length>LIMITS.maxStringLength)fail("QX_VM_INVALID_TEXT","UI.TEXT requires bounded TXT",i,ctx);outputs.push({component:"TEXT",value,source:i.source});break;}
             fail("QX_VM_COMMAND_NOT_ALLOWED","Command is not available in this QIR version",i,ctx);break;
           }
           case "BRANCH": {const v=read(o.condition,i);if(typeof v!=="boolean")fail("QX_VM_BRANCH_TYPE","BRANCH requires BOOL",i,ctx);blockId=v?o.true_target:o.false_target;transferred=true;break;}
@@ -159,6 +159,9 @@ try {
 export function generateWebAssets(qir, options = {}) {
   const diagnostics=validateQIR(qir);
   if(diagnostics.length)throw new QXWebBuildError("QX_WEB_INVALID_QIR","Cannot build invalid QIR",diagnostics);
+  const hasIntegrationRequest=[qir.initializer,...qir.functions].some(fn=>
+    fn.blocks.some(block=>block.instructions.some(inst=>inst.opcode==="COMMAND_CALL"&&inst.operands?.command==="INTEGRATION.REQUEST")));
+  if(hasIntegrationRequest)throw new QXWebBuildError("QX_WEB_INTEGRATION_UNSUPPORTED","INTEGRATION.REQUEST requires a trusted host runtime and is not available in static browser builds");
   const title=typeof options.title==="string"&&options.title.trim()?options.title.trim():"QX Web Project";
   if(title.length>120)throw new QXWebBuildError("QX_WEB_INVALID_TITLE","Project title must be 120 characters or fewer");
   const json=serializeQIR(qir).replace(/</g,"\\u003c");
