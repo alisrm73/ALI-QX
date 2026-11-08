@@ -87,6 +87,24 @@ The QIR V1 normative specification is maintained at `QX/spec/QIR-V1.md`.
 
 The phase-3 implementation does not execute QIR. The VM, Web Backend, and runtime execution remain later phases. Registry enablement for the three approved commands records semantic-contract support; it does not claim runtime execution.
 
+## QX Virtual Machine — phase 4 (in progress)
+
+The phase-4 branch adds an isolated QIR V1 interpreter:
+
+```js
+import { parse, analyze, lowerToQIR, runQIR } from "./src/index.js";
+
+const ast = parse('DATA.CREATE(total, 4 + 5)');
+const semantic = analyze(ast);
+if (!semantic.valid) throw new Error(JSON.stringify(semantic.diagnostics));
+const qir = lowerToQIR(ast, semantic);
+const result = runQIR(qir);
+```
+
+The initial interpreter executes the module initializer, local/global storage, constants, unary/binary operations, lists, function calls, branches, jumps, returns, and the approved `DATA.COUNT` expression. Runtime limits are configurable through `runQIR(module, { limits })` and cover instruction count, call depth, list length, and string length. The VM has no host I/O, filesystem, network, or dynamic code execution interface.
+
+LIST equality is deliberately rejected at runtime because QIR V1 does not yet define its equality semantics. Runtime implementation and tests are under active phase-4 validation; this section does not declare phase 4 complete.
+
 ## Diagnostics note
 
 Diagnostics currently provide stable codes and English messages with source positions. Arabic message localization and project-language selection are later diagnostics-layer work.
