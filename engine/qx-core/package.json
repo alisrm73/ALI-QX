@@ -1,0 +1,11 @@
+{
+  "name": "@ali-qx/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Platform-independent QX V1 lexer and parser",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "node --test"
+  }
+}
