@@ -109,7 +109,7 @@ test("browser runtime executes PROCESS.ADD increments", () => {
     "RETURN value",
     "END",
     "DATA.CREATE(result, increment(4))"
-  ].join("\\n"));
+  ].join("\n"));
   const makeNode = () => ({ children: [], textContent: "", className: "", append(...items) { this.children.push(...items); } });
   const nodes = new Map([["qx-output", makeNode()], ["qx-status", makeNode()]]);
   const document = { getElementById: id => nodes.get(id), createElement: () => makeNode() };
