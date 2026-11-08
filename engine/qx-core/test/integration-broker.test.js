@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createIntegrationBroker, QXIntegrationError } from "../src/integration-broker.js";
+import { createIntegrationBroker, QXIntegrationError } from "../src/index.js";
 
 const connector = (invoke = async () => '{"ok":true}') => ({
   demo: { id: "demo", version: "1.0.0", operations: { lookup: { permissions: ["demo:read"], invoke } } }
