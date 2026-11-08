@@ -109,6 +109,10 @@ export function analyze(program) {
           if (cmd.id === "DATA.REMOVE") constrain(value, ["NUM"], node.args[1], "QX3043", "DATA.REMOVE index must be NUM");
           out = concrete("LIST"); break;
         }
+        if (cmd.id === "UI.SHOW" || cmd.id === "UI.TEXT") {
+          report("QX3045", cmd.id + " is a UI statement and cannot be used as an expression", node);
+          node.args.forEach(a => expression(a, scope)); out = concrete("ERROR"); break;
+        }
         report("QX3012", "This command has no approved value-returning expression contract", node); node.args.forEach(a => expression(a, scope)); out = concrete("ERROR"); break;
       }
       case "CallExpression": {
@@ -170,6 +174,16 @@ export function analyze(program) {
         return;
       }
       constrain(expression(node.args[0], scope), ["LIST"], node.args[0], "QX3014", "DATA.COUNT expects LIST");
+      return;
+    }
+    if (cmd.id === "UI.SHOW" || cmd.id === "UI.TEXT") {
+      if (node.args.length !== 1) {
+        report("QX3046", cmd.id + " expects exactly one argument", node);
+        node.args.forEach(a => expression(a, scope));
+        return;
+      }
+      const value = expression(node.args[0], scope);
+      if (cmd.id === "UI.TEXT") constrain(value, ["TXT"], node.args[0], "QX3047", "UI.TEXT expects TXT");
       return;
     }
     if (!["DATA.CREATE", "DATA.SET", "DATA.SET_GLOBAL"].includes(cmd.id) && !cmd.enabled) {
