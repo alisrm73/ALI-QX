@@ -165,7 +165,7 @@ test("executes PROCESS.ADD in module and local function scopes", () => {
     "RETURN value",
     "END",
     "DATA.CREATE(result, increment(4))"
-  ].join("\\n"));
+  ].join("\n"));
   const globals = runQIR(module).globals;
   assert.equal(globals.count, 3);
   assert.equal(globals.result, 7);
