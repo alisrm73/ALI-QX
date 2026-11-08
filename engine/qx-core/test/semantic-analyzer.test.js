@@ -240,3 +240,25 @@ test("requires DATA.SET_GLOBAL to be inside a function", () => {
   assert.equal(result.valid, false);
   assert.ok(result.diagnostics.some(item => item.code === "QX3021"));
 });
+
+test("validates PROCESS.ADD as a numeric increment of an existing NUM variable", () => {
+  const valid = check("DATA.CREATE(count, 0)\\nPROCESS.ADD(count, 1.5)");
+  assert.equal(valid.valid, true, JSON.stringify(valid.diagnostics));
+  assert.equal(valid.symbols[0].type, "NUM");
+
+  const badTarget = check('DATA.CREATE(count, "0")\\nPROCESS.ADD(count, 1)');
+  assert.ok(badTarget.diagnostics.some(item => item.code === "QX3024"));
+  const badAmount = check("DATA.CREATE(count, 0)\\nPROCESS.ADD(count, TRUE)");
+  assert.ok(badAmount.diagnostics.some(item => item.code === "QX3025"));
+});
+
+test("PROCESS.ADD does not bypass the explicit global-write rule inside functions", () => {
+  const result = check([
+    "DATA.CREATE(count, 0)",
+    "FUNCTION increment()",
+    "PROCESS.ADD(count, 1)",
+    "END"
+  ].join("\\n"));
+  assert.equal(result.valid, false);
+  assert.ok(result.diagnostics.some(item => item.code === "QX3020"));
+});
