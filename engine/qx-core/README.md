@@ -87,9 +87,9 @@ The QIR V1 normative specification is maintained at `QX/spec/QIR-V1.md`.
 
 The phase-3 QIR implementation is consumed by the phase-4 VM described below. Registry enablement for the three approved commands records semantic-contract support; runtime availability is separately enforced by the VM.
 
-## QX Virtual Machine — phase 4 (in progress)
+## QX Virtual Machine — phase 4 (complete)
 
-The phase-4 branch adds an isolated QIR V1 interpreter:
+The phase-4 QIR V1 interpreter is exported as `runQIR`:
 
 ```js
 import { parse, analyze, lowerToQIR, runQIR } from "./src/index.js";
@@ -101,9 +101,9 @@ const qir = lowerToQIR(ast, semantic);
 const result = runQIR(qir);
 ```
 
-The initial interpreter executes the module initializer, local/global storage, constants, unary/binary operations, lists, function calls, branches, jumps, returns, and the approved `DATA.COUNT` expression. Runtime limits are configurable through `runQIR(module, { limits })` and cover instruction count, call depth, list length, and string length. The VM has no host I/O, filesystem, network, or dynamic code execution interface.
+The VM executes the module initializer, local/global storage, constants, unary/binary operations, lists, function calls, branches, jumps, returns, and the approved `DATA.COUNT` expression. Runtime limits cover instruction count, call depth, list length, and string length. The VM has no host I/O, filesystem, network, or dynamic code execution interface.
 
-LIST equality is deliberately rejected at runtime because QIR V1 does not yet define its equality semantics. Runtime implementation and tests are under active phase-4 validation; this section does not declare phase 4 complete.
+LIST equality remains deliberately rejected because QIR V1 does not define its equality semantics. Phase 4 was merged into `main`; its original validation suite contained 90 passing tests.
 
 ## Diagnostics note
 
@@ -129,7 +129,7 @@ Use `resolveCommand(domain, command)` to resolve an English or Arabic alias to i
 
 ## Verification
 
-The current phase-4 branch core suite contains **90 tests**, all passing on the verified Node.js 22.16.0 runtime, including QIR lowering, serialization, CFG and validator regressions, plus VM execution, control-flow, call-depth, instruction-budget, division, list, and Unicode NFC comparison cases. The official Unicode 18.0.0 NFC conformance file has **100,855 passing checks and 0 failures**. Execution-time integer validation for remainder operations remains a runtime concern, not a semantic-analysis guarantee.
+The phase-4 validation baseline contained **90 passing tests**. The phase-5 pull request extends the complete core suite with Web Backend build, output-safety, browser-runtime, and Unicode normalization coverage. The official Unicode 18.0.0 NFC conformance file has **100,855 passing checks and 0 failures**. Execution-time integer validation for remainder operations remains a runtime concern, not a semantic-analysis guarantee.
 
 ## Web Backend — phase 5
 
@@ -142,6 +142,6 @@ const project = buildWebProject('DATA.CREATE(total, 4 + 5)', { title: "QX Demo" 
 // project.files: index.html, styles.css, app.js
 ```
 
-The build pipeline parses and semantically analyzes QX, lowers it to QIR V1, validates the QIR, and emits a self-contained browser runtime. The browser runtime supports the existing QIR V1 instruction set and approved `DATA.COUNT` command only. It renders resulting global values as text; QX UI commands remain disabled and are not implemented by this phase.
+The build pipeline parses and semantically analyzes QX, lowers it to QIR V1, validates the QIR, and emits a self-contained browser runtime. The browser runtime supports the existing QIR V1 instruction set and approved `DATA.COUNT` command only. It embeds the Unicode 18.0.0 combining-class table so NFC ordering and equality follow the pinned project data. It renders resulting global values as text; QX UI commands remain disabled and are not implemented by this phase.
 
 Generated projects have no network or host integration API, use DOM `textContent` for output, and include a restrictive Content Security Policy. The generated assets are deterministic for identical QIR and title inputs. This phase does not add commands, alter QX syntax, or implement integrations.
