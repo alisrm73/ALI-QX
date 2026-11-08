@@ -64,7 +64,7 @@ test("validates CALCULATE and COMPARE target and expression types", () => {
 test("rejects unknown commands in expression position and does not invent return contracts", () => {
   const result = check("DATA.CREATE(value, UI.SHOW(1))");
   assert.equal(result.valid, false);
-  assert.equal(result.diagnostics[0].code, "QX3012");
+  assert.equal(result.diagnostics[0].code, "QX3045");
 });
 
 
