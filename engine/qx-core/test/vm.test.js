@@ -99,3 +99,33 @@ test("normalizes text to Unicode NFC before equality and ordering", () => {
   binary.operands.operator = ">";
   assert.equal(runQIR(ordered).globals.result, false);
 });
+
+test("executes function-local declarations and DATA.SET", () => {
+  const module = compile([
+    "FUNCTION increment(value)",
+    "DATA.CREATE(localValue, value + 1)",
+    "DATA.SET(localValue, localValue + 1)",
+    "RETURN localValue",
+    "END",
+    "DATA.CREATE(result, increment(2))"
+  ].join("\\n"));
+  assert.equal(runQIR(module).globals.result, 4);
+});
+
+test("executes PROCESS.COMPARE into an existing BOOL target", () => {
+  const module = compile([
+    "DATA.CREATE(isGreater, FALSE)",
+    "PROCESS.COMPARE(isGreater, 9 > 4)"
+  ].join("\\n"));
+  assert.equal(runQIR(module).globals.isGreater, true);
+});
+
+test("enforces list and string allocation limits", () => {
+  const listModule = compile("DATA.CREATE(items, [1, 2])");
+  assert.throws(() => runQIR(listModule, { limits: { maxListLength: 1 } }),
+    error => error instanceof QXVMError && error.code === "QX_VM_LIST_LIMIT");
+
+  const textModule = compile('DATA.CREATE(value, "abc")');
+  assert.throws(() => runQIR(textModule, { limits: { maxStringLength: 2 } }),
+    error => error instanceof QXVMError && error.code === "QX_VM_STRING_LIMIT");
+});
