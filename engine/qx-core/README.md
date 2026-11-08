@@ -26,10 +26,11 @@ const ast = parse('DATA.CREATE(name, "Ali")');
 - Tokenization of domains, command names, punctuation, numeric/string literals, lists, comments, operators, and line boundaries.
 - English and Arabic aliases for V1 control keywords and Boolean/null literals.
 - NFC normalization, XID identifier properties, Arabic/Latin script separation, and rejection of default-ignorable characters.
-- Parsing of domain commands, function calls, expressions, list literals, IF/ELSE/END, WHILE/END, and FUNCTION/RETURN/END.
+- Parsing of domain commands, qualified command calls as expressions, function calls, expressions, list literals, IF/ELSE/END, WHILE/END, and FUNCTION/RETURN/END.
+- Qualified command calls use the AST node `CommandCallExpression`, containing `domain`, `command`, `args`, and source `location`.
 - Top-level-only function declarations and RETURN statements restricted to function bodies.
 - AST nodes with source locations and stable lexer/parser error codes.
-- Automated tests for Arabic/English input, expressions, blocks, malformed syntax, comments, escapes, and CRLF locations.
+- Automated tests for Arabic/English input, nested qualified calls, expressions, blocks, malformed syntax, comments, escapes, and CRLF locations.
 
 ## Not implemented in this phase
 
@@ -42,3 +43,13 @@ Identifier properties currently come from the JavaScript runtime. Node.js 22.16.
 ## Diagnostics note
 
 Diagnostics currently provide stable codes and English messages with source positions. Arabic message localization and project-language selection are later diagnostics-layer work.
+
+## Qualified command expression compatibility slice
+
+The parser now recognizes a domain-qualified command call wherever an expression is accepted, including nested arguments, list elements, and binary expressions. For example:
+
+~~~qx
+DATA.CREATE(item, DATA.GET(items, 0))
+~~~
+
+This is a syntax/AST capability only. Semantic validation of command availability, signatures, return types, and permissions remains part of the semantic-analysis phase.
