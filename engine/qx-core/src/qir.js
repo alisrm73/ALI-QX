@@ -403,6 +403,14 @@ export function validateQIR(module) {
           if (valueTypes.has(inst.result) || !VALUE_TYPES.has(inst.type)) report("QIR_E_VALUE_TYPE", "Duplicate value or invalid result type", inst.source, { function: fn.id, block: block.id });
           valueTypes.set(inst.result, inst.type);
         }
+        if (inst.opcode === "CONST_NUM" && (typeof inst.operands.value !== "number" || !Number.isFinite(inst.operands.value) || inst.type !== "NUM"))
+          report("QIR_E_CONSTANT_TYPE", "CONST_NUM requires a finite number and NUM result", inst.source);
+        if (inst.opcode === "CONST_TXT" && (typeof inst.operands.value !== "string" || inst.type !== "TXT"))
+          report("QIR_E_CONSTANT_TYPE", "CONST_TXT requires a string and TXT result", inst.source);
+        if (inst.opcode === "CONST_BOOL" && (typeof inst.operands.value !== "boolean" || inst.type !== "BOOL"))
+          report("QIR_E_CONSTANT_TYPE", "CONST_BOOL requires a boolean and BOOL result", inst.source);
+        if (inst.opcode === "CONST_NULL" && (inst.type !== "NULL" || Object.keys(inst.operands).length !== 0))
+          report("QIR_E_CONSTANT_TYPE", "CONST_NULL has no operands and produces NULL", inst.source);
         if (inst.opcode === "DECLARE") {
           const { variable, declared_type: type, storage } = inst.operands ?? {};
           if (!variable || !VALUE_TYPES.has(type) || !["local", "global"].includes(storage)) report("QIR_E_DECLARE", "Invalid DECLARE", inst.source);

@@ -73,3 +73,36 @@ test("refuses lowering when semantic analysis has errors", () => {
   assert.equal(semantic.valid, false);
   assert.throws(() => lowerToQIR(ast, semantic), error => error.code === "QIR_E_SEMANTIC_ERRORS");
 });
+
+test("validator checks stored value types and definite assignment", () => {
+  const qir = compile("DATA.CREATE(x, 1)\nDATA.SET(x, x + 1)");
+  const badType = JSON.parse(JSON.stringify(qir));
+  const constant = badType.initializer.blocks[0].instructions.find(item => item.opcode === "CONST_NUM");
+  constant.type = "TXT";
+  assert.ok(validateQIR(badType).some(item => item.code === "QIR_E_STORE_TYPE"));
+
+  const uninitialized = JSON.parse(JSON.stringify(qir));
+  const instructions = uninitialized.initializer.blocks[0].instructions;
+  const loadIndex = instructions.findIndex(item => item.opcode === "LOAD");
+  const firstStoreIndex = instructions.findIndex(item => item.opcode === "STORE_GLOBAL");
+  const [load] = instructions.splice(loadIndex, 1);
+  instructions.splice(firstStoreIndex, 0, load);
+  assert.ok(validateQIR(uninitialized).some(item => item.code === "QIR_E_UNINITIALIZED_LOAD"));
+});
+
+test("validator rejects calls before globals read by the callee are initialized", () => {
+  const ast = parse([
+    "FUNCTION readGlobal()",
+    "RETURN value",
+    "END",
+    "DATA.CREATE(result, readGlobal())",
+    "DATA.CREATE(value, 7)"
+  ].join("\n"));
+  const semantic = analyze(ast);
+  assert.equal(semantic.valid, true, JSON.stringify(semantic.diagnostics));
+  assert.throws(
+    () => lowerToQIR(ast, semantic),
+    error => error.name === "QIRValidationError" &&
+      error.diagnostics.some(item => item.code === "QIR_E_GLOBAL_READ_BEFORE_CALL")
+  );
+});
