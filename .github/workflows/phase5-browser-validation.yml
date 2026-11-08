@@ -4,9 +4,6 @@ on:
   pull_request:
     branches:
       - "main"
-  push:
-    branches:
-      - "feature/phase5-web-backend"
 
 permissions:
   contents: read
