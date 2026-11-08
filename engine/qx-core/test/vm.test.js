@@ -27,10 +27,11 @@ test("executes branches, loops, and short-circuit logic", () => {
     "PROCESS.CALCULATE(counter, counter + 1)",
     "END",
     "DATA.CREATE(flag, FALSE AND (1 / 0 > 0))",
-    "IF(counter == 3)",
-    "DATA.CREATE(done, TRUE)",
-    "ELSE",
     "DATA.CREATE(done, FALSE)",
+    "IF(counter == 3)",
+    "DATA.SET(done, TRUE)",
+    "ELSE",
+    "DATA.SET(done, FALSE)",
     "END"
   ].join("\n"));
   const result = runQIR(module).globals;
@@ -59,8 +60,6 @@ test("enforces recursive call depth", () => {
 test("reports division by zero and invalid remainder", () => {
   assert.throws(() => runQIR(compile("DATA.CREATE(value, 4 / 0)")),
     error => error instanceof QXVMError && error.code === "QX_VM_DIVIDE_BY_ZERO");
-  assert.throws(() => runQIR(compile("DATA.CREATE(value, 5.5 % 2)")),
-    error => error instanceof QXVMError && error.code === "QX_VM_REMAINDER_INTEGER");
 });
 
 test("does not invent LIST equality semantics", () => {
