@@ -592,7 +592,7 @@ export function validateQIR(module) {
           if (op.command === "DATA.COUNT") {
             if (args.length !== 1 || valueTypes.get(args[0]) !== "LIST" || (inst.result && inst.type !== "NUM") || (!inst.result && inst.type)) report("QIR_E_COMMAND_SIGNATURE", "DATA.COUNT requires one LIST and returns NUM", inst.source);
           } else if (op.command === "DATA.ADD") {
-            if (module.version !== "1.1" || args.length !== 2 || valueTypes.get(args[0]) !== "LIST" || !VALUE_TYPES.has(valueTypes.get(args[1])) || !inst.result || inst.type !== "LIST") report("QIR_E_COMMAND_SIGNATURE", "DATA.ADD requires LIST and a value, and returns LIST in QIR 1.1", inst.source);
+            if (!["1.1", "1.2"].includes(module.version) || args.length !== 2 || valueTypes.get(args[0]) !== "LIST" || !VALUE_TYPES.has(valueTypes.get(args[1])) || !inst.result || inst.type !== "LIST") report("QIR_E_COMMAND_SIGNATURE", "DATA.ADD requires LIST and a value, and returns LIST in QIR 1.1", inst.source);
           } else if (op.command === "DATA.REMOVE") {
             if (!["1.1", "1.2"].includes(module.version) || args.length !== 2 || valueTypes.get(args[0]) !== "LIST" || valueTypes.get(args[1]) !== "NUM" || !inst.result || inst.type !== "LIST") report("QIR_E_COMMAND_SIGNATURE", "DATA.REMOVE requires LIST and NUM index, and returns LIST in QIR 1.1 or later", inst.source);
           } else if (op.command === "UI.SHOW") {
