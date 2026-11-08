@@ -51,7 +51,7 @@ export class Lexer {
       if (ch === "\n" || ch === "\r") this.error("QX1004", "Unterminated string literal", start);
       if (ch === "\\") {
         const e = this.take(); const map = { "\\": "\\", '"': '"', n: "\n", r: "\r", t: "\t" };
-        if (!(e in map)) this.error("QX1005", "Unsupported escape sequence: \\" + e, start);
+        if (e === null || !Object.hasOwn(map, e)) this.error("QX1005", "Unsupported escape sequence: \\" + (e ?? ""), start);
         value += map[e];
       } else value += ch;
     }
