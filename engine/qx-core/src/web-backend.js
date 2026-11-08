@@ -12,6 +12,7 @@ function escapeHTML(value) {
   return String(value).replace(/[&<>"']/g, ch => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" })[ch]);
 }
 function browserRun(module) {
+  const LIMITS = Object.freeze({ maxInstructions: 100000, maxCallDepth: 128, maxListLength: 10000, maxStringLength: 1000000 });
   const UNINITIALIZED = Symbol("QX_UNINITIALIZED");
   const clone = value => Array.isArray(value) ? value.map(clone) : value;
   const normalize = value => value.normalize("NFC");
@@ -96,10 +97,11 @@ function browserRun(module) {
   for(const item of module.globals){const v=globals.get(item.id);if(v!==UNINITIALIZED)result[item.name]=clone(v);}
   return {globals:result,instructionCount};
 }
+function browserEntry(module, runProgram) {
 const root=document.getElementById("qx-output");
 const status=document.getElementById("qx-status");
 try {
-  const result=browserRun(module);
+  const result=runProgram(module);
   status.textContent="Execution completed";
   const entries=Object.entries(result.globals);
   if(!entries.length){const p=document.createElement("p");p.textContent="Program completed. No global values were produced.";root.append(p);}
@@ -123,7 +125,7 @@ export function generateWebAssets(qir, options = {}) {
   const title=typeof options.title==="string"&&options.title.trim()?options.title.trim():"QX Web Project";
   if(title.length>120)throw new QXWebBuildError("QX_WEB_INVALID_TITLE","Project title must be 120 characters or fewer");
   const json=serializeQIR(qir).replace(/</g,"\\u003c");
-  const appJS="const module = "+json+";\n("+browserRun.toString()+")(module);\n";
+  const appJS="const module = "+json+";\n("+browserEntry.toString()+")(module, ("+browserRun.toString()+"));\n";
   const html=[
     "<!doctype html>","<html lang=\"en\"><head>","<meta charset=\"utf-8\">",
     "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">",
