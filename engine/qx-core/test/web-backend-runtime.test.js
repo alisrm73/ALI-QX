@@ -120,3 +120,43 @@ test("browser runtime executes PROCESS.ADD increments", () => {
   assert.equal(values.get("count"), "3");
   assert.equal(values.get("result"), "7");
 });
+
+test("browser runtime renders UI.TEXT and UI.SHOW as safe accessible text", () => {
+  const project = buildWebProject([
+    'UI.TEXT("<script>alert(1)</script>")',
+    "DATA.CREATE(items, [1, [2, 3], TRUE])",
+    "UI.SHOW(items)",
+    "UI.SHOW(NULL)"
+  ].join("\n"));
+  assert.equal(project.metadata.qirVersion, "1.2");
+  const makeNode = () => ({ children: [], textContent: "", className: "", append(...items) { this.children.push(...items); } });
+  const nodes = new Map([["qx-output", makeNode()], ["qx-status", makeNode()]]);
+  const document = { getElementById: id => nodes.get(id), createElement: () => makeNode() };
+  vm.runInNewContext(project.files["app.js"], { document });
+  assert.equal(nodes.get("qx-status").textContent, "Execution completed");
+  const output = nodes.get("qx-output").children;
+  const textNode = output.find(node => node.className === "qx-ui-text");
+  assert.equal(textNode.textContent, "<script>alert(1)</script>");
+  const shows = output.filter(node => node.className === "qx-ui-show");
+  assert.equal(shows.length, 2);
+  assert.equal(shows[0].children[0].textContent, "[\n  1,\n  [\n    2,\n    3\n  ],\n  true\n]");
+  assert.equal(shows[1].children[0].textContent, "null");
+});
+
+test("browser runtime renders UI output produced inside a function", () => {
+  const project = buildWebProject([
+    "FUNCTION greet(name)",
+    'UI.TEXT("Hello")',
+    "UI.SHOW(name)",
+    "END",
+    'greet("QX")'
+  ].join("\n"));
+  const makeNode = () => ({ children: [], textContent: "", className: "", append(...items) { this.children.push(...items); } });
+  const nodes = new Map([["qx-output", makeNode()], ["qx-status", makeNode()]]);
+  const document = { getElementById: id => nodes.get(id), createElement: () => makeNode() };
+  vm.runInNewContext(project.files["app.js"], { document });
+  assert.equal(nodes.get("qx-status").textContent, "Execution completed");
+  const output = nodes.get("qx-output").children;
+  assert.equal(output[0].textContent, "Hello");
+  assert.equal(output[1].children[0].textContent, "QX");
+});
