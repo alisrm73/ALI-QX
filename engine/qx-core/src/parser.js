@@ -124,6 +124,11 @@ export class Parser {
       return { type: "UnaryExpression", operator, argument: this.expression(6), location: this.loc(token) };
     }
     if (this.match("IDENTIFIER")) {
+      if (this.match("DOT")) {
+        const command = this.consume("IDENTIFIER", "Expected command name after domain separator");
+        if (!this.check("LPAREN")) this.fail("QX2013", "A qualified command expression must include arguments");
+        return { type: "CommandCallExpression", domain: token.value, command: command.value, args: this.args(), location: this.loc(token) };
+      }
       const callee = { type: "Identifier", name: token.value, location: this.loc(token) };
       return this.check("LPAREN") ? { type: "CallExpression", callee, args: this.args(), location: this.loc(token) } : callee;
     }
