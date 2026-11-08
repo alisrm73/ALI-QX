@@ -29,13 +29,17 @@ export function analyze(program) {
     if (!reported.has(key)) { reported.add(key); diagnostics.push({ code, message, location: l }); }
   };
   const constrain = (cell, types, node, code, message) => {
-    const r = root(cell), common = [...r.allowed].filter(type => types.includes(type));
+    const r = root(cell);
+    if (r.allowed.size === 1 && r.allowed.has("ERROR")) return true;
+    const common = [...r.allowed].filter(type => types.includes(type));
     if (!common.length) { report(code, message, node); return false; }
     r.allowed = new Set(common); r.evidence ??= node; return true;
   };
   const join = (a, b, node, code = "QX3031", message = "Conflicting type constraints") => {
     const x = root(a), y = root(b);
     if (x === y) return true;
+    if ((x.allowed.size === 1 && x.allowed.has("ERROR")) ||
+        (y.allowed.size === 1 && y.allowed.has("ERROR"))) return true;
     if (![...x.allowed].some(type => y.allowed.has(type))) { report(code, message, node); return false; }
     unify(x, y, node); return true;
   };
@@ -139,6 +143,20 @@ export function analyze(program) {
       if (!found) report("QX3003", "Undeclared target: " + node.args[0].name, node.args[0]);
       else constrain(found.symbol.cell, [required], node.args[0], "QX3024", cmd.id + " target must be " + required);
       constrain(expression(node.args[1], scope), [required], node.args[1], "QX3025", cmd.id + " expression must produce " + required); return;
+    }
+    if (cmd.id === "DATA.COUNT") {
+      if (node.args.length !== 1) {
+        report("QX3013", "DATA.COUNT expects exactly one argument", node);
+        node.args.forEach(a => expression(a, scope));
+        return;
+      }
+      constrain(expression(node.args[0], scope), ["LIST"], node.args[0], "QX3014", "DATA.COUNT expects LIST");
+      return;
+    }
+    if (!["DATA.CREATE", "DATA.SET", "DATA.SET_GLOBAL"].includes(cmd.id) && !cmd.enabled) {
+      report("QX3040", "Command has no approved semantic contract: " + cmd.id, node);
+      node.args.forEach(a => expression(a, scope));
+      return;
     }
     node.args.forEach(a => expression(a, scope));
   }
