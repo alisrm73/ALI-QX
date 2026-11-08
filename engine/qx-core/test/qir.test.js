@@ -87,7 +87,8 @@ test("validator checks stored value types and definite assignment", () => {
   const firstStoreIndex = instructions.findIndex(item => item.opcode === "STORE_GLOBAL");
   const [load] = instructions.splice(loadIndex, 1);
   instructions.splice(firstStoreIndex, 0, load);
-  assert.ok(validateQIR(uninitialized).some(item => item.code === "QIR_E_UNINITIALIZED_LOAD"));
+  const uninitializedDiagnostics = validateQIR(uninitialized);
+  assert.ok(uninitializedDiagnostics.some(item => item.code === "QIR_E_UNINITIALIZED_LOAD"), JSON.stringify(uninitializedDiagnostics));
 });
 
 test("validator rejects calls before globals read by the callee are initialized", () => {
@@ -100,9 +101,7 @@ test("validator rejects calls before globals read by the callee are initialized"
   ].join("\n"));
   const semantic = analyze(ast);
   assert.equal(semantic.valid, true, JSON.stringify(semantic.diagnostics));
-  assert.throws(
-    () => lowerToQIR(ast, semantic),
-    error => error.name === "QIRValidationError" &&
-      error.diagnostics.some(item => item.code === "QIR_E_GLOBAL_READ_BEFORE_CALL")
-  );
+  const qir = lowerToQIR(ast, semantic);
+  const diagnostics = validateQIR(qir);
+  assert.ok(diagnostics.some(item => item.code === "QIR_E_GLOBAL_READ_BEFORE_CALL"), JSON.stringify({ diagnostics, qir }));
 });
