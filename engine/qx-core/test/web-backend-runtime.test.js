@@ -70,3 +70,32 @@ test("browser runtime surfaces source-aware execution errors", () => {
   assert.match(nodes.get("qx-output").children[0].textContent, /QX_VM_DIVIDE_BY_ZERO/);
   assert.match(nodes.get("qx-output").children[0].textContent, /line 1/);
 });
+
+
+test("browser runtime executes immutable DATA.ADD and DATA.REMOVE", () => {
+  const project = buildWebProject([
+    "DATA.CREATE(items, [1, [2, 3], 4])",
+    "DATA.CREATE(added, DATA.ADD(items, 5))",
+    "DATA.CREATE(removed, DATA.REMOVE(added, 1))"
+  ].join("\n"));
+  const makeNode = () => ({ children: [], textContent: "", className: "", append(...items) { this.children.push(...items); } });
+  const nodes = new Map([["qx-output", makeNode()], ["qx-status", makeNode()]]);
+  const document = { getElementById: id => nodes.get(id), createElement: () => makeNode() };
+  vm.runInNewContext(project.files["app.js"], { document });
+  assert.equal(nodes.get("qx-status").textContent, "Execution completed");
+  const values = new Map(nodes.get("qx-output").children.filter(node => node.className === "qx-value")
+    .map(node => [node.children[0].textContent, node.children[1].textContent]));
+  assert.equal(values.get("items"), "[\n  1,\n  [\n    2,\n    3\n  ],\n  4\n]");
+  assert.equal(values.get("added"), "[\n  1,\n  [\n    2,\n    3\n  ],\n  4,\n  5\n]");
+  assert.equal(values.get("removed"), "[\n  1,\n  4,\n  5\n]");
+});
+
+test("browser runtime reports an invalid DATA.REMOVE index", () => {
+  const project = buildWebProject("DATA.CREATE(items, [1])\nDATA.CREATE(updated, DATA.REMOVE(items, 1))");
+  const makeNode = () => ({ children: [], textContent: "", className: "", append(...items) { this.children.push(...items); } });
+  const nodes = new Map([["qx-output", makeNode()], ["qx-status", makeNode()]]);
+  const document = { getElementById: id => nodes.get(id), createElement: () => makeNode() };
+  vm.runInNewContext(project.files["app.js"], { document });
+  assert.equal(nodes.get("qx-status").textContent, "Execution failed");
+  assert.match(nodes.get("qx-output").children[0].textContent, /QX_VM_LIST_INDEX/);
+});
