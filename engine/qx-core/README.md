@@ -70,3 +70,12 @@ DATA.CREATE(item, DATA.GET(items, 0))
 ```
 
 This is a syntax/AST capability only. Semantic validation of command availability, signatures, return types, and permissions remains part of the semantic-analysis phase.
+
+
+## Command registry — initial semantic-analysis slice
+
+The declarative `src/command-registry.js` catalog contains the 17 named QX V1 commands and their single English/Arabic aliases. Both names resolve to one canonical command identity; English domain and command names are ASCII case-insensitive.
+
+This slice registers names only. All command signatures remain explicitly pending (`signature: null`) and every command remains disabled (`enabled: false`). This is intentional: commands must not become semantically valid or executable until their argument count, argument types, return contract, permissions, and expected errors are specified. No unresolved signature is inferred from examples.
+
+Use `resolveCommand(domain, command)` to look up a registered name. Unknown names return `null`. `isCommandEnabled(domain, command)` remains false for every entry in this initial catalog. Semantic analysis and symbol/type checking are not part of this slice.
