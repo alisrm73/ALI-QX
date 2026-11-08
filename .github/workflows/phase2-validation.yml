@@ -1,0 +1,39 @@
+name: QX phase 2 validation
+
+on:
+  push:
+    branches:
+      - "feature/phase2-function-analysis"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout phase 2 branch
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22.16.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.16.0"
+
+      - name: Run QX core test suite
+        working-directory: engine/qx-core
+        run: npm test
+
+      - name: Package exact source snapshot
+        if: always()
+        run: zip -qr "$RUNNER_TEMP/ALI-QX-phase2-validation.zip" . -x ".git/*"
+
+      - name: Upload source snapshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ALI-QX-phase2-validation
+          path: ${{ runner.temp }}/ALI-QX-phase2-validation.zip
+          if-no-files-found: error
+          retention-days: 7
