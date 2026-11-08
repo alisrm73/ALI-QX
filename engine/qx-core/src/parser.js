@@ -8,7 +8,7 @@ const OP = new Map([["OR","OR"],["AND","AND"],["EQ_EQ","=="],["BANG_EQ","!="],["
 const COMPARISONS = new Set(["==","!=",">",">=","<","<="]);
 
 export class Parser {
-  constructor(input) { this.tokens = typeof input === "string" ? tokenize(input) : input; this.i = 0; }
+  constructor(input) { this.tokens = typeof input === "string" ? tokenize(input) : input; this.i = 0; this.blockDepth = 0; this.functionDepth = 0; }
   peek(n = 0) { return this.tokens[Math.min(this.i + n, this.tokens.length - 1)]; }
   check(type) { return this.peek().type === type; }
   match(...types) { if (!types.includes(this.peek().type)) return false; this.i++; return true; }
@@ -69,9 +69,12 @@ export class Parser {
     return { type: "WhileStatement", test, body, location: this.loc(start) };
   }
   functionDeclaration() {
+    if (this.blockDepth > 0) this.fail("QX2011", "FUNCTION declarations must be at top level in QX V1");
     const start = this.consume("FUNCTION"); const name = this.consume("IDENTIFIER", "Expected function name");
     const params = this.parameters(); this.headerBreak("FUNCTION"); this.newlines();
+    this.functionDepth++;
     const body = this.block(["END"]); this.consume("END", "Expected END to close FUNCTION");
+    this.functionDepth--;
     return { type: "FunctionDeclaration", name: name.value, params, body, location: this.loc(start) };
   }
   parameters() {
@@ -82,17 +85,19 @@ export class Parser {
     this.consume("RPAREN", "Expected ')' after parameters"); return params;
   }
   returnStatement() {
+    if (this.functionDepth === 0) this.fail("QX2012", "RETURN is only valid inside a FUNCTION");
     const start = this.consume("RETURN");
     if (this.check("NEWLINE") || this.check("END") || this.check("EOF")) this.fail("QX2006", "RETURN requires a value in QX V1");
     const argument = this.expression(); return { type: "ReturnStatement", argument, location: this.loc(start) };
   }
   block(stops) {
-    const body = []; this.newlines();
+    const body = []; this.blockDepth++; this.newlines();
     while (!this.check("EOF") && !stops.includes(this.peek().type)) {
       if (this.check("END") || this.check("ELSE")) break;
       body.push(this.statement()); this.boundary(); this.newlines();
     }
     if (this.check("EOF")) this.fail("QX2007", "Unexpected end of file; missing END");
+    this.blockDepth--;
     return body;
   }
   expression(min = 0) {
