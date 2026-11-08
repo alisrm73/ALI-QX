@@ -1,0 +1,29 @@
+name: QX phase 5 browser validation
+
+on:
+  pull_request:
+    branches:
+      - "main"
+
+permissions:
+  contents: read
+
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Set up Node.js 22.16.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.16.0"
+      - name: Install temporary browser test dependency
+        working-directory: engine/qx-core
+        run: npm install --no-save playwright
+      - name: Install Chromium
+        working-directory: engine/qx-core
+        run: npx playwright install --with-deps chromium
+      - name: Run real-browser smoke test
+        working-directory: engine/qx-core
+        run: node scripts/phase5-browser-smoke.mjs
