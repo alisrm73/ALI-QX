@@ -233,13 +233,29 @@ export function runQIR(module, options = {}) {
             break;
           }
           case "COMMAND_CALL": {
-            if (op.command !== "DATA.COUNT" || op.arguments.length !== 1)
-              throw runtimeError("QX_VM_COMMAND_NOT_ALLOWED", "Only DATA.COUNT is available in QIR V1", instruction, context);
-            const list = readValue(frame, op.arguments[0], instruction);
-            if (!Array.isArray(list))
-              throw runtimeError("QX_VM_COMMAND_ARGUMENT", "DATA.COUNT requires LIST", instruction, context);
-            if (instruction.result) values.set(instruction.result, list.length);
-            break;
+            const args = op.arguments ?? [];
+            if (op.command === "DATA.COUNT" && args.length === 1) {
+              const list = readValue(frame, args[0], instruction);
+              if (!Array.isArray(list)) throw runtimeError("QX_VM_COMMAND_ARGUMENT", "DATA.COUNT requires LIST", instruction, context);
+              if (instruction.result) values.set(instruction.result, list.length);
+              break;
+            }
+            if (op.command === "DATA.ADD" && args.length === 2) {
+              const list = readValue(frame, args[0], instruction), value = readValue(frame, args[1], instruction);
+              if (!Array.isArray(list)) throw runtimeError("QX_VM_COMMAND_ARGUMENT", "DATA.ADD requires LIST as its first argument", instruction, context);
+              if (list.length >= limits.maxListLength) throw runtimeError("QX_VM_LIST_LIMIT", "Maximum list length exceeded", instruction, context);
+              values.set(instruction.result, [...list.map(cloneValue), cloneValue(value)]);
+              break;
+            }
+            if (op.command === "DATA.REMOVE" && args.length === 2) {
+              const list = readValue(frame, args[0], instruction), index = readValue(frame, args[1], instruction);
+              if (!Array.isArray(list)) throw runtimeError("QX_VM_COMMAND_ARGUMENT", "DATA.REMOVE requires LIST as its first argument", instruction, context);
+              if (!Number.isSafeInteger(index) || index < 0 || index >= list.length)
+                throw runtimeError("QX_VM_LIST_INDEX", "DATA.REMOVE index must be a valid zero-based integer within the list", instruction, context);
+              values.set(instruction.result, list.filter((_, itemIndex) => itemIndex !== index).map(cloneValue));
+              break;
+            }
+            throw runtimeError("QX_VM_COMMAND_NOT_ALLOWED", "Command is not available in this QIR version", instruction, context);
           }
           case "BRANCH": {
             const condition = readValue(frame, op.condition, instruction);
