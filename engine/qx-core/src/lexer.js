@@ -84,6 +84,7 @@ export class Lexer {
       if (ch === " " || ch === "\t" || ch === "\f") { this.take(); continue; }
       if (ch === "\n" || ch === "\r") { const start = this.loc(); this.take(); this.add("NEWLINE", "\n", start, "\n"); continue; }
       if (ch === "/" && this.peekNext() === "/") { this.take(); this.take(); this.comment(); continue; }
+      if (INVISIBLE.test(ch)) this.error("QX1007", "Invisible or default-ignorable characters are not allowed", this.loc());
       if (ch === '"') { this.string(); continue; }
       if (/[0-9]/.test(ch)) { this.number(); continue; }
       if (ID_START.test(ch)) { this.identifier(); continue; }
