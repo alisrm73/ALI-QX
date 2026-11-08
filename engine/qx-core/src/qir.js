@@ -42,6 +42,7 @@ function inferExpression(node, variables, functions) {
       const cmd = resolveCommand(node.domain, node.command);
       if (cmd?.id === "DATA.COUNT") return "NUM";
       if (cmd?.id === "DATA.ADD" || cmd?.id === "DATA.REMOVE") return "LIST";
+      if (cmd?.id === "INTEGRATION.REQUEST") return "TXT";
       fail("QIR_E_COMMAND_NOT_ALLOWED", "Command has no approved QIR expression contract", node);
     }
     default: fail("QIR_E_UNSUPPORTED_AST", "Unsupported expression " + node.type, node);
@@ -148,10 +149,16 @@ class FunctionBuilder {
       }
       case "CommandCallExpression": {
         const cmd = resolveCommand(node.domain, node.command);
-        if (!cmd || !["DATA.COUNT", "DATA.ADD", "DATA.REMOVE"].includes(cmd.id)) fail("QIR_E_COMMAND_NOT_ALLOWED", "Command has no approved QIR expression contract", node);
-        const expected = cmd.id === "DATA.COUNT" ? 1 : 2;
+        if (!cmd || !["DATA.COUNT", "DATA.ADD", "DATA.REMOVE", "INTEGRATION.REQUEST"].includes(cmd.id)) fail("QIR_E_COMMAND_NOT_ALLOWED", "Command has no approved QIR expression contract", node);
+        const expected = cmd.id === "DATA.COUNT" ? 1 : cmd.id === "INTEGRATION.REQUEST" ? 3 : 2;
         if (node.args.length !== expected) fail("QIR_E_BAD_COMMAND_ARGUMENTS", cmd.id + " expects " + expected + " arguments", node);
         const args = node.args.map(arg => this.lowerExpression(arg));
+        if (cmd.id === "INTEGRATION.REQUEST") {
+          if (args.some(arg => arg.type !== "TXT")) fail("QIR_E_COMMAND_ARGUMENT", "INTEGRATION.REQUEST requires three TXT arguments", node);
+          const result = this.value();
+          this.emit("COMMAND_CALL", { command: cmd.id, arguments: args.map(arg => arg.value) }, "TXT", result, node);
+          return { value: result, type: "TXT" };
+        }
         if (args[0].type !== "LIST") fail("QIR_E_COMMAND_ARGUMENT", cmd.id + " first argument must be LIST", node.args[0]);
         if (cmd.id === "DATA.REMOVE" && args[1].type !== "NUM") fail("QIR_E_COMMAND_ARGUMENT", "DATA.REMOVE index must be NUM", node.args[1]);
         const resultType = cmd.id === "DATA.COUNT" ? "NUM" : "LIST";
@@ -366,8 +373,9 @@ class ModuleLowerer {
     const instructions = [initializer, ...functions].flatMap(fn => fn.blocks.flatMap(block => block.instructions));
     const usesUI = instructions.some(inst => ["UI.SHOW", "UI.TEXT"].includes(inst.operands?.command));
     const usesListOperations = instructions.some(inst => ["DATA.ADD", "DATA.REMOVE"].includes(inst.operands?.command));
+    const usesIntegration = instructions.some(inst => inst.operands?.command === "INTEGRATION.REQUEST");
     return {
-      format: "QIR", version: usesUI ? "1.2" : usesListOperations ? "1.1" : "1.0", module_id: "module_0", unicode_version: "18.0.0",
+      format: "QIR", version: usesIntegration ? "1.3" : usesUI ? "1.2" : usesListOperations ? "1.1" : "1.0", module_id: "module_0", unicode_version: "18.0.0",
       globals: this.globals, initializer, functions
     };
   }
@@ -389,7 +397,7 @@ export function validateQIR(module) {
   const diagnostics = [];
   const report = (code, message, location = null, extra = {}) =>
     diagnostics.push({ code, severity: "ERROR", message, location, ...extra });
-  if (!module || module.format !== "QIR" || !["1.0", "1.1", "1.2"].includes(module.version) || module.unicode_version !== "18.0.0") {
+  if (!module || module.format !== "QIR" || !["1.0", "1.1", "1.2", "1.3"].includes(module.version) || module.unicode_version !== "18.0.0") {
     report("QIR_E_SCHEMA", "Invalid QIR module header"); return diagnostics;
   }
   const functions = [module.initializer, ...(module.functions ?? [])];
@@ -592,13 +600,16 @@ export function validateQIR(module) {
           if (op.command === "DATA.COUNT") {
             if (args.length !== 1 || valueTypes.get(args[0]) !== "LIST" || (inst.result && inst.type !== "NUM") || (!inst.result && inst.type)) report("QIR_E_COMMAND_SIGNATURE", "DATA.COUNT requires one LIST and returns NUM", inst.source);
           } else if (op.command === "DATA.ADD") {
-            if (!["1.1", "1.2"].includes(module.version) || args.length !== 2 || valueTypes.get(args[0]) !== "LIST" || !VALUE_TYPES.has(valueTypes.get(args[1])) || !inst.result || inst.type !== "LIST") report("QIR_E_COMMAND_SIGNATURE", "DATA.ADD requires LIST and a value, and returns LIST in QIR 1.1", inst.source);
+            if (!["1.1", "1.2", "1.3"].includes(module.version) || args.length !== 2 || valueTypes.get(args[0]) !== "LIST" || !VALUE_TYPES.has(valueTypes.get(args[1])) || !inst.result || inst.type !== "LIST") report("QIR_E_COMMAND_SIGNATURE", "DATA.ADD requires LIST and a value, and returns LIST in QIR 1.1", inst.source);
           } else if (op.command === "DATA.REMOVE") {
-            if (!["1.1", "1.2"].includes(module.version) || args.length !== 2 || valueTypes.get(args[0]) !== "LIST" || valueTypes.get(args[1]) !== "NUM" || !inst.result || inst.type !== "LIST") report("QIR_E_COMMAND_SIGNATURE", "DATA.REMOVE requires LIST and NUM index, and returns LIST in QIR 1.1 or later", inst.source);
+            if (!["1.1", "1.2", "1.3"].includes(module.version) || args.length !== 2 || valueTypes.get(args[0]) !== "LIST" || valueTypes.get(args[1]) !== "NUM" || !inst.result || inst.type !== "LIST") report("QIR_E_COMMAND_SIGNATURE", "DATA.REMOVE requires LIST and NUM index, and returns LIST in QIR 1.1 or later", inst.source);
           } else if (op.command === "UI.SHOW") {
-            if (module.version !== "1.2" || args.length !== 1 || !VALUE_TYPES.has(valueTypes.get(args[0])) || inst.result || inst.type) report("QIR_E_COMMAND_SIGNATURE", "UI.SHOW requires one QX value and has no result in QIR 1.2", inst.source);
+            if (!["1.2", "1.3"].includes(module.version) || args.length !== 1 || !VALUE_TYPES.has(valueTypes.get(args[0])) || inst.result || inst.type) report("QIR_E_COMMAND_SIGNATURE", "UI.SHOW requires one QX value and has no result in QIR 1.2", inst.source);
           } else if (op.command === "UI.TEXT") {
-            if (module.version !== "1.2" || args.length !== 1 || valueTypes.get(args[0]) !== "TXT" || inst.result || inst.type) report("QIR_E_COMMAND_SIGNATURE", "UI.TEXT requires one TXT and has no result in QIR 1.2", inst.source);
+            if (!["1.2", "1.3"].includes(module.version) || args.length !== 1 || valueTypes.get(args[0]) !== "TXT" || inst.result || inst.type) report("QIR_E_COMMAND_SIGNATURE", "UI.TEXT requires one TXT and has no result in QIR 1.2", inst.source);
+          } else if (op.command === "INTEGRATION.REQUEST") {
+            if (module.version !== "1.3" || args.length !== 3 || args.some(id => valueTypes.get(id) !== "TXT") || !inst.result || inst.type !== "TXT")
+              report("QIR_E_COMMAND_SIGNATURE", "INTEGRATION.REQUEST requires three TXT arguments and returns TXT in QIR 1.3", inst.source);
           } else {
             report("QIR_E_COMMAND_NOT_ALLOWED", "Command is not allowed in QIR", inst.source);
           }
@@ -678,7 +689,7 @@ export function validateQIR(module) {
             report("QIR_E_CALL_RESULT", "Value-returning CALL must capture its result", inst.source);
         }
       }
-      if (inst.opcode === "COMMAND_CALL" && !["DATA.COUNT", ...(["1.1", "1.2"].includes(module.version) ? ["DATA.ADD", "DATA.REMOVE"] : []), ...(module.version === "1.2" ? ["UI.SHOW", "UI.TEXT"] : [])].includes(inst.operands?.command))
+      if (inst.opcode === "COMMAND_CALL" && !["DATA.COUNT", ...(["1.1", "1.2", "1.3"].includes(module.version) ? ["DATA.ADD", "DATA.REMOVE"] : []), ...(["1.2", "1.3"].includes(module.version) ? ["UI.SHOW", "UI.TEXT"] : []), ...(module.version === "1.3" ? ["INTEGRATION.REQUEST"] : [])].includes(inst.operands?.command))
         report("QIR_E_COMMAND_NOT_ALLOWED", "Command is not allowed by this QIR version", inst.source);
     }
   }
