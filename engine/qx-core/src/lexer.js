@@ -1,9 +1,7 @@
-const ID_START = /^\p{XID_Start}$/u;
-const ID_CONTINUE = /^\p{XID_Continue}$/u;
-const LETTER = /^\p{L}$/u;
-const LATIN = /^\p{Script=Latin}$/u;
-const ARABIC = /^\p{Script=Arabic}$/u;
-const INVISIBLE = /^\p{Default_Ignorable_Code_Point}$/u;
+import {
+  UNICODE_VERSION, isXIDStart, isXIDContinue, isLetter, isLatin, isArabic,
+  isDefaultIgnorable, normalizeNFC
+} from "./unicode.js";
 
 const KEYWORDS = new Map([
   ["IF", "IF"], ["إذا", "IF"], ["ELSE", "ELSE"], ["وإلا", "ELSE"],
@@ -24,7 +22,7 @@ export class Lexer {
   constructor(source) {
     if (typeof source !== "string") throw new TypeError("QX source must be a string");
     this.source = source; this.i = 0; this.line = 1; this.column = 1; this.tokens = [];
-    this.unicodeVersion = globalThis.process?.versions?.unicode ?? "unknown";
+    this.unicodeVersion = UNICODE_VERSION;
   }
   peek() { return this.i < this.source.length ? String.fromCodePoint(this.source.codePointAt(this.i)) : null; }
   peekNext() {
@@ -63,19 +61,22 @@ export class Lexer {
     const raw = this.source.slice(start.offset, this.i); this.add("NUMBER", Number(raw), start, raw);
   }
   identifier() {
-    const start = this.loc(), first = this.peek(); this.take(); while (this.peek() !== null && ID_CONTINUE.test(this.peek())) this.take();
+    const start = this.loc(), first = this.peek(); this.take();
+    while (this.peek() !== null && isXIDContinue(this.peek().codePointAt(0))) this.take();
     const raw = this.source.slice(start.offset, this.i); let script = null;
-    if (!LETTER.test(first) || (!LATIN.test(first) && !ARABIC.test(first))) this.error("QX1008", "Identifiers must start with an Arabic or Latin letter", start);
+    const firstCodePoint = first.codePointAt(0);
+    if (!isLetter(firstCodePoint) || (!isLatin(firstCodePoint) && !isArabic(firstCodePoint))) this.error("QX1008", "Identifiers must start with an Arabic or Latin letter", start);
     for (const ch of raw) {
-      if (INVISIBLE.test(ch)) this.error("QX1007", "Invisible characters are not allowed in identifiers", start);
-      if (LETTER.test(ch)) {
-        const next = LATIN.test(ch) ? "Latin" : ARABIC.test(ch) ? "Arabic" : null;
+      const cp = ch.codePointAt(0);
+      if (isDefaultIgnorable(cp)) this.error("QX1007", "Invisible characters are not allowed in identifiers", start);
+      if (isLetter(cp)) {
+        const next = isLatin(cp) ? "Latin" : isArabic(cp) ? "Arabic" : null;
         if (!next) this.error("QX1008", "Only Arabic and Latin letters are supported in V1 identifiers", start);
         if (script && script !== next) this.error("QX1009", "An identifier cannot mix Arabic and Latin letters", start);
         script = next;
       }
     }
-    const normalized = raw.normalize("NFC");
+    const normalized = normalizeNFC(raw);
     const asciiFolded = normalized.replace(/[a-z]/g, ch => ch.toUpperCase());
     const keyword = KEYWORDS.get(normalized) ?? KEYWORDS.get(asciiFolded);
     this.add(keyword ?? "IDENTIFIER", keyword ?? normalized, start, raw);
@@ -87,9 +88,9 @@ export class Lexer {
       if (ch === "\n" || ch === "\r") { const start = this.loc(); this.take(); this.add("NEWLINE", "\n", start, "\n"); continue; }
       if (ch === "/" && this.peekNext() === "/") { this.take(); this.take(); this.comment(); continue; }
       if (ch === '"') { this.string(); continue; }
-      if (INVISIBLE.test(ch)) this.error("QX1007", "Invisible or default-ignorable characters are not allowed in source identifiers", this.loc());
+      if (isDefaultIgnorable(ch.codePointAt(0))) this.error("QX1007", "Invisible or default-ignorable characters are not allowed in source identifiers", this.loc());
       if (/[0-9]/.test(ch)) { this.number(); continue; }
-      if (ID_START.test(ch)) { this.identifier(); continue; }
+      if (isXIDStart(ch.codePointAt(0))) { this.identifier(); continue; }
       const start = this.loc(), pair = ch + (this.peekNext() ?? "");
       if (PAIRS.has(pair)) { this.take(); this.take(); this.add(PAIRS.get(pair), pair, start, pair); continue; }
       if (PUNCT.has(ch)) { this.take(); this.add(PUNCT.get(ch), ch, start, ch); continue; }
