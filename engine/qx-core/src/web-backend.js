@@ -47,6 +47,7 @@ function browserRun(module, combiningClassEntries) {
   const globals=new Map(module.globals.map(x=>[x.id,UNINITIALIZED]));
   const functions=new Map([module.initializer,...module.functions].map(x=>[x.id,x]));
   let instructionCount=0;
+  const outputs=[];
   function binary(op,a,b,inst,ctx) {
     const num=v=>{if(typeof v!=="number"||!Number.isFinite(v))fail("QX_VM_INVALID_NUMBER","Expected finite NUM",inst,ctx);return v;};
     const str=v=>{if(typeof v!=="string"||v.length>LIMITS.maxStringLength)fail("QX_VM_INVALID_TEXT","Expected bounded TXT",inst,ctx);return v;};
@@ -105,6 +106,8 @@ function browserRun(module, combiningClassEntries) {
             if(o.command==="DATA.COUNT"&&args.length===1){const list=read(args[0],i);if(!Array.isArray(list))fail("QX_VM_COMMAND_ARGUMENT","DATA.COUNT requires LIST",i,ctx);if(i.result)values.set(i.result,list.length);break;}
             if(o.command==="DATA.ADD"&&args.length===2){const list=read(args[0],i),value=read(args[1],i);if(!Array.isArray(list))fail("QX_VM_COMMAND_ARGUMENT","DATA.ADD requires LIST",i,ctx);if(list.length>=LIMITS.maxListLength)fail("QX_VM_LIST_LIMIT","Maximum list length exceeded",i,ctx);values.set(i.result,[...list.map(clone),clone(value)]);break;}
             if(o.command==="DATA.REMOVE"&&args.length===2){const list=read(args[0],i),index=read(args[1],i);if(!Array.isArray(list))fail("QX_VM_COMMAND_ARGUMENT","DATA.REMOVE requires LIST",i,ctx);if(!Number.isSafeInteger(index)||index<0||index>=list.length)fail("QX_VM_LIST_INDEX","DATA.REMOVE index must be a valid zero-based integer within the list",i,ctx);values.set(i.result,list.filter((_,n)=>n!==index).map(clone));break;}
+            if(o.command==="UI.SHOW"&&args.length===1&&module.version==="1.2"){outputs.push({component:"SHOW",value:clone(read(args[0],i)),source:i.source});break;}
+            if(o.command==="UI.TEXT"&&args.length===1&&module.version==="1.2"){const value=read(args[0],i);if(typeof value!=="string"||value.length>LIMITS.maxStringLength)fail("QX_VM_INVALID_TEXT","UI.TEXT requires bounded TXT",i,ctx);outputs.push({component:"TEXT",value,source:i.source});break;}
             fail("QX_VM_COMMAND_NOT_ALLOWED","Command is not available in this QIR version",i,ctx);break;
           }
           case "BRANCH": {const v=read(o.condition,i);if(typeof v!=="boolean")fail("QX_VM_BRANCH_TYPE","BRANCH requires BOOL",i,ctx);blockId=v?o.true_target:o.false_target;transferred=true;break;}
@@ -120,7 +123,7 @@ function browserRun(module, combiningClassEntries) {
   execute(module.initializer,[],1);
   const result={};
   for(const item of module.globals){const v=globals.get(item.id);if(v!==UNINITIALIZED)result[item.name]=clone(v);}
-  return {globals:result,instructionCount};
+  return {globals:result,outputs,instructionCount};
 }
 function browserEntry(module, runProgram, combiningClassEntries) {
 const root=document.getElementById("qx-output");
@@ -128,8 +131,17 @@ const status=document.getElementById("qx-status");
 try {
   const result=runProgram(module, combiningClassEntries);
   status.textContent="Execution completed";
+  for(const item of result.outputs||[]){
+    if(item.component==="TEXT"){
+      const text=document.createElement("p");text.className="qx-ui-text";text.textContent=item.value;root.append(text);
+    }else if(item.component==="SHOW"){
+      const section=document.createElement("section");section.className="qx-ui-show";
+      const pre=document.createElement("pre");pre.textContent=typeof item.value==="string"?item.value:JSON.stringify(item.value,null,2);
+      section.append(pre);root.append(section);
+    }
+  }
   const entries=Object.entries(result.globals);
-  if(!entries.length){const p=document.createElement("p");p.textContent="Program completed. No global values were produced.";root.append(p);}
+  if(!entries.length&&!(result.outputs||[]).length){const p=document.createElement("p");p.textContent="Program completed. No UI output or global values were produced.";root.append(p);}
   for(const [name,value] of entries){
     const section=document.createElement("section");section.className="qx-value";
     const h=document.createElement("h2");h.textContent=name;
@@ -158,7 +170,7 @@ export function generateWebAssets(qir, options = {}) {
     "<title>"+escapeHTML(title)+"</title>","<link rel=\"stylesheet\" href=\"./styles.css\">",
     "<script defer src=\"./app.js\"></script>","</head><body><main class=\"qx-shell\">",
     "<header class=\"qx-header\"><p class=\"qx-eyebrow\">ALI-QX · WEB BACKEND</p><h1>"+escapeHTML(title)+"</h1>",
-    "<p>Generated from a validated QIR V1 module.</p><p id=\"qx-status\" class=\"qx-status\" role=\"status\" aria-live=\"polite\">Starting QX program…</p></header>",
+    "<p>Generated from a validated QIR module.</p><p id=\"qx-status\" class=\"qx-status\" role=\"status\" aria-live=\"polite\">Starting QX program…</p></header>",
     "<div id=\"qx-output\" class=\"qx-output\" aria-live=\"polite\"></div>",
     "<footer>QX V1 · Local execution · No network integrations</footer></main></body></html>"
   ].join("\n");
@@ -169,13 +181,13 @@ export function generateWebAssets(qir, options = {}) {
     ".qx-header, .qx-value { background: #fff; border: 1px solid #e2e7ef; border-radius: 18px; padding: 24px; box-shadow: 0 8px 30px rgb(23 32 51 / 5%); }",
     ".qx-eyebrow, .qx-meta { color: #68758b; font-size: .78rem; letter-spacing: .08em; }",
     "h1 { margin: .25rem 0; font-size: clamp(1.8rem, 5vw, 2.6rem); } .qx-status { color: #176b46; font-weight: 650; }",
-    ".qx-output { display: grid; gap: 14px; margin-top: 18px; } .qx-value h2 { margin: 0 0 12px; font-size: 1rem; }",
+    ".qx-output { display: grid; gap: 14px; margin-top: 18px; } .qx-value h2 { margin: 0 0 12px; font-size: 1rem; } .qx-ui-text, .qx-ui-show { margin: 0; padding: 16px 18px; border: 1px solid #e2e7ef; border-radius: 12px; background: #fff; line-height: 1.6; overflow-wrap: anywhere; } .qx-ui-show pre { background: transparent; padding: 0; }",
     "pre { margin: 0; padding: 14px; border-radius: 10px; overflow: auto; background: #f5f7fa; white-space: pre-wrap; overflow-wrap: anywhere; }",
     ".qx-error { color: #9b2525; border: 1px solid #efcaca; background: #fff7f7; } footer { margin: 24px 4px; color: #758198; font-size: .8rem; }",
     "@media (max-width: 520px) { .qx-shell { margin: 18px auto; } .qx-header, .qx-value { padding: 18px; } }"
   ].join("\n");
   return Object.freeze({format:"QX_WEB_PROJECT_V1",files:Object.freeze({"index.html":html,"styles.css":css,"app.js":appJS}),
-    metadata:Object.freeze({qirVersion:qir.version,unicodeVersion:UNICODE_VERSION,runtime:"browser-qir-v1",networkAccess:false})});
+    metadata:Object.freeze({qirVersion:qir.version,unicodeVersion:UNICODE_VERSION,runtime:"browser-qir-compatible",networkAccess:false})});
 }
 export function buildWebProject(source, options = {}) {
   if(typeof source!=="string")throw new TypeError("QX source must be a string");

@@ -64,14 +64,26 @@ test("validates CALCULATE and COMPARE target and expression types", () => {
 test("rejects unknown commands in expression position and does not invent return contracts", () => {
   const result = check("DATA.CREATE(value, UI.SHOW(1))");
   assert.equal(result.valid, false);
-  assert.equal(result.diagnostics[0].code, "QX3012");
+  assert.equal(result.diagnostics[0].code, "QX3045");
 });
 
 
-test("rejects commands whose semantic contracts are still pending", () => {
-  const result = check('UI.SHOW("not approved")');
-  assert.equal(result.valid, false);
-  assert.ok(result.diagnostics.some(item => item.code === "QX3040"));
+test("validates UI.SHOW and UI.TEXT statement contracts", () => {
+  const result = check([
+    'UI.TEXT("Hello from QX")',
+    "DATA.CREATE(items, [1, 2])",
+    "UI.SHOW(items)",
+    "UI.SHOW(TRUE)",
+    "UI.SHOW(NULL)"
+  ].join("\n"));
+  assert.equal(result.valid, true, JSON.stringify(result.diagnostics));
+
+  const badText = check("UI.TEXT(42)");
+  assert.ok(badText.diagnostics.some(item => item.code === "QX3047"));
+  const badArity = check('UI.SHOW("one", "two")');
+  assert.ok(badArity.diagnostics.some(item => item.code === "QX3046"));
+  const expression = check('DATA.CREATE(value, UI.TEXT("not a value"))');
+  assert.ok(expression.diagnostics.some(item => item.code === "QX3045"));
 });
 
 test("does not cascade type diagnostics after an earlier ERROR", () => {
