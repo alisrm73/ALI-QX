@@ -129,7 +129,7 @@ Use `resolveCommand(domain, command)` to resolve an English or Arabic alias to i
 
 ## Verification
 
-The phase-4 validation baseline contained **90 passing tests**. The phase-6 DATA implementation pull request passes **109 core tests** on Node.js 22.16.0, including QIR 1.1, immutable list behavior, Web Backend build, output-safety, browser-runtime, and pinned Unicode normalization coverage. A separate Chromium smoke test also passes against the generated site. The official Unicode 18.0.0 NFC conformance file has **100,855 passing checks and 0 failures**. Execution-time integer validation for remainder operations remains a runtime concern, not a semantic-analysis guarantee.
+The phase-4 validation baseline contained **90 passing tests**. The phase-6 DATA implementation pull request passes **114 core tests** on Node.js 22.16.0, including QIR 1.1, immutable list behavior, Web Backend build, output-safety, browser-runtime, and pinned Unicode normalization coverage. A separate Chromium smoke test also passes against the generated site. The official Unicode 18.0.0 NFC conformance file has **100,855 passing checks and 0 failures**. Execution-time integer validation for remainder operations remains a runtime concern, not a semantic-analysis guarantee.
 
 ## Web Backend — phase 5
 
