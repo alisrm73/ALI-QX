@@ -84,15 +84,26 @@ export const COMMAND_REGISTRY = Object.freeze(definitions.map(([domain, name, ar
               ]),
               result: Object.freeze({ kind: "stored", target: "target", type: "BOOL" })
             })
+          : domain === "INTEGRATION" && name === "REQUEST"
+            ? Object.freeze({
+                parameters: Object.freeze([
+                  { name: "connector", type: "TXT" },
+                  { name: "operation", type: "TXT" },
+                  { name: "payloadJson", type: "TXT" }
+                ]),
+                result: Object.freeze({ kind: "value", type: "TXT", asynchronous: true })
+              })
           : null,
     signatureStatus: (domain === "DATA" && ["ADD", "REMOVE", "COUNT"].includes(name)) ||
       (domain === "PROCESS" && (name === "ADD" || name === "CALCULATE" || name === "COMPARE")) ||
-      (domain === "UI" && (name === "SHOW" || name === "TEXT"))
+      (domain === "UI" && (name === "SHOW" || name === "TEXT")) ||
+      (domain === "INTEGRATION" && name === "REQUEST")
       ? "specified"
       : "pending",
     enabled: (domain === "DATA" && ["ADD", "REMOVE", "COUNT"].includes(name)) ||
       (domain === "PROCESS" && (name === "ADD" || name === "CALCULATE" || name === "COMPARE")) ||
-      (domain === "UI" && (name === "SHOW" || name === "TEXT"))
+      (domain === "UI" && (name === "SHOW" || name === "TEXT")) ||
+      (domain === "INTEGRATION" && name === "REQUEST")
   })
 ));
 
