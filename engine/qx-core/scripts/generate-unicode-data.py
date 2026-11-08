@@ -114,8 +114,8 @@ def main():
         "// Generated from Unicode Character Database 18.0.0. Do not edit by hand.\n"
         'import { gunzipSync } from "node:zlib";\nconst encoded = "' + encoded + '";\n'
         + 'const bytes = gunzipSync(Buffer.from(encoded, "base64"));\nlet offset = 0;\n'
-        + 'function readVarint() { let value = 0, shift = 0; while (true) { const byte = bytes[offset++]; value += (byte & 127) * (2 ** shift); if ((byte & 128) === 0) return value; shift += 7; } }\n'
-        + 'function readRanges() { const count = readVarint(), ranges = []; let previousEnd = -1; for (let i = 0; i < count; i++) { const start = previousEnd + 1 + readVarint(), end = start + readVarint(); ranges.push(start, end); previousEnd = end; } return Object.freeze(ranges); }\n'
+        + 'function readVarint() { let value = 0, shift = 0; while (true) { const byte = bytes[offset++]; value += (byte & 0x7F) * (2 ** shift); if ((byte & 0x80) === 0) return value; shift += 7; } }\n'
+        + 'function readRanges() { const count = readVarint(), ranges = []; let previousEnd = -1; for (let i = 0; i < count; i++) { const start = previousEnd + 1 + readVarint(); const end = start + readVarint(); ranges.push(start, end); previousEnd = end; } return Object.freeze(ranges); }\n'
         + 'export const UNICODE_VERSION = "18.0.0";\n'
         + 'export const XID_START_RANGES = readRanges();\nexport const XID_CONTINUE_RANGES = readRanges();\nexport const LETTER_RANGES = readRanges();\nexport const LATIN_SCRIPT_RANGES = readRanges();\nexport const ARABIC_SCRIPT_RANGES = readRanges();\nexport const DEFAULT_IGNORABLE_RANGES = readRanges();\n'
         + 'const count = readVarint(), classes = new Map(); let previous = 0; for (let i = 0; i < count; i++) { previous += readVarint(); classes.set(previous, readVarint()); } export const COMBINING_CLASS = classes;\n'
