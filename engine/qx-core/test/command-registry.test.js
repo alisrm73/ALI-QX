@@ -38,12 +38,39 @@ test("does not accept unregistered names, aliases, or cross-domain commands", ()
   assert.equal(resolveCommand("DATA", "إنشاء"), null);
 });
 
-test("keeps every command disabled until its signature is specified", () => {
+test("records only the three approved V1 command contracts", () => {
+  assert.deepEqual(resolveCommand("DATA", "COUNT").signature, {
+    parameters: [{ name: "list", type: "LIST" }],
+    result: { kind: "value", type: "NUM" }
+  });
+  assert.deepEqual(resolveCommand("PROCESS", "CALCULATE").signature, {
+    parameters: [
+      { name: "target", type: "Identifier", variableType: "NUM", mustBeDeclared: true },
+      { name: "expression", type: "Expression", resultType: "NUM" }
+    ],
+    result: { kind: "stored", target: "target", type: "NUM" }
+  });
+  assert.deepEqual(resolveCommand("PROCESS", "COMPARE").signature, {
+    parameters: [
+      { name: "target", type: "Identifier", variableType: "BOOL", mustBeDeclared: true },
+      { name: "expression", type: "Expression", resultType: "BOOL" }
+    ],
+    result: { kind: "stored", target: "target", type: "BOOL" }
+  });
+  assert.equal(COMMAND_REGISTRY.filter(command => command.signatureStatus === "specified").length, 3);
+});
+
+test("keeps every command disabled until semantic validation is implemented", () => {
   for (const command of COMMAND_REGISTRY) {
-    assert.equal(command.signature, null);
-    assert.equal(command.signatureStatus, "pending");
     assert.equal(command.enabled, false);
     assert.equal(isCommandEnabled(command.domain, command.name), false);
+    if (["DATA.COUNT", "PROCESS.CALCULATE", "PROCESS.COMPARE"].includes(command.id)) {
+      assert.equal(command.signatureStatus, "specified");
+      assert.notEqual(command.signature, null);
+    } else {
+      assert.equal(command.signature, null);
+      assert.equal(command.signatureStatus, "pending");
+    }
   }
 });
 
