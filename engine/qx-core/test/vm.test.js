@@ -129,3 +129,29 @@ test("enforces list and string allocation limits", () => {
   assert.throws(() => runQIR(textModule, { limits: { maxStringLength: 2 } }),
     error => error instanceof QXVMError && error.code === "QX_VM_STRING_LIMIT");
 });
+
+
+test("executes DATA.ADD and DATA.REMOVE without mutating source lists", () => {
+  const result = runQIR(compile([
+    "DATA.CREATE(items, [1, [2, 3], 4])",
+    "DATA.CREATE(added, DATA.ADD(items, 5))",
+    "DATA.CREATE(removed, DATA.REMOVE(added, 1))"
+  ].join("\n"))).globals;
+  assert.deepEqual(result.items, [1, [2, 3], 4]);
+  assert.deepEqual(result.added, [1, [2, 3], 4, 5]);
+  assert.deepEqual(result.removed, [1, 4, 5]);
+  assert.notEqual(result.items, result.added);
+  assert.notEqual(result.items[1], result.added[1]);
+});
+
+test("DATA.ADD and DATA.REMOVE enforce list limits and valid zero-based indices", () => {
+  const add = compile("DATA.CREATE(items, [1])\nDATA.CREATE(updated, DATA.ADD(items, 2))");
+  assert.throws(() => runQIR(add, { limits: { maxListLength: 1 } }),
+    error => error instanceof QXVMError && error.code === "QX_VM_LIST_LIMIT");
+
+  for (const index of [-1, 1.5, 2]) {
+    const remove = compile("DATA.CREATE(items, [1, 2])\nDATA.CREATE(updated, DATA.REMOVE(items, " + index + "))");
+    assert.throws(() => runQIR(remove),
+      error => error instanceof QXVMError && error.code === "QX_VM_LIST_INDEX");
+  }
+});
