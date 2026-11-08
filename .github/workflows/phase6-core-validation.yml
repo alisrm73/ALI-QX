@@ -1,0 +1,28 @@
+name: QX phase 6 core validation
+
+on:
+  pull_request:
+    branches:
+      - "main"
+      - "feature/phase6-data-ops"
+    paths:
+      - "engine/qx-core/**"
+      - "QX/spec/PHASE-6-*.md"
+      - ".github/workflows/phase6-core-validation.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Run QX core tests
+        working-directory: engine/qx-core
+        run: npm test
