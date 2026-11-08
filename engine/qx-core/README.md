@@ -145,3 +145,32 @@ const project = buildWebProject('DATA.CREATE(total, 4 + 5)', { title: "QX Demo" 
 The build pipeline parses and semantically analyzes QX, lowers it to QIR 1.0, the compatible QIR 1.1 DATA list extension, or QIR 1.2 UI output extension, validates the QIR, and emits a self-contained browser runtime. The browser runtime supports the QIR 1.0 instruction set plus QIR 1.1 `DATA.ADD` and `DATA.REMOVE`, and QIR 1.2 `UI.SHOW` and `UI.TEXT`. UI output is rendered as safe DOM text via `textContent`. It embeds the Unicode 18.0.0 combining-class table so NFC ordering and equality follow the pinned project data. It renders explicit UI output and resulting global values as text. UI output does not expose HTML, event handlers, network, or host APIs.
 
 Generated projects have no network or host integration API, use DOM `textContent` for output, and include a restrictive Content Security Policy. The generated assets are deterministic for identical QIR and title inputs. This phase does not add commands, alter QX syntax, or implement integrations.
+
+
+## Host-owned integration broker — phase 6
+
+The isolated broker is available from `src/integration-broker.js` for trusted host code:
+
+```js
+import { createIntegrationBroker } from "./src/integration-broker.js";
+
+const broker = createIntegrationBroker({
+  connectors: {
+    demo: {
+      id: "demo",
+      version: "1.0.0",
+      operations: {
+        lookup: {
+          permissions: ["demo:read"],
+          invoke: async ({ payload, signal }) => JSON.stringify({ received: payload, aborted: signal.aborted })
+        }
+      }
+    }
+  },
+  grants: [{ connector: "demo", operation: "lookup", permissions: ["demo:read"] }]
+});
+
+const responseJson = await broker.request("demo", "lookup", '{"query":"QX"}');
+```
+
+The broker denies by default, accepts only registered connector/operation identifiers, enforces JSON byte limits, timeout and concurrency limits, and passes an AbortSignal to trusted adapters. Credentials and destination policy must remain inside host-controlled adapter implementations. This API is infrastructure only: the QX language command `INTEGRATION.REQUEST` is not yet wired to QIR/VM, and browser builds remain network-disabled.
