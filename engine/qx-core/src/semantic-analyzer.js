@@ -240,7 +240,7 @@ export function analyze(program) {
           const fnScope = new Scope(moduleScope, "function");
           functionScopes.set(node.name, { node, scope: fnScope });
           for (const param of node.params) declare(fnScope, param.name, "UNKNOWN", param, "parameter");
-          // Function body analysis is deferred until parameter type inference is specified.
+          report("QX3030", "Function-body analysis is deferred until parameter and return-type inference is implemented", node);
           break;
         }
         case "ReturnStatement":
