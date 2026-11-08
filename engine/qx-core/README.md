@@ -55,7 +55,7 @@ The Unicode 18.0.0 `NormalizationTest.txt` was run during this update: **100,855
 
 ## Not implemented in this phase
 
-Semantic analysis, symbol tables, duplicate-name checks, type checking, command signature validation, QIR, VM, Web Backend, and execution are not implemented. A successful parse means only that the source matches the implemented grammar; it does not prove semantic correctness.
+QIR, VM, Web Backend, and execution are not implemented. The initial semantic-analysis slice now includes module symbols, primitive/list type inference, expression typing, condition checks, assignment checks, and validation of DATA.COUNT, PROCESS.CALCULATE, and PROCESS.COMPARE. Function parameter and return-type inference remains deferred until its cross-call inference contract is implemented. A successful parse means only that the source matches the implemented grammar; it does not prove semantic correctness.
 
 ## Diagnostics note
 
@@ -79,3 +79,17 @@ The declarative `src/command-registry.js` catalog contains the 17 named QX V1 co
 This slice registers names only. All command signatures remain explicitly pending (`signature: null`) and every command remains disabled (`enabled: false`). This is intentional: commands must not become semantically valid or executable until their argument count, argument types, return contract, permissions, and expected errors are specified. No unresolved signature is inferred from examples.
 
 Use `resolveCommand(domain, command)` to look up a registered name. Unknown names return `null`. `isCommandEnabled(domain, command)` remains false for every entry in this initial catalog. Semantic analysis and symbol/type checking are not part of this slice.
+
+
+## Semantic analysis — initial slice
+
+`analyze(program)` accepts a parsed AST and returns `{ valid, diagnostics, symbols }`. Diagnostics include stable codes and source locations.
+
+Implemented in this slice:
+- Infers TXT, NUM, BOOL, and LIST declarations from DATA.CREATE initial values.
+- Treats NULL as a special value, not an inferable variable type; DATA.CREATE with NULL is rejected.
+- Checks duplicate declarations, undeclared identifiers, assignment type stability, arithmetic/logical/comparison expression types, and BOOL conditions.
+- Validates the approved DATA.COUNT, PROCESS.CALCULATE, and PROCESS.COMPARE contracts.
+- Does not invent signatures or enable commands whose contracts remain pending.
+
+Function parameter and return-type inference, plus execution-time integer validation for remainder operations, remain outside this initial slice. All commands remain disabled.
