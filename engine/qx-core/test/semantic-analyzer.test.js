@@ -64,14 +64,26 @@ test("validates CALCULATE and COMPARE target and expression types", () => {
 test("rejects unknown commands in expression position and does not invent return contracts", () => {
   const result = check("DATA.CREATE(value, UI.SHOW(1))");
   assert.equal(result.valid, false);
-  assert.equal(result.diagnostics[0].code, "QX3012");
+  assert.equal(result.diagnostics[0].code, "QX3045");
 });
 
 
-test("rejects commands whose semantic contracts are still pending", () => {
-  const result = check('UI.SHOW("not approved")');
-  assert.equal(result.valid, false);
-  assert.ok(result.diagnostics.some(item => item.code === "QX3040"));
+test("validates UI.SHOW and UI.TEXT statement contracts", () => {
+  const result = check([
+    'UI.TEXT("Hello from QX")',
+    "DATA.CREATE(items, [1, 2])",
+    "UI.SHOW(items)",
+    "UI.SHOW(TRUE)",
+    "UI.SHOW(NULL)"
+  ].join("\n"));
+  assert.equal(result.valid, true, JSON.stringify(result.diagnostics));
+
+  const badText = check("UI.TEXT(42)");
+  assert.ok(badText.diagnostics.some(item => item.code === "QX3047"));
+  const badArity = check('UI.SHOW("one", "two")');
+  assert.ok(badArity.diagnostics.some(item => item.code === "QX3046"));
+  const expression = check('DATA.CREATE(value, UI.TEXT("not a value"))');
+  assert.ok(expression.diagnostics.some(item => item.code === "QX3045"));
 });
 
 test("does not cascade type diagnostics after an earlier ERROR", () => {
@@ -215,4 +227,65 @@ test("rejects procedure calls in value positions even through lists and forward 
   assert.equal(returnedProcedure.valid, false);
   assert.ok(returnedProcedure.diagnostics.some(item => item.code === "QX3039"));
   assert.ok(returnedProcedure.diagnostics.some(item => item.code === "QX3038"));
+});
+
+
+test("validates DATA.ADD and DATA.REMOVE expression contracts", () => {
+  const valid = check([
+    "DATA.CREATE(items, [1, 2])",
+    "DATA.CREATE(added, DATA.ADD(items, NULL))",
+    "DATA.CREATE(removed, DATA.REMOVE(added, 0))"
+  ].join("\n"));
+  assert.equal(valid.valid, true, JSON.stringify(valid.diagnostics));
+  assert.deepEqual(valid.symbols.map(item => item.type), ["LIST", "LIST", "LIST"]);
+
+  const badList = check("DATA.CREATE(items, 1)\nDATA.CREATE(result, DATA.ADD(items, 2))");
+  assert.ok(badList.diagnostics.some(item => item.code === "QX3042"));
+  const badIndex = check("DATA.CREATE(items, [1])\nDATA.CREATE(result, DATA.REMOVE(items, TRUE))");
+  assert.ok(badIndex.diagnostics.some(item => item.code === "QX3043"));
+  const wrongArity = check("DATA.CREATE(items, [])\nDATA.CREATE(result, DATA.ADD(items))");
+  assert.ok(wrongArity.diagnostics.some(item => item.code === "QX3041"));
+});
+
+test("requires DATA.SET_GLOBAL to be inside a function", () => {
+  const result = check("DATA.CREATE(value, 1)\nDATA.SET_GLOBAL(value, 2)");
+  assert.equal(result.valid, false);
+  assert.ok(result.diagnostics.some(item => item.code === "QX3021"));
+});
+
+test("validates PROCESS.ADD as a numeric increment of an existing NUM variable", () => {
+  const valid = check("DATA.CREATE(count, 0)\nPROCESS.ADD(count, 1.5)");
+  assert.equal(valid.valid, true, JSON.stringify(valid.diagnostics));
+  assert.equal(valid.symbols[0].type, "NUM");
+
+  const badTarget = check('DATA.CREATE(count, "0")\nPROCESS.ADD(count, 1)');
+  assert.ok(badTarget.diagnostics.some(item => item.code === "QX3024"));
+  const badAmount = check("DATA.CREATE(count, 0)\nPROCESS.ADD(count, TRUE)");
+  assert.ok(badAmount.diagnostics.some(item => item.code === "QX3025"));
+});
+
+test("PROCESS.ADD does not bypass the explicit global-write rule inside functions", () => {
+  const result = check([
+    "DATA.CREATE(count, 0)",
+    "FUNCTION increment()",
+    "PROCESS.ADD(count, 1)",
+    "END"
+  ].join("\n"));
+  assert.equal(result.valid, false);
+  assert.ok(result.diagnostics.some(item => item.code === "QX3020"));
+});
+
+test("accepts INTEGRATION.REQUEST as a TXT-valued expression", () => {
+  const result = check('DATA.CREATE(response, INTEGRATION.REQUEST("demo", "lookup", "{\\\"id\\\":1}"))');
+  assert.equal(result.valid, true, JSON.stringify(result.diagnostics));
+  assert.equal(result.symbols.find(item => item.name === "response").type, "TXT");
+});
+
+test("rejects malformed INTEGRATION.REQUEST arguments and statement use", () => {
+  const wrongArity = check('DATA.CREATE(response, INTEGRATION.REQUEST("demo", "lookup"))');
+  assert.ok(wrongArity.diagnostics.some(item => item.code === "QX3050"));
+  const wrongType = check('DATA.CREATE(response, INTEGRATION.REQUEST("demo", 7, "{}"))');
+  assert.ok(wrongType.diagnostics.some(item => item.code === "QX3051"));
+  const statement = check('INTEGRATION.REQUEST("demo", "lookup", "{}")');
+  assert.ok(statement.diagnostics.some(item => item.code === "QX3052"));
 });

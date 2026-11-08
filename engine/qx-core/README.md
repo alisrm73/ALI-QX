@@ -75,7 +75,7 @@ Implemented:
 - Function parameter and return-type inference from body constraints and all call sites, including uncalled functions, forward calls, nested calls, and recursion.
 - Validation of every RETURN path, incompatible return types, fallthrough, unresolved parameter types, and procedure/value-use boundaries.
 - Rejects commands whose semantic contracts are still pending instead of silently accepting them as statements.
-- Semantic contracts for `DATA.COUNT`, `PROCESS.CALCULATE`, and `PROCESS.COMPARE`. These are the only three commands marked enabled in the registry; all other unresolved command contracts remain disabled.
+- Semantic contracts for `DATA.COUNT`, `DATA.ADD`, `DATA.REMOVE`, `UI.SHOW`, `UI.TEXT`, `PROCESS.ADD`, `PROCESS.CALCULATE`, `PROCESS.COMPARE`, and `INTEGRATION.REQUEST`. `DATA.ADD` and `DATA.REMOVE` are expression-only immutable list operations introduced by the QIR 1.1 extension. `PROCESS.ADD` increments an existing NUM target using QIR 1.0 load-add-store lowering; `UI.SHOW` and `UI.TEXT` are statement-only output effects in the QIR 1.2 extension; `DATA.GET` remains disabled.
 
 A procedure without RETURN may be called as a standalone statement, but cannot supply a value to an expression. A successful parse alone does not prove semantic correctness.
 
@@ -85,11 +85,11 @@ The QIR V1 normative specification is maintained at `QX/spec/QIR-V1.md`.
 
 `lowerToQIR(program, semanticAnalysis)` converts a semantically valid Program AST to QIR V1. `validateQIR(module)` returns structured diagnostics; `serializeQIR(module)` emits canonical JSON; `parseQIR(json)` parses and validates serialized QIR. The module initializer is `fn_0`; source functions receive stable `fn_1` onward identifiers in source order. The QIR module carries the Unicode 18.0.0 version marker and source start locations.
 
-The phase-3 QIR implementation is consumed by the phase-4 VM described below. Registry enablement for the three approved commands records semantic-contract support; runtime availability is separately enforced by the VM.
+The phase-3 QIR 1.0 implementation is consumed by the phase-4 VM described below. QIR 1.0 remains unchanged; modules using `DATA.ADD` or `DATA.REMOVE` are emitted as QIR 1.1 under `QX/spec/QIR-DATA-LIST-EXTENSION-1.1.md`; modules using `UI.SHOW` or `UI.TEXT` use QIR 1.2 under `QX/spec/QIR-UI-OUTPUT-EXTENSION-1.2.md`.
 
 ## QX Virtual Machine — phase 4 (complete)
 
-The phase-4 QIR V1 interpreter is exported as `runQIR`:
+The QIR interpreter is exported as `runQIR`; QIR 1.2 UI effects are collected in the returned `outputs` array:
 
 ```js
 import { parse, analyze, lowerToQIR, runQIR } from "./src/index.js";
@@ -101,7 +101,7 @@ const qir = lowerToQIR(ast, semantic);
 const result = runQIR(qir);
 ```
 
-The VM executes the module initializer, local/global storage, constants, unary/binary operations, lists, function calls, branches, jumps, returns, and the approved `DATA.COUNT` expression. Runtime limits cover instruction count, call depth, list length, and string length. The VM has no host I/O, filesystem, network, or dynamic code execution interface.
+The VM executes the module initializer, local/global storage, constants, unary/binary operations, lists, function calls, branches, jumps, returns, `DATA.COUNT`, `DATA.ADD`, `DATA.REMOVE`, `UI.SHOW`, and `UI.TEXT`. ADD/REMOVE return deep-copied lists and never mutate their inputs; REMOVE validates a zero-based safe-integer index. Runtime limits cover instruction count, call depth, list length, and string length. The VM has no host I/O, filesystem, network, or dynamic code execution interface.
 
 LIST equality remains deliberately rejected because QIR V1 does not define its equality semantics. Phase 4 was merged into `main`; its original validation suite contained 90 passing tests.
 
@@ -122,14 +122,14 @@ This parser capability is syntax/AST only. Phase 2 validates the three approved 
 
 ## Command registry
 
-The registry contains 17 QX V1 command names. The approved contracts for `DATA.COUNT`, `PROCESS.CALCULATE`, and `PROCESS.COMPARE` are recorded and these three entries alone have `enabled: true`. Other entries retain `signature: null`, `signatureStatus: "pending"`, and `enabled: false`; no signature is inferred from examples.
+The registry contains 17 QX V1 command names. Nine commands currently have enabled semantic contracts: `DATA.COUNT`, `DATA.ADD`, `DATA.REMOVE`, `UI.SHOW`, `UI.TEXT`, `PROCESS.ADD`, `PROCESS.CALCULATE`, `PROCESS.COMPARE`, and `INTEGRATION.REQUEST`. `DATA.GET` remains pending and disabled.
 
 Use `resolveCommand(domain, command)` to resolve an English or Arabic alias to its canonical entry, and `isCommandEnabled(domain, command)` to inspect registry enablement. Enablement here denotes an approved semantic contract, not runtime availability; execution remains unimplemented until the VM phase.
 
 
 ## Verification
 
-The phase-4 validation baseline contained **90 passing tests**. The current phase-5 pull request passes **101 core tests** on Node.js 22.16.0, including Web Backend build, output-safety, browser-runtime, and pinned Unicode normalization coverage. A separate Chromium smoke test also passes against the generated site. The official Unicode 18.0.0 NFC conformance file has **100,855 passing checks and 0 failures**. Execution-time integer validation for remainder operations remains a runtime concern, not a semantic-analysis guarantee.
+The phase-4 validation baseline contained **90 passing tests**. The phase-6 DATA/PROCESS/UI implementation branch currently runs **114 core tests** on Node.js 22.16.0, including QIR 1.1/1.2, immutable list behavior, UI output effects, Web Backend build, output-safety, browser-runtime, and pinned Unicode normalization coverage. A separate Chromium smoke test also passes against the generated site. The official Unicode 18.0.0 NFC conformance file has **100,855 passing checks and 0 failures**. Execution-time integer validation for remainder operations remains a runtime concern, not a semantic-analysis guarantee.
 
 ## Web Backend — phase 5
 
@@ -142,6 +142,76 @@ const project = buildWebProject('DATA.CREATE(total, 4 + 5)', { title: "QX Demo" 
 // project.files: index.html, styles.css, app.js
 ```
 
-The build pipeline parses and semantically analyzes QX, lowers it to QIR V1, validates the QIR, and emits a self-contained browser runtime. The browser runtime supports the existing QIR V1 instruction set and approved `DATA.COUNT` command only. It embeds the Unicode 18.0.0 combining-class table so NFC ordering and equality follow the pinned project data. It renders resulting global values as text; QX UI commands remain disabled and are not implemented by this phase.
+The build pipeline parses and semantically analyzes QX, lowers it to QIR 1.0, the compatible QIR 1.1 DATA list extension, QIR 1.2 UI output extension, or QIR 1.3 asynchronous integration extension, then validates the QIR. The static browser runtime supports local execution through QIR 1.2 and rejects modules containing `INTEGRATION.REQUEST`; QIR 1.3 integration requests require a trusted host runtime and broker. UI output is rendered as safe DOM text via `textContent`. It embeds the Unicode 18.0.0 combining-class table so NFC ordering and equality follow the pinned project data. It renders explicit UI output and resulting global values as text. UI output does not expose HTML, event handlers, network, or host APIs.
 
-Generated projects have no network or host integration API, use DOM `textContent` for output, and include a restrictive Content Security Policy. The generated assets are deterministic for identical QIR and title inputs. This phase does not add commands, alter QX syntax, or implement integrations.
+Generated projects have no network or host integration API, use DOM `textContent` for output, and include a restrictive Content Security Policy. The generated assets are deterministic for identical QIR and title inputs. The browser backend remains network-disabled; host integrations are isolated behind the separately documented broker API and are not available to generated browser projects.
+
+
+## Host-owned integration broker — phase 6
+
+The isolated broker is available from `src/integration-broker.js` for trusted host code:
+
+```js
+import { createIntegrationBroker } from "./src/integration-broker.js";
+
+const broker = createIntegrationBroker({
+  connectors: {
+    demo: {
+      id: "demo",
+      version: "1.0.0",
+      operations: {
+        lookup: {
+          permissions: ["demo:read"],
+          invoke: async ({ payload, signal }) => JSON.stringify({ received: payload, aborted: signal.aborted })
+        }
+      }
+    }
+  },
+  grants: [{ connector: "demo", operation: "lookup", permissions: ["demo:read"] }]
+});
+
+const responseJson = await broker.request("demo", "lookup", '{"query":"QX"}');
+```
+
+The broker denies by default, accepts only registered connector/operation identifiers, enforces JSON byte limits, timeout and concurrency limits, and passes an AbortSignal to trusted adapters. Credentials and destination policy must remain inside host-controlled adapter implementations. The QX language command `INTEGRATION.REQUEST(connector, operation, payloadJson)` is wired as a TXT-valued expression in QIR 1.3. Execute such modules with `runQIRAsync`; synchronous `runQIR` rejects them with `QX_VM_ASYNC_REQUIRED`. The broker remains host-only and browser builds remain network-disabled.
+
+
+## QIR 1.3 asynchronous integration execution
+
+A source program can use the approved expression form:
+
+```qx
+DATA.CREATE(response, INTEGRATION.REQUEST("demo", "lookup", "{\"id\":1}"))
+```
+
+Trusted host code supplies the broker to the async VM API:
+
+```js
+import { runQIRAsync, createIntegrationBroker, parse, analyze, lowerToQIR } from "./src/index.js";
+
+const source = 'DATA.CREATE(response, INTEGRATION.REQUEST("demo", "lookup", "{\\\"id\\\":1}"))';
+const ast = parse(source);
+const semantic = analyze(ast);
+if (!semantic.valid) throw new Error("QX semantic validation failed");
+const module = lowerToQIR(ast, semantic);
+
+const integrationBroker = createIntegrationBroker({
+  connectors: {
+    demo: {
+      id: "demo",
+      version: "1.0.0",
+      operations: {
+        lookup: {
+          permissions: ["demo:read"],
+          invoke: async ({ payload }) => JSON.stringify({ received: payload })
+        }
+      }
+    }
+  },
+  grants: [{ connector: "demo", operation: "lookup", permissions: ["demo:read"] }]
+});
+
+const result = await runQIRAsync(module, { integrationBroker });
+```
+
+Only trusted host code registers adapters and grants. Adapter credentials and destination restrictions must remain outside QX source and generated browser assets. No production connector is included.

@@ -41,12 +41,34 @@ export const COMMAND_REGISTRY = Object.freeze(definitions.map(([domain, name, ar
       Object.freeze({ domain, command: name }),
       Object.freeze({ domain: COMMAND_DOMAINS.find(item => item.id === domain).aliases[1], command: arabicName })
     ]),
-    signature: domain === "DATA" && name === "COUNT"
+    signature: domain === "DATA" && name === "ADD"
+      ? Object.freeze({ parameters: Object.freeze([{ name: "list", type: "LIST" }, { name: "value", types: Object.freeze(["NUM", "TXT", "BOOL", "LIST", "NULL"]) }]), result: Object.freeze({ kind: "value", type: "LIST" }) })
+      : domain === "DATA" && name === "REMOVE"
+        ? Object.freeze({ parameters: Object.freeze([{ name: "list", type: "LIST" }, { name: "index", type: "NUM", integer: true, minimum: 0 }]), result: Object.freeze({ kind: "value", type: "LIST" }) })
+        : domain === "DATA" && name === "COUNT"
       ? Object.freeze({
           parameters: Object.freeze([{ name: "list", type: "LIST" }]),
           result: Object.freeze({ kind: "value", type: "NUM" })
         })
-      : domain === "PROCESS" && name === "CALCULATE"
+      : domain === "UI" && name === "SHOW"
+        ? Object.freeze({
+            parameters: Object.freeze([{ name: "value", types: Object.freeze(["NUM", "TXT", "BOOL", "LIST", "NULL"]) }]),
+            result: Object.freeze({ kind: "effect", component: "SHOW" })
+          })
+        : domain === "UI" && name === "TEXT"
+          ? Object.freeze({
+              parameters: Object.freeze([{ name: "text", type: "TXT" }]),
+              result: Object.freeze({ kind: "effect", component: "TEXT" })
+            })
+      : domain === "PROCESS" && name === "ADD"
+        ? Object.freeze({
+            parameters: Object.freeze([
+              { name: "target", type: "Identifier", variableType: "NUM", mustBeDeclared: true },
+              { name: "amount", type: "Expression", resultType: "NUM" }
+            ]),
+            result: Object.freeze({ kind: "stored", target: "target", type: "NUM" })
+          })
+        : domain === "PROCESS" && name === "CALCULATE"
         ? Object.freeze({
             parameters: Object.freeze([
               { name: "target", type: "Identifier", variableType: "NUM", mustBeDeclared: true },
@@ -62,13 +84,26 @@ export const COMMAND_REGISTRY = Object.freeze(definitions.map(([domain, name, ar
               ]),
               result: Object.freeze({ kind: "stored", target: "target", type: "BOOL" })
             })
+          : domain === "INTEGRATION" && name === "REQUEST"
+            ? Object.freeze({
+                parameters: Object.freeze([
+                  { name: "connector", type: "TXT" },
+                  { name: "operation", type: "TXT" },
+                  { name: "payloadJson", type: "TXT" }
+                ]),
+                result: Object.freeze({ kind: "value", type: "TXT", asynchronous: true })
+              })
           : null,
-    signatureStatus: (domain === "DATA" && name === "COUNT") ||
-      (domain === "PROCESS" && (name === "CALCULATE" || name === "COMPARE"))
+    signatureStatus: (domain === "DATA" && ["ADD", "REMOVE", "COUNT"].includes(name)) ||
+      (domain === "PROCESS" && (name === "ADD" || name === "CALCULATE" || name === "COMPARE")) ||
+      (domain === "UI" && (name === "SHOW" || name === "TEXT")) ||
+      (domain === "INTEGRATION" && name === "REQUEST")
       ? "specified"
       : "pending",
-    enabled: (domain === "DATA" && name === "COUNT") ||
-      (domain === "PROCESS" && (name === "CALCULATE" || name === "COMPARE"))
+    enabled: (domain === "DATA" && ["ADD", "REMOVE", "COUNT"].includes(name)) ||
+      (domain === "PROCESS" && (name === "ADD" || name === "CALCULATE" || name === "COMPARE")) ||
+      (domain === "UI" && (name === "SHOW" || name === "TEXT")) ||
+      (domain === "INTEGRATION" && name === "REQUEST")
   })
 ));
 

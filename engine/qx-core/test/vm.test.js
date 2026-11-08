@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { analyze, lowerToQIR, parse, runQIR, QXVMError } from "../src/index.js";
+import { analyze, lowerToQIR, parse, runQIR, runQIRAsync, createIntegrationBroker, QXVMError } from "../src/index.js";
 
 function compile(source) {
   const ast = parse(source);
@@ -128,4 +128,123 @@ test("enforces list and string allocation limits", () => {
   const textModule = compile('DATA.CREATE(value, "abc")');
   assert.throws(() => runQIR(textModule, { limits: { maxStringLength: 2 } }),
     error => error instanceof QXVMError && error.code === "QX_VM_STRING_LIMIT");
+});
+
+
+test("executes DATA.ADD and DATA.REMOVE without mutating source lists", () => {
+  const result = runQIR(compile([
+    "DATA.CREATE(items, [1, [2, 3], 4])",
+    "DATA.CREATE(added, DATA.ADD(items, 5))",
+    "DATA.CREATE(removed, DATA.REMOVE(added, 1))"
+  ].join("\n"))).globals;
+  assert.deepEqual(result.items, [1, [2, 3], 4]);
+  assert.deepEqual(result.added, [1, [2, 3], 4, 5]);
+  assert.deepEqual(result.removed, [1, 4, 5]);
+  assert.notEqual(result.items, result.added);
+  assert.notEqual(result.items[1], result.added[1]);
+});
+
+test("DATA.ADD and DATA.REMOVE enforce list limits and valid zero-based indices", () => {
+  const add = compile("DATA.CREATE(items, [1])\nDATA.CREATE(updated, DATA.ADD(items, 2))");
+  assert.throws(() => runQIR(add, { limits: { maxListLength: 1 } }),
+    error => error instanceof QXVMError && error.code === "QX_VM_LIST_LIMIT");
+
+  for (const index of [-1, 1.5, 2]) {
+    const remove = compile("DATA.CREATE(items, [1, 2])\nDATA.CREATE(updated, DATA.REMOVE(items, " + index + "))");
+    assert.throws(() => runQIR(remove),
+      error => error instanceof QXVMError && error.code === "QX_VM_LIST_INDEX");
+  }
+});
+
+test("executes PROCESS.ADD in module and local function scopes", () => {
+  const module = compile([
+    "DATA.CREATE(count, 1)",
+    "PROCESS.ADD(count, 2)",
+    "FUNCTION increment(value)",
+    "PROCESS.ADD(value, 3)",
+    "RETURN value",
+    "END",
+    "DATA.CREATE(result, increment(4))"
+  ].join("\n"));
+  const globals = runQIR(module).globals;
+  assert.equal(globals.count, 3);
+  assert.equal(globals.result, 7);
+});
+
+test("executes UI.TEXT and UI.SHOW as ordered output effects", () => {
+  const result = runQIR(compile([
+    'UI.TEXT("Hello from QX")',
+    "DATA.CREATE(items, [1, [2, 3], TRUE])",
+    "UI.SHOW(items)",
+    "UI.SHOW(NULL)"
+  ].join("\n")));
+  assert.deepEqual(result.outputs.map(item => item.component), ["TEXT", "SHOW", "SHOW"]);
+  assert.equal(result.outputs[0].value, "Hello from QX");
+  assert.deepEqual(result.outputs[1].value, [1, [2, 3], true]);
+  assert.equal(result.outputs[2].value, null);
+  assert.equal(result.globals.items.length, 3);
+});
+
+test("collects UI output from called functions in execution order", () => {
+  const result = runQIR(compile([
+    "FUNCTION greet(name)",
+    'UI.TEXT("Hello")',
+    "UI.SHOW(name)",
+    "END",
+    'greet("QX")',
+    'UI.TEXT("Done")'
+  ].join("\n")));
+  assert.deepEqual(result.outputs.map(item => item.component), ["TEXT", "SHOW", "TEXT"]);
+  assert.deepEqual(result.outputs.map(item => item.value), ["Hello", "QX", "Done"]);
+});
+
+function demoIntegrationBroker(invoke = async ({ payload }) => JSON.stringify({ received: payload })) {
+  return createIntegrationBroker({
+    connectors: {
+      demo: {
+        id: "demo",
+        version: "1.0.0",
+        operations: { lookup: { permissions: ["demo:read"], invoke } }
+      }
+    },
+    grants: [{ connector: "demo", operation: "lookup", permissions: ["demo:read"] }]
+  });
+}
+
+test("executes INTEGRATION.REQUEST asynchronously through a trusted broker, including nested functions", async () => {
+  const module = compile([
+    "FUNCTION lookup(payload)",
+    'RETURN INTEGRATION.REQUEST("demo", "lookup", payload)',
+    "END",
+    'DATA.CREATE(response, lookup("{\\\"id\\\":7}"))'
+  ].join("\n"));
+  assert.equal(module.version, "1.3");
+  const result = await runQIRAsync(module, { integrationBroker: demoIntegrationBroker() });
+  assert.equal(result.globals.response, '{"received":{"id":7}}');
+});
+
+test("requires asynchronous VM execution and a broker before running integration modules", async () => {
+  const module = compile('DATA.CREATE(response, INTEGRATION.REQUEST("demo", "lookup", "{}"))');
+  let calls = 0;
+  const integrationBroker = demoIntegrationBroker(async () => { calls++; return '{"ok":true}'; });
+  assert.throws(() => runQIR(module, { integrationBroker }),
+    error => error instanceof QXVMError && error.code === "QX_VM_ASYNC_REQUIRED");
+  assert.equal(calls, 0);
+  await assert.rejects(runQIRAsync(module),
+    error => error instanceof QXVMError && error.code === "QX_VM_INTEGRATION_UNAVAILABLE");
+});
+
+test("sanitizes integration adapter failures at the VM boundary", async () => {
+  const module = compile('DATA.CREATE(response, INTEGRATION.REQUEST("demo", "lookup", "{}"))');
+  const integrationBroker = demoIntegrationBroker(async () => { throw new Error("private-adapter-secret"); });
+  await assert.rejects(runQIRAsync(module, { integrationBroker }), error =>
+    error instanceof QXVMError && error.code === "QX_VM_INTEGRATION_FAILED" &&
+    !error.message.includes("private-adapter-secret"));
+});
+
+test("rejects non-JSON integration broker responses", async () => {
+  const module = compile('DATA.CREATE(response, INTEGRATION.REQUEST("demo", "lookup", "{}"))');
+  const integrationBroker = demoIntegrationBroker(async () => "<html>not json</html>");
+  await assert.rejects(runQIRAsync(module, { integrationBroker }),
+    error => error instanceof QXVMError && error.code === "QX_VM_INTEGRATION_RESPONSE");
 });

@@ -98,9 +98,31 @@ export function analyze(program) {
       case "CommandCallExpression": {
         const cmd = resolveCommand(node.domain, node.command);
         if (!cmd) { report("QX3011", "Unknown command: " + node.domain + "." + node.command, node); node.args.forEach(a => expression(a, scope)); out = concrete("ERROR"); break; }
-        if (cmd.id !== "DATA.COUNT") { report("QX3012", "This command has no approved value-returning expression contract", node); node.args.forEach(a => expression(a, scope)); out = concrete("ERROR"); break; }
-        if (node.args.length !== 1) { report("QX3013", "DATA.COUNT expects exactly one argument", node); node.args.forEach(a => expression(a, scope)); out = concrete("ERROR"); break; }
-        const arg = expression(node.args[0], scope); constrain(arg, ["LIST"], node.args[0], "QX3014", "DATA.COUNT expects LIST"); out = concrete("NUM"); break;
+        if (cmd.id === "DATA.COUNT") {
+          if (node.args.length !== 1) { report("QX3013", "DATA.COUNT expects exactly one argument", node); node.args.forEach(a => expression(a, scope)); out = concrete("ERROR"); break; }
+          const arg = expression(node.args[0], scope); constrain(arg, ["LIST"], node.args[0], "QX3014", "DATA.COUNT expects LIST"); out = concrete("NUM"); break;
+        }
+        if (cmd.id === "DATA.ADD" || cmd.id === "DATA.REMOVE") {
+          if (node.args.length !== 2) { report("QX3041", cmd.id + " expects exactly two arguments", node); node.args.forEach(a => expression(a, scope)); out = concrete("ERROR"); break; }
+          const list = expression(node.args[0], scope); constrain(list, ["LIST"], node.args[0], "QX3042", cmd.id + " first argument must be LIST");
+          const value = expression(node.args[1], scope);
+          if (cmd.id === "DATA.REMOVE") constrain(value, ["NUM"], node.args[1], "QX3043", "DATA.REMOVE index must be NUM");
+          out = concrete("LIST"); break;
+        }
+        if (cmd.id === "UI.SHOW" || cmd.id === "UI.TEXT") {
+          report("QX3045", cmd.id + " is a UI statement and cannot be used as an expression", node);
+          node.args.forEach(a => expression(a, scope)); out = concrete("ERROR"); break;
+        }
+        if (cmd.id === "INTEGRATION.REQUEST") {
+          if (node.args.length !== 3) {
+            report("QX3050", "INTEGRATION.REQUEST expects connector, operation, and JSON payload text", node);
+            node.args.forEach(a => expression(a, scope)); out = concrete("ERROR"); break;
+          }
+          node.args.forEach((arg, index) =>
+            constrain(expression(arg, scope), ["TXT"], arg, "QX3051", "INTEGRATION.REQUEST argument " + (index + 1) + " must be TXT"));
+          out = concrete("TXT"); break;
+        }
+        report("QX3012", "This command has no approved value-returning expression contract", node); node.args.forEach(a => expression(a, scope)); out = concrete("ERROR"); break;
       }
       case "CallExpression": {
         const fn = node.callee?.type === "Identifier" ? functions.get(node.callee.name) : null;
@@ -133,16 +155,26 @@ export function analyze(program) {
       const found = scope.lookup(node.args[0].name);
       if (!found) { report("QX3003", "Undeclared identifier: " + node.args[0].name, node.args[0]); expression(node.args[1], scope); return; }
       if (cmd.id === "DATA.SET" && scope.kind === "function" && found.scope.kind !== "function") report("QX3020", "Use DATA.SET_GLOBAL to update a module variable inside a function", node);
+      if (cmd.id === "DATA.SET_GLOBAL" && scope.kind !== "function") report("QX3021", "DATA.SET_GLOBAL is only valid inside a function", node);
       if (cmd.id === "DATA.SET_GLOBAL" && found.scope.kind !== "module") report("QX3021", "DATA.SET_GLOBAL requires an existing module variable", node.args[0]);
       join(found.symbol.cell, expression(node.args[1], scope), node.args[1], "QX3022", "Assigned value has a different type from variable " + node.args[0].name); return;
     }
-    if (["PROCESS.CALCULATE", "PROCESS.COMPARE"].includes(cmd.id)) {
-      const required = cmd.id === "PROCESS.CALCULATE" ? "NUM" : "BOOL";
+    if (["PROCESS.ADD", "PROCESS.CALCULATE", "PROCESS.COMPARE"].includes(cmd.id)) {
+      const required = cmd.id === "PROCESS.COMPARE" ? "BOOL" : "NUM";
       if (node.args.length !== 2 || node.args[0]?.type !== "Identifier") { report("QX3023", cmd.id + " expects a target identifier and an expression", node); node.args.forEach(a => expression(a, scope)); return; }
       const found = scope.lookup(node.args[0].name);
       if (!found) report("QX3003", "Undeclared target: " + node.args[0].name, node.args[0]);
-      else constrain(found.symbol.cell, [required], node.args[0], "QX3024", cmd.id + " target must be " + required);
+      else {
+        constrain(found.symbol.cell, [required], node.args[0], "QX3024", cmd.id + " target must be " + required);
+        if (cmd.id === "PROCESS.ADD" && scope.kind === "function" && found.scope.kind !== "function")
+          report("QX3020", "Use DATA.SET_GLOBAL inside a function to update a module variable", node);
+      }
       constrain(expression(node.args[1], scope), [required], node.args[1], "QX3025", cmd.id + " expression must produce " + required); return;
+    }
+    if (cmd.id === "DATA.ADD" || cmd.id === "DATA.REMOVE") {
+      report("QX3044", cmd.id + " is an expression and cannot be used as a command statement", node);
+      node.args.forEach(a => expression(a, scope));
+      return;
     }
     if (cmd.id === "DATA.COUNT") {
       if (node.args.length !== 1) {
@@ -151,6 +183,21 @@ export function analyze(program) {
         return;
       }
       constrain(expression(node.args[0], scope), ["LIST"], node.args[0], "QX3014", "DATA.COUNT expects LIST");
+      return;
+    }
+    if (cmd.id === "UI.SHOW" || cmd.id === "UI.TEXT") {
+      if (node.args.length !== 1) {
+        report("QX3046", cmd.id + " expects exactly one argument", node);
+        node.args.forEach(a => expression(a, scope));
+        return;
+      }
+      const value = expression(node.args[0], scope);
+      if (cmd.id === "UI.TEXT") constrain(value, ["TXT"], node.args[0], "QX3047", "UI.TEXT expects TXT");
+      return;
+    }
+    if (cmd.id === "INTEGRATION.REQUEST") {
+      report("QX3052", "INTEGRATION.REQUEST is a value-returning expression and cannot be used as a command statement", node);
+      node.args.forEach(a => expression(a, scope));
       return;
     }
     if (!["DATA.CREATE", "DATA.SET", "DATA.SET_GLOBAL"].includes(cmd.id) && !cmd.enabled) {

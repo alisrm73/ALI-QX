@@ -38,7 +38,7 @@ test("does not accept unregistered names, aliases, or cross-domain commands", ()
   assert.equal(resolveCommand("DATA", "إنشاء"), null);
 });
 
-test("records only the three approved V1 command contracts", () => {
+test("records the approved V1 command contracts", () => {
   assert.deepEqual(resolveCommand("DATA", "COUNT").signature, {
     parameters: [{ name: "list", type: "LIST" }],
     result: { kind: "value", type: "NUM" }
@@ -57,11 +57,42 @@ test("records only the three approved V1 command contracts", () => {
     ],
     result: { kind: "stored", target: "target", type: "BOOL" }
   });
-  assert.equal(COMMAND_REGISTRY.filter(command => command.signatureStatus === "specified").length, 3);
+  assert.equal(COMMAND_REGISTRY.filter(command => command.signatureStatus === "specified").length, 9);
+  assert.deepEqual(resolveCommand("INTEGRATION", "REQUEST").signature, {
+    parameters: [
+      { name: "connector", type: "TXT" },
+      { name: "operation", type: "TXT" },
+      { name: "payloadJson", type: "TXT" }
+    ],
+    result: { kind: "value", type: "TXT", asynchronous: true }
+  });
+  assert.deepEqual(resolveCommand("PROCESS", "ADD").signature, {
+    parameters: [
+      { name: "target", type: "Identifier", variableType: "NUM", mustBeDeclared: true },
+      { name: "amount", type: "Expression", resultType: "NUM" }
+    ],
+    result: { kind: "stored", target: "target", type: "NUM" }
+  });
+  assert.deepEqual(resolveCommand("DATA", "ADD").signature, {
+    parameters: [{ name: "list", type: "LIST" }, { name: "value", types: ["NUM", "TXT", "BOOL", "LIST", "NULL"] }],
+    result: { kind: "value", type: "LIST" }
+  });
+  assert.deepEqual(resolveCommand("DATA", "REMOVE").signature, {
+    parameters: [{ name: "list", type: "LIST" }, { name: "index", type: "NUM", integer: true, minimum: 0 }],
+    result: { kind: "value", type: "LIST" }
+  });
+  assert.deepEqual(resolveCommand("UI", "SHOW").signature, {
+    parameters: [{ name: "value", types: ["NUM", "TXT", "BOOL", "LIST", "NULL"] }],
+    result: { kind: "effect", component: "SHOW" }
+  });
+  assert.deepEqual(resolveCommand("UI", "TEXT").signature, {
+    parameters: [{ name: "text", type: "TXT" }],
+    result: { kind: "effect", component: "TEXT" }
+  });
 });
 
-test("enables only the three approved commands after semantic validation", () => {
-  const enabled = new Set(["DATA.COUNT", "PROCESS.CALCULATE", "PROCESS.COMPARE"]);
+test("enables only commands with approved semantic contracts", () => {
+  const enabled = new Set(["DATA.COUNT", "DATA.ADD", "DATA.REMOVE", "UI.SHOW", "UI.TEXT", "PROCESS.ADD", "PROCESS.CALCULATE", "PROCESS.COMPARE", "INTEGRATION.REQUEST"]);
   for (const command of COMMAND_REGISTRY) {
     assert.equal(command.enabled, enabled.has(command.id));
     assert.equal(isCommandEnabled(command.domain, command.name), enabled.has(command.id));
