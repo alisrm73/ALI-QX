@@ -57,7 +57,7 @@ test("records the approved V1 command contracts", () => {
     ],
     result: { kind: "stored", target: "target", type: "BOOL" }
   });
-  assert.equal(COMMAND_REGISTRY.filter(command => command.signatureStatus === "specified").length, 6);
+  assert.equal(COMMAND_REGISTRY.filter(command => command.signatureStatus === "specified").length, 8);
   assert.deepEqual(resolveCommand("PROCESS", "ADD").signature, {
     parameters: [
       { name: "target", type: "Identifier", variableType: "NUM", mustBeDeclared: true },
