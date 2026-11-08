@@ -507,8 +507,10 @@ export function validateQIR(module) {
       }
     }
     flowByFunction.set(fn.id, { trackedVariables, inStates });
+    const flow = flowByFunction.get(fn.id);
 
     for (const block of fn.blocks) {
+      const initializedVariables = new Set(flow.inStates.get(block.id) ?? []);
       const seen = new Set();
       for (const inst of block.instructions) {
         const refs = [];
