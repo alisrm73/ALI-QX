@@ -1,4 +1,5 @@
 import { validateQIR } from "./qir.js";
+import { normalizeNFC } from "./unicode.js";
 
 const UNINITIALIZED = Symbol("QX_UNINITIALIZED");
 const DEFAULT_LIMITS = Object.freeze({
@@ -30,8 +31,8 @@ function checkedLimits(overrides = {}) {
 }
 
 function compareCodePoints(left, right) {
-  const a = Array.from(left, char => char.codePointAt(0));
-  const b = Array.from(right, char => char.codePointAt(0));
+  const a = Array.from(normalizeNFC(left), char => char.codePointAt(0));
+  const b = Array.from(normalizeNFC(right), char => char.codePointAt(0));
   const length = Math.min(a.length, b.length);
   for (let i = 0; i < length; i++) {
     if (a[i] !== b[i]) return a[i] < b[i] ? -1 : 1;
@@ -127,7 +128,9 @@ export function runQIR(module, options = {}) {
       case "!=": {
         if (Array.isArray(left) || Array.isArray(right))
           throw runtimeError("QX_VM_LIST_EQUALITY_UNSPECIFIED", "LIST equality is not defined by QIR V1 runtime semantics", instruction, frame.context);
-        const equal = left === right;
+        const equal = typeof left === "string" && typeof right === "string"
+          ? normalizeNFC(left) === normalizeNFC(right)
+          : left === right;
         return operator === "==" ? equal : !equal;
       }
       case ">":
