@@ -253,3 +253,31 @@ test("QIR 1.1 rejects UI output commands", () => {
   bad.version = "1.1";
   assert.ok(validateQIR(bad).some(item => item.code === "QIR_E_COMMAND_SIGNATURE" || item.code === "QIR_E_COMMAND_NOT_ALLOWED"));
 });
+
+test("lowers INTEGRATION.REQUEST into QIR 1.3 and round-trips", () => {
+  const qir = compile('DATA.CREATE(response, INTEGRATION.REQUEST("demo", "lookup", "{\\\"id\\\":1}"))');
+  assert.equal(qir.version, "1.3");
+  const call = qir.initializer.blocks.flatMap(block => block.instructions)
+    .find(inst => inst.opcode === "COMMAND_CALL" && inst.operands.command === "INTEGRATION.REQUEST");
+  assert.ok(call);
+  assert.equal(call.type, "TXT");
+  assert.ok(call.result);
+  assert.equal(call.operands.arguments.length, 3);
+  assert.deepEqual(validateQIR(parseQIR(serializeQIR(qir))), []);
+});
+
+test("QIR 1.3 retains DATA and UI extensions while requiring the integration signature", () => {
+  const qir = compile([
+    "DATA.CREATE(items, [1])",
+    "DATA.CREATE(added, DATA.ADD(items, 2))",
+    'UI.TEXT("ready")',
+    'DATA.CREATE(response, INTEGRATION.REQUEST("demo", "lookup", "{}"))'
+  ].join("\n"));
+  assert.equal(qir.version, "1.3");
+  assert.deepEqual(validateQIR(qir), []);
+  const invalid = JSON.parse(JSON.stringify(qir));
+  const call = invalid.initializer.blocks.flatMap(block => block.instructions)
+    .find(inst => inst.opcode === "COMMAND_CALL" && inst.operands.command === "INTEGRATION.REQUEST");
+  call.type = "NUM";
+  assert.ok(validateQIR(invalid).some(item => item.code === "QIR_E_COMMAND_SIGNATURE"));
+});
