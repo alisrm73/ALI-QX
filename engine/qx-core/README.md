@@ -53,9 +53,22 @@ node scripts/verify-unicode-normalization.mjs /path/to/NormalizationTest.txt
 
 The Unicode 18.0.0 `NormalizationTest.txt` was run during this update: **100,855 NFC checks passed, 0 failed**. The regular project test suite also covers representative canonical composition, Unicode 18 combining-mark reordering, and algorithmic Hangul composition.
 
-## Not implemented in this phase
+## Semantic analysis — phase 2
 
-QIR, VM, Web Backend, and execution are not implemented. The initial semantic-analysis slice now includes module symbols, primitive/list type inference, expression typing, condition checks, assignment checks, and validation of DATA.COUNT, PROCESS.CALCULATE, and PROCESS.COMPARE. Function parameter and return-type inference remains deferred until its cross-call inference contract is implemented. A successful parse means only that the source matches the implemented grammar; it does not prove semantic correctness.
+`analyze(program)` returns `{ valid, diagnostics, symbols, functions }`. Diagnostics have stable codes and source locations.
+
+Implemented:
+- Module and function scopes, duplicate declarations, undeclared identifiers, local/global assignment rules, and type-stable assignments.
+- TXT, NUM, BOOL, and LIST inference; arithmetic, comparison, Boolean, and condition type constraints.
+- Function parameter and return-type inference from body constraints and all call sites, including uncalled functions, forward calls, nested calls, and recursion.
+- Validation of every RETURN path, incompatible return types, fallthrough, unresolved parameter types, and procedure/value-use boundaries.
+- Semantic contracts for `DATA.COUNT`, `PROCESS.CALCULATE`, and `PROCESS.COMPARE`. These are the only three commands marked enabled in the registry; all other unresolved command contracts remain disabled.
+
+A procedure without RETURN may be called as a standalone statement, but cannot supply a value to an expression. A successful parse alone does not prove semantic correctness.
+
+## Not implemented
+
+QIR, QX Virtual Machine, Web Backend, and runtime execution are not implemented. Registry enablement for the three approved commands records semantic-contract support; it does not claim that a VM or runtime executor exists.
 
 ## Diagnostics note
 
@@ -72,24 +85,13 @@ DATA.CREATE(item, DATA.GET(items, 0))
 This is a syntax/AST capability only. Semantic validation of command availability, signatures, return types, and permissions remains part of the semantic-analysis phase.
 
 
-## Command registry — initial semantic-analysis slice
+## Command registry
 
-The declarative `src/command-registry.js` catalog contains the 17 named QX V1 commands and their single English/Arabic aliases. Both names resolve to one canonical command identity; English domain and command names are ASCII case-insensitive.
+The registry contains 17 QX V1 command names. The approved contracts for `DATA.COUNT`, `PROCESS.CALCULATE`, and `PROCESS.COMPARE` are recorded and these three entries alone have `enabled: true`. Other entries retain `signature: null`, `signatureStatus: "pending"`, and `enabled: false`; no signature is inferred from examples.
 
-This slice registers names only. All command signatures remain explicitly pending (`signature: null`) and every command remains disabled (`enabled: false`). This is intentional: commands must not become semantically valid or executable until their argument count, argument types, return contract, permissions, and expected errors are specified. No unresolved signature is inferred from examples.
-
-Use `resolveCommand(domain, command)` to look up a registered name. Unknown names return `null`. `isCommandEnabled(domain, command)` remains false for every entry in this initial catalog. Semantic analysis and symbol/type checking are not part of this slice.
+Use `resolveCommand(domain, command)` to resolve an English or Arabic alias to its canonical entry, and `isCommandEnabled(domain, command)` to inspect registry enablement. Enablement here denotes an approved semantic contract, not runtime availability; execution remains unimplemented until the VM phase.
 
 
-## Semantic analysis — initial slice
+## Verification
 
-`analyze(program)` accepts a parsed AST and returns `{ valid, diagnostics, symbols }`. Diagnostics include stable codes and source locations.
-
-Implemented in this slice:
-- Infers TXT, NUM, BOOL, and LIST declarations from DATA.CREATE initial values.
-- Treats NULL as a special value, not an inferable variable type; DATA.CREATE with NULL is rejected.
-- Checks duplicate declarations, undeclared identifiers, assignment type stability, arithmetic/logical/comparison expression types, and BOOL conditions.
-- Validates the approved DATA.COUNT, PROCESS.CALCULATE, and PROCESS.COMPARE contracts.
-- Does not invent signatures or enable commands whose contracts remain pending.
-
-Function parameter and return-type inference, plus execution-time integer validation for remainder operations, remain outside this initial slice. All commands remain disabled.
+The current core suite contains **63 tests**, all passing on the verified Node.js runtime. The official Unicode 18.0.0 NFC conformance file has **100,855 passing checks and 0 failures**. Execution-time integer validation for remainder operations remains a runtime concern, not a semantic-analysis guarantee.
