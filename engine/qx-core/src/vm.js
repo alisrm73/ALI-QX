@@ -268,7 +268,9 @@ function createQIRExecution(module, options = {}) {
               let response;
               try {
                 response = yield Promise.resolve(integrationBroker.request(connector, operation, payloadJson));
-              } catch {
+              } catch (error) {
+                if (error?.code === "QX_INTEGRATION_INVALID_RESPONSE")
+                  throw runtimeError("QX_VM_INTEGRATION_RESPONSE", "Integration broker returned an invalid response", instruction, context);
                 throw runtimeError("QX_VM_INTEGRATION_FAILED", "Integration request failed", instruction, context);
               }
               if (typeof response !== "string")
