@@ -75,7 +75,7 @@ Implemented:
 - Function parameter and return-type inference from body constraints and all call sites, including uncalled functions, forward calls, nested calls, and recursion.
 - Validation of every RETURN path, incompatible return types, fallthrough, unresolved parameter types, and procedure/value-use boundaries.
 - Rejects commands whose semantic contracts are still pending instead of silently accepting them as statements.
-- Semantic contracts for `DATA.COUNT`, `DATA.ADD`, `DATA.REMOVE`, `PROCESS.CALCULATE`, and `PROCESS.COMPARE`. `DATA.ADD` and `DATA.REMOVE` are expression-only immutable list operations introduced by the QIR 1.1 extension; `DATA.GET` remains disabled.
+- Semantic contracts for `DATA.COUNT`, `DATA.ADD`, `DATA.REMOVE`, `PROCESS.ADD`, `PROCESS.CALCULATE`, and `PROCESS.COMPARE`. `DATA.ADD` and `DATA.REMOVE` are expression-only immutable list operations introduced by the QIR 1.1 extension. `PROCESS.ADD` increments an existing NUM target using QIR 1.0 load-add-store lowering; `DATA.GET` remains disabled.
 
 A procedure without RETURN may be called as a standalone statement, but cannot supply a value to an expression. A successful parse alone does not prove semantic correctness.
 
@@ -122,7 +122,7 @@ This parser capability is syntax/AST only. Phase 2 validates the three approved 
 
 ## Command registry
 
-The registry contains 17 QX V1 command names. Five commands currently have enabled semantic contracts: `DATA.COUNT`, `DATA.ADD`, `DATA.REMOVE`, `PROCESS.CALCULATE`, and `PROCESS.COMPARE`. `DATA.ADD` and `DATA.REMOVE` are implemented end-to-end in the phase-6 branch; `DATA.GET` remains pending and disabled.
+The registry contains 17 QX V1 command names. Six commands currently have enabled semantic contracts: `DATA.COUNT`, `DATA.ADD`, `DATA.REMOVE`, `PROCESS.ADD`, `PROCESS.CALCULATE`, and `PROCESS.COMPARE`. `DATA.ADD` and `DATA.REMOVE` are implemented end-to-end in the phase-6 branch; `DATA.GET` remains pending and disabled.
 
 Use `resolveCommand(domain, command)` to resolve an English or Arabic alias to its canonical entry, and `isCommandEnabled(domain, command)` to inspect registry enablement. Enablement here denotes an approved semantic contract, not runtime availability; execution remains unimplemented until the VM phase.
 
