@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import vm from "node:vm";
-import { buildWebProject } from "../src/web-backend.js";
+import { buildWebProject, QXWebBuildError } from "../src/web-backend.js";
 
 test("generated browser runtime executes QIR and renders global results", () => {
   const project = buildWebProject('DATA.CREATE(total, 4 + 5)\nPROCESS.CALCULATE(total, total * 2)');
@@ -160,3 +160,20 @@ test("browser runtime renders UI output produced inside a function", () => {
   assert.equal(output[0].textContent, "Hello");
   assert.equal(output[1].children[0].textContent, "QX");
 });
+
+test("static browser builds reject INTEGRATION.REQUEST without a trusted host bridge", () => {
+  assert.throws(
+    () => buildWebProject('DATA.CREATE(response, INTEGRATION.REQUEST("demo", "lookup", "{}"))'),
+    error => error instanceof QXWebBuildError && error.code === "QX_WEB_INTEGRATION_UNSUPPORTED"
+  );
+});
+
+test("QIR 1.3 browser builds preserve local UI output when no integration is present", () => {
+  const project = buildWebProject([
+    'UI.TEXT("local only")',
+    "DATA.CREATE(value, 7)"
+  ].join("\\n"));
+  assert.equal(project.metadata.qirVersion, "1.2");
+  assert.equal(project.metadata.networkAccess, false);
+});
+
