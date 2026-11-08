@@ -1,38 +1,44 @@
-# QX Core — Lexer and Parser (Phase 2)
+# QX Core — Lexer and Parser
 
-A dependency-free JavaScript ES module implementing the first executable slice of the QX V1 language core.
+This directory contains the first executable QX V1 language-core slice, implemented as dependency-free JavaScript ES modules.
 
 ## Requirements
 
 - Node.js 22 or later.
 
-## Run tests
+## Run the tests
 
-```sh
+~~~sh
 npm test
-```
+~~~
 
-## Use
+## API
 
-```js
-import { tokenize, parse } from "@ali-qx/core";
+~~~js
+import { tokenize, parse } from "./src/index.js";
 
 const tokens = tokenize('DATA.CREATE(name, "Ali")');
 const ast = parse('DATA.CREATE(name, "Ali")');
-```
+~~~
 
-## Implemented in this phase
+## Implemented
 
-- Tokenization of command names, domains, punctuation, numeric and string literals, lists, comments, operators, and line boundaries.
-- Arabic and English keyword aliases from the QX V1 specification.
-- NFC normalization of identifiers and rejection of mixed Arabic/Latin identifiers and default-ignorable characters.
-- Parsing of domain commands, function calls, expressions, list literals, `IF/ELSE/END`, `WHILE/END`, `FUNCTION/RETURN/END`.
-- Structured lexer/parser diagnostics with stable error codes and source locations.
+- Tokenization of domains, command names, punctuation, numeric/string literals, lists, comments, operators, and line boundaries.
+- English and Arabic aliases for V1 control keywords and Boolean/null literals.
+- NFC normalization, XID identifier properties, Arabic/Latin script separation, and rejection of default-ignorable characters.
+- Parsing of domain commands, function calls, expressions, list literals, IF/ELSE/END, WHILE/END, and FUNCTION/RETURN/END.
+- Top-level-only function declarations and RETURN statements restricted to function bodies.
+- AST nodes with source locations and stable lexer/parser error codes.
+- Automated tests for Arabic/English input, expressions, blocks, malformed syntax, comments, escapes, and CRLF locations.
 
-## Explicit boundaries
+## Not implemented in this phase
 
-This phase does not implement semantic analysis, symbol tables, type checking, QIR, VM, code generation, or execution. It does not claim that parsed programs are semantically valid.
+Semantic analysis, symbol tables, duplicate-name checks, type checking, command signature validation, QIR, VM, Web Backend, and execution are not implemented. A successful parse means only that the source matches the implemented grammar; it does not prove semantic correctness.
 
-The Unicode property escapes are supplied by the JavaScript runtime. The runtime version is exposed by `Lexer.unicodeVersion`; Node 22 currently reports Unicode 16.0, so exact Unicode 18.0 identifier conformance remains an open compatibility requirement and must be addressed with pinned Unicode 18.0 tables before claiming full V1 conformance.
+## Unicode compatibility note
 
-Diagnostics currently use English messages with stable codes. Arabic localization is a later diagnostics-layer task.
+Identifier properties currently come from the JavaScript runtime. Node.js 22.16.0 reports Unicode 16.0. The QX V1 specification targets Unicode 18.0.0, so exact Unicode 18.0 identifier conformance remains open until the implementation uses pinned Unicode 18.0 tables. The lexer exposes the runtime version as Lexer.unicodeVersion.
+
+## Diagnostics note
+
+Diagnostics currently provide stable codes and English messages with source positions. Arabic message localization and project-language selection are later diagnostics-layer work.
