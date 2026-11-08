@@ -29,12 +29,12 @@ test("multiline argument lists and empty lists are parsed", () => {
 
 test("CRLF and standalone carriage returns produce consistent line locations", () => {
   const crlf = tokenize("DATA.CREATE(a, 1)\r\nUI.SHOW(a)");
-  assert.equal(crlf.at(-2).line, 2);
-  assert.equal(crlf.at(-2).column, 1);
+  assert.equal(crlf.find(token => token.value === "UI").line, 2);
+  assert.equal(crlf.find(token => token.value === "UI").column, 1);
 
   const cr = tokenize("DATA.CREATE(a, 1)\rUI.SHOW(a)");
-  assert.equal(cr.at(-2).line, 2);
-  assert.equal(cr.at(-2).column, 1);
+  assert.equal(cr.find(token => token.value === "UI").line, 2);
+  assert.equal(cr.find(token => token.value === "UI").column, 1);
 });
 
 test("unsupported numeric notation and single-character equality are rejected", () => {
