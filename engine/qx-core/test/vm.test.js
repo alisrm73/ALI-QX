@@ -77,3 +77,25 @@ test("rejects malformed QIR before executing it", () => {
   module.initializer.blocks[0].instructions[0].opcode = "HOST_ACCESS";
   assert.throws(() => runQIR(module), error => error.name === "QIRValidationError");
 });
+
+test("implements integer remainder and rejects fractional operands", () => {
+  const integerModule = compile("DATA.CREATE(value, 5 + 2)");
+  const integerBinary = integerModule.initializer.blocks.flatMap(block => block.instructions).find(item => item.opcode === "BINARY");
+  integerBinary.operands.operator = "%";
+  assert.equal(runQIR(integerModule).globals.value, 1);
+
+  const fractionalModule = compile("DATA.CREATE(value, 5.5 + 2)");
+  const fractionalBinary = fractionalModule.initializer.blocks.flatMap(block => block.instructions).find(item => item.opcode === "BINARY");
+  fractionalBinary.operands.operator = "%";
+  assert.throws(() => runQIR(fractionalModule),
+    error => error instanceof QXVMError && error.code === "QX_VM_REMAINDER_INTEGER");
+});
+
+test("normalizes text to Unicode NFC before equality and ordering", () => {
+  const equal = compile('DATA.CREATE(result, "é" == "é")');
+  assert.equal(runQIR(equal).globals.result, true);
+  const ordered = compile('DATA.CREATE(result, "é" == "é")');
+  const binary = ordered.initializer.blocks.flatMap(block => block.instructions).find(item => item.opcode === "BINARY");
+  binary.operands.operator = ">";
+  assert.equal(runQIR(ordered).globals.result, false);
+});
