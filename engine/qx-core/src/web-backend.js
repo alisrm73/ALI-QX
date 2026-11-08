@@ -46,7 +46,8 @@ function browserRun(module, combiningClassEntries) {
   const globalsById=new Map(module.globals.map(x=>[x.id,x]));
   const globals=new Map(module.globals.map(x=>[x.id,UNINITIALIZED]));
   const functions=new Map([module.initializer,...module.functions].map(x=>[x.id,x]));
-  let instructionCount=0;\n  const outputs=[];
+  let instructionCount=0;
+  const outputs=[];
   function binary(op,a,b,inst,ctx) {
     const num=v=>{if(typeof v!=="number"||!Number.isFinite(v))fail("QX_VM_INVALID_NUMBER","Expected finite NUM",inst,ctx);return v;};
     const str=v=>{if(typeof v!=="string"||v.length>LIMITS.maxStringLength)fail("QX_VM_INVALID_TEXT","Expected bounded TXT",inst,ctx);return v;};
@@ -169,7 +170,7 @@ export function generateWebAssets(qir, options = {}) {
     "<title>"+escapeHTML(title)+"</title>","<link rel=\"stylesheet\" href=\"./styles.css\">",
     "<script defer src=\"./app.js\"></script>","</head><body><main class=\"qx-shell\">",
     "<header class=\"qx-header\"><p class=\"qx-eyebrow\">ALI-QX · WEB BACKEND</p><h1>"+escapeHTML(title)+"</h1>",
-    "<p>Generated from a validated QIR V1 module.</p><p id=\"qx-status\" class=\"qx-status\" role=\"status\" aria-live=\"polite\">Starting QX program…</p></header>",
+    "<p>Generated from a validated QIR module.</p><p id=\"qx-status\" class=\"qx-status\" role=\"status\" aria-live=\"polite\">Starting QX program…</p></header>",
     "<div id=\"qx-output\" class=\"qx-output\" aria-live=\"polite\"></div>",
     "<footer>QX V1 · Local execution · No network integrations</footer></main></body></html>"
   ].join("\n");
