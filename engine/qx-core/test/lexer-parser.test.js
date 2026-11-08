@@ -29,7 +29,7 @@ test("rejects mixed Arabic and Latin identifier scripts", () => {
 test("rejects unsupported escapes, invisible identifiers, and semicolon terminators", () => {
   assert.throws(() => tokenize('"bad\\q"'), error => error.code === "QX1005");
   assert.throws(() => tokenize("DATA.CREATE(x\u200e, 1)"), error => error.code === "QX1007");
-  assert.equal(tokenize('DATA.CREATE(text, "A\\u200eB")')[6].type, "STRING");
+  assert.equal(tokenize('DATA.CREATE(text, "A\u200eB")')[6].type, "STRING");
   assert.throws(() => tokenize("DATA.CREATE(x, 1);"), error => error.code === "QX1001");
 });
 
@@ -93,8 +93,41 @@ test("handles escaped strings and CRLF source locations", () => {
   assert.equal(tokens.at(-2).line, 2);
 });
 
-
 test("restricts function declarations to top level and RETURN to functions", () => {
   assert.throws(() => parse("RETURN 1"), error => error.code === "QX2012");
   assert.throws(() => parse("IF (TRUE)\nFUNCTION nested()\nEND\nEND"), error => error.code === "QX2011");
+});
+
+test("parses qualified command calls as expression arguments", () => {
+  const ast = parse("DATA.CREATE(item, DATA.GET(items, 0))");
+  const call = ast.body[0].args[1];
+  assert.equal(call.type, "CommandCallExpression");
+  assert.equal(call.domain, "DATA");
+  assert.equal(call.command, "GET");
+  assert.equal(call.args[0].name, "items");
+  assert.equal(call.args[1].value, 0);
+  assert.deepEqual(call.location, { line: 1, column: 19, offset: 18 });
+});
+
+test("parses Arabic qualified command calls and nested command calls", () => {
+  const ast = parse("البيانات.إنشاء(عنصر, البيانات.جلب(العناصر, البيانات.عدد(العناصر)))");
+  const outer = ast.body[0].args[1];
+  assert.equal(outer.type, "CommandCallExpression");
+  assert.equal(outer.domain, "البيانات");
+  assert.equal(outer.command, "جلب");
+  assert.equal(outer.args[1].type, "CommandCallExpression");
+  assert.equal(outer.args[1].command, "عدد");
+});
+
+test("parses qualified command calls inside lists and binary expressions", () => {
+  const ast = parse("DATA.CREATE(values, [DATA.GET(items, 0), DATA.GET(items, 1) + 2])");
+  const list = ast.body[0].args[1];
+  assert.equal(list.type, "ListLiteral");
+  assert.equal(list.elements[0].type, "CommandCallExpression");
+  assert.equal(list.elements[1].type, "BinaryExpression");
+  assert.equal(list.elements[1].left.type, "CommandCallExpression");
+});
+
+test("requires a call after a qualified command expression", () => {
+  assert.throws(() => parse("DATA.CREATE(value, DATA.GET)"), error => error.code === "QX2013");
 });
