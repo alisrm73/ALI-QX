@@ -58,6 +58,7 @@ export function runQIR(module, options = {}) {
   const globalsById = new Map(module.globals.map(item => [item.id, item]));
   const globals = new Map(module.globals.map(item => [item.id, UNINITIALIZED]));
   const state = { instructions: 0 };
+  const outputs = [];
 
   const runtimeError = (code, message, instruction, context) =>
     new QXVMError(code, message, instruction, context);
@@ -253,6 +254,17 @@ export function runQIR(module, options = {}) {
               if (!Number.isSafeInteger(index) || index < 0 || index >= list.length)
                 throw runtimeError("QX_VM_LIST_INDEX", "DATA.REMOVE index must be a valid zero-based integer within the list", instruction, context);
               values.set(instruction.result, list.filter((_, itemIndex) => itemIndex !== index).map(cloneValue));
+              break;
+            }
+            if (op.command === "UI.SHOW" && args.length === 1 && module.version === "1.2") {
+              outputs.push(Object.freeze({ component: "SHOW", value: cloneValue(readValue(frame, args[0], instruction)), source: instruction.source }));
+              break;
+            }
+            if (op.command === "UI.TEXT" && args.length === 1 && module.version === "1.2") {
+              const value = readValue(frame, args[0], instruction);
+              if (typeof value !== "string") throw runtimeError("QX_VM_INVALID_TEXT", "UI.TEXT requires TXT", instruction, context);
+              ensureString(value, instruction, frame);
+              outputs.push(Object.freeze({ component: "TEXT", value, source: instruction.source }));
               break;
             }
             throw runtimeError("QX_VM_COMMAND_NOT_ALLOWED", "Command is not available in this QIR version", instruction, context);
