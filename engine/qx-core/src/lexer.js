@@ -1,5 +1,5 @@
-const ID_START = /^\p{ID_Start}$/u;
-const ID_CONTINUE = /^\p{ID_Continue}$/u;
+const ID_START = /^\p{XID_Start}$/u;
+const ID_CONTINUE = /^\p{XID_Continue}$/u;
 const LETTER = /^\p{L}$/u;
 const LATIN = /^\p{Script=Latin}$/u;
 const ARABIC = /^\p{Script=Arabic}$/u;
