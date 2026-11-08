@@ -388,7 +388,7 @@ export function validateQIR(module) {
     const valueTypes = new Map(), valueLocations = new Map(), instructionIds = new Set(), variableTypes = new Map();
     valueTypesByFunction.set(fn.id, valueTypes);
     const definedVariables = new Set();
-    for (const global of module.globals ?? []) { variableTypes.set(global.id, global.type); definedVariables.add(global.id); } }
+    for (const global of module.globals ?? []) { variableTypes.set(global.id, global.type); definedVariables.add(global.id); }
     const predecessors = new Map(fn.blocks.map(block => [block.id, new Set()]));
     for (const block of fn.blocks) {
       if (!Array.isArray(block.instructions) || !block.instructions.length) {
