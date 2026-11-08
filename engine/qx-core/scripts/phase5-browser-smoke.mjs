@@ -26,7 +26,7 @@ try {
     name: node.querySelector("h2").textContent,
     value: node.querySelector("pre").textContent
   })));
-  assert.deepEqual(result, [{ name: "total", value: "18" }, { name: "label", value: '<img src=x onerror=alert(1)>' }]);
+  assert.deepEqual(result, [{ name: "total", value: "18" }, { name: "label", value: '\"<img src=x onerror=alert(1)>\"' }]);
   assert.equal(await page.locator("#qx-output img").count(), 0);
   console.log("Phase 5 Chromium smoke test passed: QIR executed and result rendered.");
 } finally {
