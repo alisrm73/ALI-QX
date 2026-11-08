@@ -73,10 +73,18 @@ test("records the approved V1 command contracts", () => {
     parameters: [{ name: "list", type: "LIST" }, { name: "index", type: "NUM", integer: true, minimum: 0 }],
     result: { kind: "value", type: "LIST" }
   });
+  assert.deepEqual(resolveCommand("UI", "SHOW").signature, {
+    parameters: [{ name: "value", types: ["NUM", "TXT", "BOOL", "LIST", "NULL"] }],
+    result: { kind: "effect", component: "SHOW" }
+  });
+  assert.deepEqual(resolveCommand("UI", "TEXT").signature, {
+    parameters: [{ name: "text", type: "TXT" }],
+    result: { kind: "effect", component: "TEXT" }
+  });
 });
 
 test("enables only commands with approved semantic contracts", () => {
-  const enabled = new Set(["DATA.COUNT", "DATA.ADD", "DATA.REMOVE", "PROCESS.ADD", "PROCESS.CALCULATE", "PROCESS.COMPARE"]);
+  const enabled = new Set(["DATA.COUNT", "DATA.ADD", "DATA.REMOVE", "UI.SHOW", "UI.TEXT", "PROCESS.ADD", "PROCESS.CALCULATE", "PROCESS.COMPARE"]);
   for (const command of COMMAND_REGISTRY) {
     assert.equal(command.enabled, enabled.has(command.id));
     assert.equal(isCommandEnabled(command.domain, command.name), enabled.has(command.id));
