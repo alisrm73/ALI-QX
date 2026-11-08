@@ -216,3 +216,27 @@ test("rejects procedure calls in value positions even through lists and forward 
   assert.ok(returnedProcedure.diagnostics.some(item => item.code === "QX3039"));
   assert.ok(returnedProcedure.diagnostics.some(item => item.code === "QX3038"));
 });
+
+
+test("validates DATA.ADD and DATA.REMOVE expression contracts", () => {
+  const valid = check([
+    "DATA.CREATE(items, [1, 2])",
+    "DATA.CREATE(added, DATA.ADD(items, NULL))",
+    "DATA.CREATE(removed, DATA.REMOVE(added, 0))"
+  ].join("\n"));
+  assert.equal(valid.valid, true, JSON.stringify(valid.diagnostics));
+  assert.deepEqual(valid.symbols.map(item => item.type), ["LIST", "LIST", "LIST"]);
+
+  const badList = check("DATA.CREATE(items, 1)\nDATA.CREATE(result, DATA.ADD(items, 2))");
+  assert.ok(badList.diagnostics.some(item => item.code === "QX3042"));
+  const badIndex = check("DATA.CREATE(items, [1])\nDATA.CREATE(result, DATA.REMOVE(items, TRUE))");
+  assert.ok(badIndex.diagnostics.some(item => item.code === "QX3043"));
+  const wrongArity = check("DATA.CREATE(items, [])\nDATA.CREATE(result, DATA.ADD(items))");
+  assert.ok(wrongArity.diagnostics.some(item => item.code === "QX3041"));
+});
+
+test("requires DATA.SET_GLOBAL to be inside a function", () => {
+  const result = check("DATA.CREATE(value, 1)\nDATA.SET_GLOBAL(value, 2)");
+  assert.equal(result.valid, false);
+  assert.ok(result.diagnostics.some(item => item.code === "QX3021"));
+});
