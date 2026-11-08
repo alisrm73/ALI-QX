@@ -4,3 +4,5 @@ export { COMMAND_DOMAINS, COMMAND_REGISTRY, isCommandEnabled, resolveCommand } f
 export { analyze } from "./semantic-analyzer.js";
 export { lowerToQIR, validateQIR, serializeQIR, parseQIR } from "./qir.js";
 export { runQIR, QXVMError } from "./vm.js";
+
+export { buildWebProject, generateWebAssets, QXWebBuildError } from "./web-backend.js";
