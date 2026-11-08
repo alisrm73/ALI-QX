@@ -213,7 +213,7 @@ test("QIR 1.0 continues to reject DATA.ADD and DATA.REMOVE command calls", () =>
 });
 
 test("lowers PROCESS.ADD into a NUM load-add-store sequence in QIR 1.0", () => {
-  const qir = compile("DATA.CREATE(count, 1)\\nPROCESS.ADD(count, 2)");
+  const qir = compile("DATA.CREATE(count, 1)\nPROCESS.ADD(count, 2)");
   assert.equal(qir.version, "1.0");
   const instructions = qir.initializer.blocks.flatMap(block => block.instructions);
   const loadIndex = instructions.findIndex(inst => inst.opcode === "LOAD");
