@@ -40,8 +40,9 @@ function inferExpression(node, variables, functions) {
     }
     case "CommandCallExpression": {
       const cmd = resolveCommand(node.domain, node.command);
-      if (cmd?.id !== "DATA.COUNT") fail("QIR_E_COMMAND_NOT_ALLOWED", "Only DATA.COUNT returns a QIR expression value", node);
-      return "NUM";
+      if (cmd?.id === "DATA.COUNT") return "NUM";
+      if (cmd?.id === "DATA.ADD" || cmd?.id === "DATA.REMOVE") return "LIST";
+      fail("QIR_E_COMMAND_NOT_ALLOWED", "Command has no approved QIR expression contract", node);
     }
     default: fail("QIR_E_UNSUPPORTED_AST", "Unsupported expression " + node.type, node);
   }
@@ -147,10 +148,15 @@ class FunctionBuilder {
       }
       case "CommandCallExpression": {
         const cmd = resolveCommand(node.domain, node.command);
-        if (cmd?.id !== "DATA.COUNT" || node.args.length !== 1) fail("QIR_E_COMMAND_NOT_ALLOWED", "Only DATA.COUNT with one argument is allowed as a value", node);
-        const arg = this.lowerExpression(node.args[0]);
-        const result = this.value(); this.emit("COMMAND_CALL", { command: "DATA.COUNT", arguments: [arg.value] }, "NUM", result, node);
-        return { value: result, type: "NUM" };
+        if (!cmd || !["DATA.COUNT", "DATA.ADD", "DATA.REMOVE"].includes(cmd.id)) fail("QIR_E_COMMAND_NOT_ALLOWED", "Command has no approved QIR expression contract", node);
+        const expected = cmd.id === "DATA.COUNT" ? 1 : 2;
+        if (node.args.length !== expected) fail("QIR_E_BAD_COMMAND_ARGUMENTS", cmd.id + " expects " + expected + " arguments", node);
+        const args = node.args.map(arg => this.lowerExpression(arg));
+        if (args[0].type !== "LIST") fail("QIR_E_COMMAND_ARGUMENT", cmd.id + " first argument must be LIST", node.args[0]);
+        if (cmd.id === "DATA.REMOVE" && args[1].type !== "NUM") fail("QIR_E_COMMAND_ARGUMENT", "DATA.REMOVE index must be NUM", node.args[1]);
+        const resultType = cmd.id === "DATA.COUNT" ? "NUM" : "LIST";
+        const result = this.value(); this.emit("COMMAND_CALL", { command: cmd.id, arguments: args.map(arg => arg.value) }, resultType, result, node);
+        return { value: result, type: resultType };
       }
       default: fail("QIR_E_UNSUPPORTED_AST", "Unsupported expression " + node.type, node);
     }
@@ -209,7 +215,7 @@ class FunctionBuilder {
         if (args.length !== 2 || args[0].type !== "Identifier") fail("QIR_E_BAD_COMMAND_ARGUMENTS", command.id + " expects target and value", node);
         const variable = this.variables.get(args[0].name) ?? this.owner.globalVariable(args[0].name, this);
         if (!variable) fail("QIR_E_UNKNOWN_VARIABLE", "Unknown target " + args[0].name, args[0]);
-        if (command.id === "DATA.SET_GLOBAL" && variable.storage !== "global") fail("QIR_E_GLOBAL_REQUIRED", "DATA.SET_GLOBAL requires a global", args[0]);
+        if (command.id === "DATA.SET_GLOBAL" && (variable.storage !== "global" || this.descriptor.kind !== "function")) fail("QIR_E_GLOBAL_REQUIRED", "DATA.SET_GLOBAL requires a module global and must be used inside a function", args[0]);
         if (command.id === "DATA.SET" && variable.storage === "global" && this.descriptor.kind !== "module_initializer")
           fail("QIR_E_GLOBAL_WRITE", "Use DATA.SET_GLOBAL inside functions", node);
         const value = this.lowerExpression(args[1]);
@@ -342,8 +348,9 @@ class ModuleLowerer {
       const builder = new FunctionBuilder(this, descriptor);
       return builder.finish(descriptor.node.body);
     });
+    const usesListOperations = [initializer, ...functions].some(fn => fn.blocks.some(block => block.instructions.some(inst => ["DATA.ADD", "DATA.REMOVE"].includes(inst.operands?.command))));
     return {
-      format: "QIR", version: "1.0", module_id: "module_0", unicode_version: "18.0.0",
+      format: "QIR", version: usesListOperations ? "1.1" : "1.0", module_id: "module_0", unicode_version: "18.0.0",
       globals: this.globals, initializer, functions
     };
   }
@@ -365,7 +372,7 @@ export function validateQIR(module) {
   const diagnostics = [];
   const report = (code, message, location = null, extra = {}) =>
     diagnostics.push({ code, severity: "ERROR", message, location, ...extra });
-  if (!module || module.format !== "QIR" || module.version !== "1.0" || module.unicode_version !== "18.0.0") {
+  if (!module || module.format !== "QIR" || !["1.0", "1.1"].includes(module.version) || module.unicode_version !== "18.0.0") {
     report("QIR_E_SCHEMA", "Invalid QIR module header"); return diagnostics;
   }
   const functions = [module.initializer, ...(module.functions ?? [])];
@@ -563,9 +570,15 @@ export function validateQIR(module) {
           const expected = comparisons.includes(op.operator) || ["AND", "OR"].includes(op.operator) ? "BOOL" : op.operator === "+" && left === "TXT" ? "TXT" : "NUM";
           if (!valid || inst.type !== expected) report("QIR_E_BINARY_TYPE", "Invalid binary operand or result types", inst.source);
         }
-        if (inst.opcode === "COMMAND_CALL" && op.command === "DATA.COUNT") {
+        if (inst.opcode === "COMMAND_CALL") {
           const args = op.arguments ?? [];
-          if (args.length !== 1 || valueTypes.get(args[0]) !== "LIST" || (inst.result && inst.type !== "NUM")) report("QIR_E_COMMAND_SIGNATURE", "DATA.COUNT requires one LIST and returns NUM", inst.source);
+          if (op.command === "DATA.COUNT") {
+            if (args.length !== 1 || valueTypes.get(args[0]) !== "LIST" || (inst.result && inst.type !== "NUM") || (!inst.result && inst.type)) report("QIR_E_COMMAND_SIGNATURE", "DATA.COUNT requires one LIST and returns NUM", inst.source);
+          } else if (op.command === "DATA.ADD") {
+            if (module.version !== "1.1" || args.length !== 2 || valueTypes.get(args[0]) !== "LIST" || !VALUE_TYPES.has(valueTypes.get(args[1])) || !inst.result || inst.type !== "LIST") report("QIR_E_COMMAND_SIGNATURE", "DATA.ADD requires LIST and a value, and returns LIST in QIR 1.1", inst.source);
+          } else if (op.command === "DATA.REMOVE") {
+            if (module.version !== "1.1" || args.length !== 2 || valueTypes.get(args[0]) !== "LIST" || valueTypes.get(args[1]) !== "NUM" || !inst.result || inst.type !== "LIST") report("QIR_E_COMMAND_SIGNATURE", "DATA.REMOVE requires LIST and NUM index, and returns LIST in QIR 1.1", inst.source);
+          }
         }
         if (inst.result) seen.add(inst.result);
       }
@@ -642,8 +655,8 @@ export function validateQIR(module) {
             report("QIR_E_CALL_RESULT", "Value-returning CALL must capture its result", inst.source);
         }
       }
-      if (inst.opcode === "COMMAND_CALL" && inst.operands?.command !== "DATA.COUNT")
-        report("QIR_E_COMMAND_NOT_ALLOWED", "Only DATA.COUNT may be emitted as COMMAND_CALL", inst.source);
+      if (inst.opcode === "COMMAND_CALL" && !["DATA.COUNT", ...(module.version === "1.1" ? ["DATA.ADD", "DATA.REMOVE"] : [])].includes(inst.operands?.command))
+        report("QIR_E_COMMAND_NOT_ALLOWED", "Command is not allowed by this QIR version", inst.source);
     }
   }
   return diagnostics;
