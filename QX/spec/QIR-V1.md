@@ -197,6 +197,7 @@ BRANCH يتطلب BOOL ووجهتين في الدالة نفسها. JUMP وجه�
 | BinaryExpression | BINARY أو CFG لـ AND/OR |
 | CallExpression | CALL |
 | CommandCallExpression | COMMAND_CALL لـ DATA.COUNT فقط |
+| CommandStatement | توجيه حسب domain/command إلى عقد التخزين أو الأمر المعتمد أدناه |
 | DATA.CREATE | DECLARE ثم STORE المناسب |
 | DATA.SET | STORE_LOCAL أو STORE_GLOBAL وفق النطاق |
 | DATA.SET_GLOBAL | STORE_GLOBAL لمتغير وحدة موجود |
