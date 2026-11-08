@@ -1,6 +1,7 @@
 import { parse } from "./parser.js";
 import { analyze } from "./semantic-analyzer.js";
 import { lowerToQIR, serializeQIR, validateQIR } from "./qir.js";
+import { COMBINING_CLASS, UNICODE_VERSION } from "./unicode-data.js";
 
 export class QXWebBuildError extends Error {
   constructor(code, message, diagnostics = []) {
@@ -11,11 +12,29 @@ const LIMITS = Object.freeze({ maxInstructions: 100000, maxCallDepth: 128, maxLi
 function escapeHTML(value) {
   return String(value).replace(/[&<>"']/g, ch => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" })[ch]);
 }
-function browserRun(module) {
+function browserRun(module, combiningClassEntries) {
   const LIMITS = Object.freeze({ maxInstructions: 100000, maxCallDepth: 128, maxListLength: 10000, maxStringLength: 1000000 });
   const UNINITIALIZED = Symbol("QX_UNINITIALIZED");
   const clone = value => Array.isArray(value) ? value.map(clone) : value;
-  const normalize = value => value.normalize("NFC");
+  const combiningClasses = new Map(combiningClassEntries);
+  const normalize = value => {
+    if (typeof value !== "string") throw new TypeError("NFC input must be a string");
+    const points = Array.from(value.normalize("NFD"), c => c.codePointAt(0));
+    for (let i = 1; i < points.length; i++) {
+      const current = combiningClasses.get(points[i]) ?? 0;
+      if (current === 0) continue;
+      let j = i;
+      while (j > 0) {
+        const previous = combiningClasses.get(points[j - 1]) ?? 0;
+        if (previous === 0 || previous <= current) break;
+        [points[j - 1], points[j]] = [points[j], points[j - 1]];
+        j--;
+      }
+    }
+    let ordered = "";
+    for (let i = 0; i < points.length; i += 8192) ordered += String.fromCodePoint(...points.slice(i, i + 8192));
+    return ordered.normalize("NFC");
+  };
   function compareText(a,b) {
     const x=Array.from(normalize(a),c=>c.codePointAt(0)), y=Array.from(normalize(b),c=>c.codePointAt(0));
     for(let i=0;i<Math.min(x.length,y.length);i++) if(x[i]!==y[i]) return x[i]<y[i]?-1:1;
@@ -97,11 +116,11 @@ function browserRun(module) {
   for(const item of module.globals){const v=globals.get(item.id);if(v!==UNINITIALIZED)result[item.name]=clone(v);}
   return {globals:result,instructionCount};
 }
-function browserEntry(module, runProgram) {
+function browserEntry(module, runProgram, combiningClassEntries) {
 const root=document.getElementById("qx-output");
 const status=document.getElementById("qx-status");
 try {
-  const result=runProgram(module);
+  const result=runProgram(module, combiningClassEntries);
   status.textContent="Execution completed";
   const entries=Object.entries(result.globals);
   if(!entries.length){const p=document.createElement("p");p.textContent="Program completed. No global values were produced.";root.append(p);}
@@ -150,7 +169,7 @@ export function generateWebAssets(qir, options = {}) {
     "@media (max-width: 520px) { .qx-shell { margin: 18px auto; } .qx-header, .qx-value { padding: 18px; } }"
   ].join("\n");
   return Object.freeze({format:"QX_WEB_PROJECT_V1",files:Object.freeze({"index.html":html,"styles.css":css,"app.js":appJS}),
-    metadata:Object.freeze({qirVersion:qir.version,unicodeVersion:qir.unicode_version,runtime:"browser-qir-v1",networkAccess:false})});
+    metadata:Object.freeze({qirVersion:qir.version,unicodeVersion:UNICODE_VERSION,runtime:"browser-qir-v1",networkAccess:false})});
 }
 export function buildWebProject(source, options = {}) {
   if(typeof source!=="string")throw new TypeError("QX source must be a string");
