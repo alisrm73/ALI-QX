@@ -57,7 +57,7 @@ test("enforces recursive call depth", () => {
     error => error instanceof QXVMError && error.code === "QX_VM_CALL_DEPTH_LIMIT");
 });
 
-test("reports division by zero and invalid remainder", () => {
+test("reports division by zero", () => {
   assert.throws(() => runQIR(compile("DATA.CREATE(value, 4 / 0)")),
     error => error instanceof QXVMError && error.code === "QX_VM_DIVIDE_BY_ZERO");
 });
