@@ -67,3 +67,10 @@ test("nested blocks match their own END and reject a second ELSE", () => {
     QXParseError
   );
 });
+
+test("English keyword case folding is ASCII-only", () => {
+  assert.equal(tokenize("if")[0].type, "IF");
+  assert.equal(tokenize("If")[0].type, "IF");
+  assert.equal(tokenize("ıf")[0].type, "IDENTIFIER");
+  assert.equal(tokenize("إذا")[0].type, "IF");
+});
