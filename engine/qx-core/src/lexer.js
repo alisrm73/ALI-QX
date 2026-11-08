@@ -76,7 +76,8 @@ export class Lexer {
       }
     }
     const normalized = raw.normalize("NFC");
-    const keyword = KEYWORDS.get(normalized) ?? KEYWORDS.get(normalized.toUpperCase());
+    const asciiFolded = normalized.replace(/[a-z]/g, ch => ch.toUpperCase());
+    const keyword = KEYWORDS.get(normalized) ?? KEYWORDS.get(asciiFolded);
     this.add(keyword ?? "IDENTIFIER", keyword ?? normalized, start, raw);
   }
   tokenize() {
