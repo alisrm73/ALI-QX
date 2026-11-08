@@ -5,7 +5,8 @@ import { buildWebProject } from "../src/web-backend.js";
 
 const project = buildWebProject([
   "DATA.CREATE(total, 4 + 5)",
-  "PROCESS.CALCULATE(total, total * 2)"
+  "PROCESS.CALCULATE(total, total * 2)",
+  "DATA.CREATE(label, \"<img src=x onerror=alert(1)>\")"
 ].join("\n"), { title: "QX Browser Smoke Test" });
 const types = { "index.html": "text/html; charset=utf-8", "app.js": "text/javascript; charset=utf-8", "styles.css": "text/css; charset=utf-8" };
 const server = http.createServer((request, response) => {
@@ -25,7 +26,8 @@ try {
     name: node.querySelector("h2").textContent,
     value: node.querySelector("pre").textContent
   })));
-  assert.deepEqual(result, [{ name: "total", value: "18" }]);
+  assert.deepEqual(result, [{ name: "total", value: "18" }, { name: "label", value: '<img src=x onerror=alert(1)>' }]);
+  assert.equal(await page.locator("#qx-output img").count(), 0);
   console.log("Phase 5 Chromium smoke test passed: QIR executed and result rendered.");
 } finally {
   if (browser) await browser.close();
