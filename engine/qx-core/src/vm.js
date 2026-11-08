@@ -195,7 +195,7 @@ export function runQIR(module, options = {}) {
               if (!globalsById.has(op.variable))
                 throw runtimeError("QX_VM_UNKNOWN_GLOBAL", "Unknown global declaration: " + op.variable, instruction, context);
               globals.set(op.variable, UNINITIALIZED);
-            } else {
+            } else if (op.parameter !== true) {
               variables.set(op.variable, UNINITIALIZED);
             }
             break;
