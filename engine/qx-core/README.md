@@ -1,4 +1,4 @@
-# QX Core — Lexer and Parser
+# QX Core — Lexer, Parser, Semantic Analysis, and QIR
 
 This directory contains the first executable QX V1 language-core slice, implemented as dependency-free JavaScript ES modules.
 
@@ -15,10 +15,18 @@ npm test
 ## API
 
 ```js
-import { tokenize, parse } from "./src/index.js";
+import { tokenize, parse, analyze, lowerToQIR, validateQIR, serializeQIR, parseQIR } from "./src/index.js";
 
-const tokens = tokenize('DATA.CREATE(name, "Ali")');
-const ast = parse('DATA.CREATE(name, "Ali")');
+const source = 'DATA.CREATE(name, "Ali")';
+const tokens = tokenize(source);
+const ast = parse(source);
+const semantic = analyze(ast);
+if (semantic.valid) {
+  const qir = lowerToQIR(ast, semantic);
+  const diagnostics = validateQIR(qir);
+  const serialized = serializeQIR(qir);
+  const restored = parseQIR(serialized);
+}
 ```
 
 ## Implemented
@@ -32,6 +40,10 @@ const ast = parse('DATA.CREATE(name, "Ali")');
 - Top-level-only function declarations and RETURN statements restricted to function bodies.
 - AST nodes with source locations and stable lexer/parser error codes.
 - Automated tests for Arabic/English input, Unicode 18.0.0 identifiers, NFC, nested qualified calls, expressions, blocks, malformed syntax, comments, escapes, and CRLF locations.
+- AST-to-QIR lowering for constants, variables, lists, unary/binary expressions, function calls, approved command calls, IF/ELSE, WHILE, and RETURN.
+- Explicit control-flow blocks and terminators; AND/OR lower through conditional branches to preserve short-circuit evaluation.
+- QIR validation for module/function/block structure, opcode contracts, value types, variable storage, control-flow targets, dominance, source locations, control-flow-aware definite-assignment dataflow, global reads at initializer call sites, typed LOAD/STORE/RETURN/CALL contracts, and same-block value-use ordering.
+- Canonical JSON serialization and validated QIR parsing; QIR remains pinned to Unicode 18.0.0.
 
 ## Unicode 18.0.0 data provenance and regeneration
 
@@ -67,9 +79,13 @@ Implemented:
 
 A procedure without RETURN may be called as a standalone statement, but cannot supply a value to an expression. A successful parse alone does not prove semantic correctness.
 
-## Not implemented
+## QIR — phase 3
 
-QIR, QX Virtual Machine, Web Backend, and runtime execution are not implemented. Registry enablement for the three approved commands records semantic-contract support; it does not claim that a VM or runtime executor exists.
+The QIR V1 normative specification is maintained at `QX/spec/QIR-V1.md`.
+
+`lowerToQIR(program, semanticAnalysis)` converts a semantically valid Program AST to QIR V1. `validateQIR(module)` returns structured diagnostics; `serializeQIR(module)` emits canonical JSON; `parseQIR(json)` parses and validates serialized QIR. The module initializer is `fn_0`; source functions receive stable `fn_1` onward identifiers in source order. The QIR module carries the Unicode 18.0.0 version marker and source start locations.
+
+The phase-3 implementation does not execute QIR. The VM, Web Backend, and runtime execution remain later phases. Registry enablement for the three approved commands records semantic-contract support; it does not claim runtime execution.
 
 ## Diagnostics note
 
@@ -95,4 +111,4 @@ Use `resolveCommand(domain, command)` to resolve an English or Arabic alias to i
 
 ## Verification
 
-The current core suite contains **65 tests**, all passing on the verified Node.js runtime. The official Unicode 18.0.0 NFC conformance file has **100,855 passing checks and 0 failures**. Execution-time integer validation for remainder operations remains a runtime concern, not a semantic-analysis guarantee.
+The current core suite contains **76 tests**, all passing on the verified Node.js 22.16.0 runtime, including the QIR lowering, serialization, CFG, and validator regression cases. The official Unicode 18.0.0 NFC conformance file has **100,855 passing checks and 0 failures**. Execution-time integer validation for remainder operations remains a runtime concern, not a semantic-analysis guarantee.
