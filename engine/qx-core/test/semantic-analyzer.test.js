@@ -274,3 +274,18 @@ test("PROCESS.ADD does not bypass the explicit global-write rule inside function
   assert.equal(result.valid, false);
   assert.ok(result.diagnostics.some(item => item.code === "QX3020"));
 });
+
+test("accepts INTEGRATION.REQUEST as a TXT-valued expression", () => {
+  const result = check('DATA.CREATE(response, INTEGRATION.REQUEST("demo", "lookup", "{\\\"id\\\":1}"))');
+  assert.equal(result.valid, true, JSON.stringify(result.diagnostics));
+  assert.equal(result.symbols.find(item => item.name === "response").type, "TXT");
+});
+
+test("rejects malformed INTEGRATION.REQUEST arguments and statement use", () => {
+  const wrongArity = check('DATA.CREATE(response, INTEGRATION.REQUEST("demo", "lookup"))');
+  assert.ok(wrongArity.diagnostics.some(item => item.code === "QX3050"));
+  const wrongType = check('DATA.CREATE(response, INTEGRATION.REQUEST("demo", 7, "{}"))');
+  assert.ok(wrongType.diagnostics.some(item => item.code === "QX3051"));
+  const statement = check('INTEGRATION.REQUEST("demo", "lookup", "{}")');
+  assert.ok(statement.diagnostics.some(item => item.code === "QX3052"));
+});
