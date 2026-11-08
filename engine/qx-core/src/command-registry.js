@@ -41,8 +41,32 @@ export const COMMAND_REGISTRY = Object.freeze(definitions.map(([domain, name, ar
       Object.freeze({ domain, command: name }),
       Object.freeze({ domain: COMMAND_DOMAINS.find(item => item.id === domain).aliases[1], command: arabicName })
     ]),
-    signature: null,
-    signatureStatus: "pending",
+    signature: domain === "DATA" && name === "COUNT"
+      ? Object.freeze({
+          parameters: Object.freeze([{ name: "list", type: "LIST" }]),
+          result: Object.freeze({ kind: "value", type: "NUM" })
+        })
+      : domain === "PROCESS" && name === "CALCULATE"
+        ? Object.freeze({
+            parameters: Object.freeze([
+              { name: "target", type: "Identifier", variableType: "NUM", mustBeDeclared: true },
+              { name: "expression", type: "Expression", resultType: "NUM" }
+            ]),
+            result: Object.freeze({ kind: "stored", target: "target", type: "NUM" })
+          })
+        : domain === "PROCESS" && name === "COMPARE"
+          ? Object.freeze({
+              parameters: Object.freeze([
+                { name: "target", type: "Identifier", variableType: "BOOL", mustBeDeclared: true },
+                { name: "expression", type: "Expression", resultType: "BOOL" }
+              ]),
+              result: Object.freeze({ kind: "stored", target: "target", type: "BOOL" })
+            })
+          : null,
+    signatureStatus: (domain === "DATA" && name === "COUNT") ||
+      (domain === "PROCESS" && (name === "CALCULATE" || name === "COMPARE"))
+      ? "specified"
+      : "pending",
     enabled: false
   })
 ));
