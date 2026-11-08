@@ -184,3 +184,30 @@ test("validator enforces LOAD, RETURN, and CALL type contracts", () => {
   call.operands.arguments = ["v_extra_call"];
   assert.ok(validateQIR(callQir).some(item => item.code === "QIR_E_CALL_TYPE"));
 });
+
+
+test("lowers immutable list operations into QIR 1.1 and round-trips", () => {
+  const qir = compile([
+    "DATA.CREATE(items, [1, [2], 3])",
+    "DATA.CREATE(added, DATA.ADD(items, 4))",
+    "DATA.CREATE(removed, DATA.REMOVE(added, 1))"
+  ].join("\n"));
+  assert.equal(qir.version, "1.1");
+  const calls = [qir.initializer, ...qir.functions].flatMap(fn => fn.blocks.flatMap(block => block.instructions))
+    .filter(inst => inst.opcode === "COMMAND_CALL");
+  assert.deepEqual(calls.map(inst => inst.operands.command), ["DATA.ADD", "DATA.REMOVE"]);
+  assert.ok(calls.every(inst => inst.type === "LIST" && inst.result));
+  assert.deepEqual(validateQIR(parseQIR(serializeQIR(qir))), []);
+});
+
+test("QIR 1.0 continues to reject DATA.ADD and DATA.REMOVE command calls", () => {
+  const qir = compile("DATA.CREATE(items, [1])");
+  assert.equal(qir.version, "1.0");
+  const bad = JSON.parse(JSON.stringify(qir));
+  bad.initializer.blocks[0].instructions.splice(-1, 0, {
+    id: "inst_bad", opcode: "COMMAND_CALL", result: "v_bad", type: "LIST",
+    operands: { command: "DATA.ADD", arguments: ["v_missing", "v_missing"] },
+    source: { line: 1, column: 1, offset: 0 }
+  });
+  assert.ok(validateQIR(bad).some(item => item.code === "QIR_E_COMMAND_SIGNATURE" || item.code === "QIR_E_COMMAND_NOT_ALLOWED"));
+});
