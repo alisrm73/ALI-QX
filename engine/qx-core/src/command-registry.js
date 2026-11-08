@@ -50,7 +50,15 @@ export const COMMAND_REGISTRY = Object.freeze(definitions.map(([domain, name, ar
           parameters: Object.freeze([{ name: "list", type: "LIST" }]),
           result: Object.freeze({ kind: "value", type: "NUM" })
         })
-      : domain === "PROCESS" && name === "CALCULATE"
+      : domain === "PROCESS" && name === "ADD"
+        ? Object.freeze({
+            parameters: Object.freeze([
+              { name: "target", type: "Identifier", variableType: "NUM", mustBeDeclared: true },
+              { name: "amount", type: "Expression", resultType: "NUM" }
+            ]),
+            result: Object.freeze({ kind: "stored", target: "target", type: "NUM" })
+          })
+        : domain === "PROCESS" && name === "CALCULATE"
         ? Object.freeze({
             parameters: Object.freeze([
               { name: "target", type: "Identifier", variableType: "NUM", mustBeDeclared: true },
@@ -68,7 +76,7 @@ export const COMMAND_REGISTRY = Object.freeze(definitions.map(([domain, name, ar
             })
           : null,
     signatureStatus: (domain === "DATA" && ["ADD", "REMOVE", "COUNT"].includes(name)) ||
-      (domain === "PROCESS" && (name === "CALCULATE" || name === "COMPARE"))
+      (domain === "PROCESS" && (name === "ADD" || name === "CALCULATE" || name === "COMPARE"))
       ? "specified"
       : "pending",
     enabled: (domain === "DATA" && ["ADD", "REMOVE", "COUNT"].includes(name)) ||
