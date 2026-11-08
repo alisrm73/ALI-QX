@@ -108,7 +108,7 @@ test("executes function-local declarations and DATA.SET", () => {
     "RETURN localValue",
     "END",
     "DATA.CREATE(result, increment(2))"
-  ].join("\\n"));
+  ].join("\n"));
   assert.equal(runQIR(module).globals.result, 4);
 });
 
@@ -116,7 +116,7 @@ test("executes PROCESS.COMPARE into an existing BOOL target", () => {
   const module = compile([
     "DATA.CREATE(isGreater, FALSE)",
     "PROCESS.COMPARE(isGreater, 9 > 4)"
-  ].join("\\n"));
+  ].join("\n"));
   assert.equal(runQIR(module).globals.isGreater, true);
 });
 
