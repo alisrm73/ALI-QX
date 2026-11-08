@@ -26,6 +26,11 @@ test("rejects mixed Arabic and Latin identifier scripts", () => {
   assert.throws(() => tokenize("abمرحبا"), error => error instanceof QXLexError && error.code === "QX1009");
 });
 
+test("rejects non-letter Unicode XID_Start characters", () => {
+  assert.throws(() => tokenize("℘name"), error => error instanceof QXLexError && error.code === "QX1008");
+  assert.throws(() => tokenize("ᢅname"), error => error instanceof QXLexError && error.code === "QX1008");
+});
+
 test("rejects unsupported escapes, invisible identifiers, and semicolon terminators", () => {
   assert.throws(() => tokenize('"bad\\q"'), error => error.code === "QX1005");
   assert.throws(() => tokenize("DATA.CREATE(x\u200e, 1)"), error => error.code === "QX1007");
