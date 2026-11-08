@@ -75,7 +75,7 @@ Implemented:
 - Function parameter and return-type inference from body constraints and all call sites, including uncalled functions, forward calls, nested calls, and recursion.
 - Validation of every RETURN path, incompatible return types, fallthrough, unresolved parameter types, and procedure/value-use boundaries.
 - Rejects commands whose semantic contracts are still pending instead of silently accepting them as statements.
-- Semantic contracts for `DATA.COUNT`, `DATA.ADD`, `DATA.REMOVE`, `PROCESS.ADD`, `PROCESS.CALCULATE`, and `PROCESS.COMPARE`. `DATA.ADD` and `DATA.REMOVE` are expression-only immutable list operations introduced by the QIR 1.1 extension. `PROCESS.ADD` increments an existing NUM target using QIR 1.0 load-add-store lowering; `DATA.GET` remains disabled.
+- Semantic contracts for `DATA.COUNT`, `DATA.ADD`, `DATA.REMOVE`, `UI.SHOW`, `UI.TEXT`, `PROCESS.ADD`, `PROCESS.CALCULATE`, and `PROCESS.COMPARE`. `DATA.ADD` and `DATA.REMOVE` are expression-only immutable list operations introduced by the QIR 1.1 extension. `PROCESS.ADD` increments an existing NUM target using QIR 1.0 load-add-store lowering; `UI.SHOW` and `UI.TEXT` are statement-only output effects in the QIR 1.2 extension; `DATA.GET` remains disabled.
 
 A procedure without RETURN may be called as a standalone statement, but cannot supply a value to an expression. A successful parse alone does not prove semantic correctness.
 
@@ -85,11 +85,11 @@ The QIR V1 normative specification is maintained at `QX/spec/QIR-V1.md`.
 
 `lowerToQIR(program, semanticAnalysis)` converts a semantically valid Program AST to QIR V1. `validateQIR(module)` returns structured diagnostics; `serializeQIR(module)` emits canonical JSON; `parseQIR(json)` parses and validates serialized QIR. The module initializer is `fn_0`; source functions receive stable `fn_1` onward identifiers in source order. The QIR module carries the Unicode 18.0.0 version marker and source start locations.
 
-The phase-3 QIR 1.0 implementation is consumed by the phase-4 VM described below. QIR 1.0 remains unchanged; modules using `DATA.ADD` or `DATA.REMOVE` are emitted as QIR 1.1 under `QX/spec/QIR-DATA-LIST-EXTENSION-1.1.md`.
+The phase-3 QIR 1.0 implementation is consumed by the phase-4 VM described below. QIR 1.0 remains unchanged; modules using `DATA.ADD` or `DATA.REMOVE` are emitted as QIR 1.1 under `QX/spec/QIR-DATA-LIST-EXTENSION-1.1.md`; modules using `UI.SHOW` or `UI.TEXT` use QIR 1.2 under `QX/spec/QIR-UI-OUTPUT-EXTENSION-1.2.md`.
 
 ## QX Virtual Machine — phase 4 (complete)
 
-The phase-4 QIR V1 interpreter is exported as `runQIR`:
+The QIR interpreter is exported as `runQIR`; QIR 1.2 UI effects are collected in the returned `outputs` array:
 
 ```js
 import { parse, analyze, lowerToQIR, runQIR } from "./src/index.js";
@@ -101,7 +101,7 @@ const qir = lowerToQIR(ast, semantic);
 const result = runQIR(qir);
 ```
 
-The VM executes the module initializer, local/global storage, constants, unary/binary operations, lists, function calls, branches, jumps, returns, and `DATA.COUNT`, `DATA.ADD`, and `DATA.REMOVE`. ADD/REMOVE return deep-copied lists and never mutate their inputs; REMOVE validates a zero-based safe-integer index. Runtime limits cover instruction count, call depth, list length, and string length. The VM has no host I/O, filesystem, network, or dynamic code execution interface.
+The VM executes the module initializer, local/global storage, constants, unary/binary operations, lists, function calls, branches, jumps, returns, `DATA.COUNT`, `DATA.ADD`, `DATA.REMOVE`, `UI.SHOW`, and `UI.TEXT`. ADD/REMOVE return deep-copied lists and never mutate their inputs; REMOVE validates a zero-based safe-integer index. Runtime limits cover instruction count, call depth, list length, and string length. The VM has no host I/O, filesystem, network, or dynamic code execution interface.
 
 LIST equality remains deliberately rejected because QIR V1 does not define its equality semantics. Phase 4 was merged into `main`; its original validation suite contained 90 passing tests.
 
@@ -122,14 +122,14 @@ This parser capability is syntax/AST only. Phase 2 validates the three approved 
 
 ## Command registry
 
-The registry contains 17 QX V1 command names. Six commands currently have enabled semantic contracts: `DATA.COUNT`, `DATA.ADD`, `DATA.REMOVE`, `PROCESS.ADD`, `PROCESS.CALCULATE`, and `PROCESS.COMPARE`. `DATA.ADD` and `DATA.REMOVE` are implemented end-to-end in the phase-6 branch; `DATA.GET` remains pending and disabled.
+The registry contains 17 QX V1 command names. Eight commands currently have enabled semantic contracts: `DATA.COUNT`, `DATA.ADD`, `DATA.REMOVE`, `UI.SHOW`, `UI.TEXT`, `PROCESS.ADD`, `PROCESS.CALCULATE`, and `PROCESS.COMPARE`. `DATA.ADD` and `DATA.REMOVE` are implemented end-to-end in the phase-6 branch; `DATA.GET` remains pending and disabled.
 
 Use `resolveCommand(domain, command)` to resolve an English or Arabic alias to its canonical entry, and `isCommandEnabled(domain, command)` to inspect registry enablement. Enablement here denotes an approved semantic contract, not runtime availability; execution remains unimplemented until the VM phase.
 
 
 ## Verification
 
-The phase-4 validation baseline contained **90 passing tests**. The phase-6 DATA implementation pull request passes **114 core tests** on Node.js 22.16.0, including QIR 1.1, immutable list behavior, Web Backend build, output-safety, browser-runtime, and pinned Unicode normalization coverage. A separate Chromium smoke test also passes against the generated site. The official Unicode 18.0.0 NFC conformance file has **100,855 passing checks and 0 failures**. Execution-time integer validation for remainder operations remains a runtime concern, not a semantic-analysis guarantee.
+The phase-4 validation baseline contained **90 passing tests**. The phase-6 DATA/PROCESS/UI implementation branch currently runs **114 core tests** on Node.js 22.16.0, including QIR 1.1/1.2, immutable list behavior, UI output effects, Web Backend build, output-safety, browser-runtime, and pinned Unicode normalization coverage. A separate Chromium smoke test also passes against the generated site. The official Unicode 18.0.0 NFC conformance file has **100,855 passing checks and 0 failures**. Execution-time integer validation for remainder operations remains a runtime concern, not a semantic-analysis guarantee.
 
 ## Web Backend — phase 5
 
@@ -142,6 +142,6 @@ const project = buildWebProject('DATA.CREATE(total, 4 + 5)', { title: "QX Demo" 
 // project.files: index.html, styles.css, app.js
 ```
 
-The build pipeline parses and semantically analyzes QX, lowers it to QIR 1.0 or the compatible QIR 1.1 DATA list extension, validates the QIR, and emits a self-contained browser runtime. The browser runtime supports the QIR 1.0 instruction set plus QIR 1.1 `DATA.ADD` and `DATA.REMOVE`, alongside `DATA.COUNT`. It embeds the Unicode 18.0.0 combining-class table so NFC ordering and equality follow the pinned project data. It renders resulting global values as text; QX UI commands remain disabled and are not implemented by this phase.
+The build pipeline parses and semantically analyzes QX, lowers it to QIR 1.0, the compatible QIR 1.1 DATA list extension, or QIR 1.2 UI output extension, validates the QIR, and emits a self-contained browser runtime. The browser runtime supports the QIR 1.0 instruction set plus QIR 1.1 `DATA.ADD` and `DATA.REMOVE`, and QIR 1.2 `UI.SHOW` and `UI.TEXT`. UI output is rendered as safe DOM text via `textContent`. It embeds the Unicode 18.0.0 combining-class table so NFC ordering and equality follow the pinned project data. It renders explicit UI output and resulting global values as text. UI output does not expose HTML, event handlers, network, or host APIs.
 
 Generated projects have no network or host integration API, use DOM `textContent` for output, and include a restrictive Content Security Policy. The generated assets are deterministic for identical QIR and title inputs. This phase does not add commands, alter QX syntax, or implement integrations.
