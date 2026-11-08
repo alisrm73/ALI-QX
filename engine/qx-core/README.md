@@ -85,7 +85,7 @@ The QIR V1 normative specification is maintained at `QX/spec/QIR-V1.md`.
 
 `lowerToQIR(program, semanticAnalysis)` converts a semantically valid Program AST to QIR V1. `validateQIR(module)` returns structured diagnostics; `serializeQIR(module)` emits canonical JSON; `parseQIR(json)` parses and validates serialized QIR. The module initializer is `fn_0`; source functions receive stable `fn_1` onward identifiers in source order. The QIR module carries the Unicode 18.0.0 version marker and source start locations.
 
-The phase-3 implementation does not execute QIR. The VM, Web Backend, and runtime execution remain later phases. Registry enablement for the three approved commands records semantic-contract support; it does not claim runtime execution.
+The phase-3 QIR implementation is consumed by the phase-4 VM described below. Registry enablement for the three approved commands records semantic-contract support; runtime availability is separately enforced by the VM.
 
 ## QX Virtual Machine — phase 4 (in progress)
 
@@ -129,4 +129,4 @@ Use `resolveCommand(domain, command)` to resolve an English or Arabic alias to i
 
 ## Verification
 
-The current core suite contains **76 tests**, all passing on the verified Node.js 22.16.0 runtime, including the QIR lowering, serialization, CFG, and validator regression cases. The official Unicode 18.0.0 NFC conformance file has **100,855 passing checks and 0 failures**. Execution-time integer validation for remainder operations remains a runtime concern, not a semantic-analysis guarantee.
+The current phase-4 branch core suite contains **87 tests**, all passing on the verified Node.js 22.16.0 runtime, including QIR lowering, serialization, CFG and validator regressions, plus VM execution, control-flow, call-depth, instruction-budget, division, list, and Unicode NFC comparison cases. The official Unicode 18.0.0 NFC conformance file has **100,855 passing checks and 0 failures**. Execution-time integer validation for remainder operations remains a runtime concern, not a semantic-analysis guarantee.
