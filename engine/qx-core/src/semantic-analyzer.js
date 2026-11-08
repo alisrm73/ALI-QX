@@ -159,6 +159,7 @@ export function analyze(program) {
         return;
       }
       const type = expression(node.args[1], scope);
+      if (type === "ERROR") return;
       if (!TYPES.has(type)) {
         report("QX3018", "DATA.CREATE cannot infer a variable type from " + type, node.args[1]);
         return;
