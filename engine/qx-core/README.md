@@ -130,3 +130,18 @@ Use `resolveCommand(domain, command)` to resolve an English or Arabic alias to i
 ## Verification
 
 The current phase-4 branch core suite contains **90 tests**, all passing on the verified Node.js 22.16.0 runtime, including QIR lowering, serialization, CFG and validator regressions, plus VM execution, control-flow, call-depth, instruction-budget, division, list, and Unicode NFC comparison cases. The official Unicode 18.0.0 NFC conformance file has **100,855 passing checks and 0 failures**. Execution-time integer validation for remainder operations remains a runtime concern, not a semantic-analysis guarantee.
+
+## Web Backend — phase 5
+
+The phase-5 Web Backend builds a static, dependency-free web project from valid QX V1 source:
+
+```js
+import { buildWebProject } from "./src/index.js";
+
+const project = buildWebProject('DATA.CREATE(total, 4 + 5)', { title: "QX Demo" });
+// project.files: index.html, styles.css, app.js
+```
+
+The build pipeline parses and semantically analyzes QX, lowers it to QIR V1, validates the QIR, and emits a self-contained browser runtime. The browser runtime supports the existing QIR V1 instruction set and approved `DATA.COUNT` command only. It renders resulting global values as text; QX UI commands remain disabled and are not implemented by this phase.
+
+Generated projects have no network or host integration API, use DOM `textContent` for output, and include a restrictive Content Security Policy. The generated assets are deterministic for identical QIR and title inputs. This phase does not add commands, alter QX syntax, or implement integrations.
