@@ -99,3 +99,24 @@ test("browser runtime reports an invalid DATA.REMOVE index", () => {
   assert.equal(nodes.get("qx-status").textContent, "Execution failed");
   assert.match(nodes.get("qx-output").children[0].textContent, /QX_VM_LIST_INDEX/);
 });
+
+test("browser runtime executes PROCESS.ADD increments", () => {
+  const project = buildWebProject([
+    "DATA.CREATE(count, 1)",
+    "PROCESS.ADD(count, 2)",
+    "FUNCTION increment(value)",
+    "PROCESS.ADD(value, 3)",
+    "RETURN value",
+    "END",
+    "DATA.CREATE(result, increment(4))"
+  ].join("\\n"));
+  const makeNode = () => ({ children: [], textContent: "", className: "", append(...items) { this.children.push(...items); } });
+  const nodes = new Map([["qx-output", makeNode()], ["qx-status", makeNode()]]);
+  const document = { getElementById: id => nodes.get(id), createElement: () => makeNode() };
+  vm.runInNewContext(project.files["app.js"], { document });
+  assert.equal(nodes.get("qx-status").textContent, "Execution completed");
+  const values = new Map(nodes.get("qx-output").children.filter(node => node.className === "qx-value")
+    .map(node => [node.children[0].textContent, node.children[1].textContent]));
+  assert.equal(values.get("count"), "3");
+  assert.equal(values.get("result"), "7");
+});
