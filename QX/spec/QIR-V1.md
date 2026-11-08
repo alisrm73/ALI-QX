@@ -1,7 +1,7 @@
 # مواصفة QIR V1
 **QX Intermediate Representation — Version 1.0**
 
-- الحالة: مواصفة موحدة للتصميم والتحقق؛ لا تمثل تنفيذًا برمجيًا.
+- الحالة: المواصفة المعتمدة لـ QIR V1، والتنفيذ البرمجي متاح في `engine/qx-core/src/qir.js` مع اختبارات القبول في `engine/qx-core/test/qir.test.js`.
 - النطاق: المرحلة الثالثة من ALI-QX.
 - مرجع اللغة: QX V1. مرجع Unicode: 18.0.0.
 - الملفات المرجعية التي تمت مراجعتها: QX/README.md وlexer.js وparser.js وsemantic-analyzer.js وcommand-registry.js على main.

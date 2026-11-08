@@ -151,3 +151,36 @@ test("validator rejects broken control-flow targets and undefined value referenc
   branch.operands.condition = "v_999";
   assert.ok(validateQIR(badValue).some(item => item.code === "QIR_E_UNDEFINED_VALUE"));
 });
+
+test("validator enforces LOAD, RETURN, and CALL type contracts", () => {
+  const loadQir = compile("DATA.CREATE(x, 1)\nDATA.CREATE(y, x + 1)");
+  const badLoad = JSON.parse(JSON.stringify(loadQir));
+  const load = badLoad.initializer.blocks.flatMap(block => block.instructions).find(item => item.opcode === "LOAD");
+  load.type = "TXT";
+  assert.ok(validateQIR(badLoad).some(item => item.code === "QIR_E_LOAD_TYPE"));
+
+  const returnQir = compile([
+    "FUNCTION identity(arg)",
+    "RETURN arg",
+    "END",
+    "DATA.CREATE(result, identity(1))"
+  ].join("\n"));
+  const fn = returnQir.functions[0];
+  const returnBlock = fn.blocks.find(block => block.instructions.at(-1).opcode === "RETURN");
+  returnBlock.instructions.splice(-1, 0, {
+    id: "inst_extra_return", opcode: "CONST_TXT", result: "v_extra_return",
+    type: "TXT", operands: { value: "wrong" }, source: { line: 1, column: 1, offset: 0 }
+  });
+  returnBlock.instructions.at(-1).operands.value = "v_extra_return";
+  assert.ok(validateQIR(returnQir).some(item => item.code === "QIR_E_RETURN_TYPE"));
+
+  const callQir = JSON.parse(JSON.stringify(returnQir));
+  const initBlock = callQir.initializer.blocks.find(block => block.instructions.some(item => item.opcode === "CALL"));
+  const call = initBlock.instructions.find(item => item.opcode === "CALL");
+  initBlock.instructions.splice(initBlock.instructions.indexOf(call), 0, {
+    id: "inst_extra_call", opcode: "CONST_TXT", result: "v_extra_call",
+    type: "TXT", operands: { value: "wrong" }, source: { line: 1, column: 1, offset: 0 }
+  });
+  call.operands.arguments = ["v_extra_call"];
+  assert.ok(validateQIR(callQir).some(item => item.code === "QIR_E_CALL_TYPE"));
+});

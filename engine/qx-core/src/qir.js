@@ -377,6 +377,7 @@ export function validateQIR(module) {
   }
   const functionById = new Map(functions.map(fn => [fn.id, fn]));
   const flowByFunction = new Map();
+  const valueTypesByFunction = new Map();
   for (const fn of functions) {
     if (!fn || functionIds.has(fn.id) || !Array.isArray(fn.blocks) || !fn.blocks.length) {
       report("QIR_E_FUNCTION_SCHEMA", "Invalid function or duplicate function id"); continue;
@@ -384,12 +385,10 @@ export function validateQIR(module) {
     functionIds.add(fn.id);
     const blocks = new Map(fn.blocks.map(block => [block.id, block]));
     if (!blocks.has(fn.entry_block)) report("QIR_E_ENTRY_BLOCK", "Entry block does not exist", null, { function: fn.id });
-    const valueTypes = new Map(), instructionIds = new Set(), variableTypes = new Map();
+    const valueTypes = new Map(), valueLocations = new Map(), instructionIds = new Set(), variableTypes = new Map();
+    valueTypesByFunction.set(fn.id, valueTypes);
     const definedVariables = new Set();
-    for (const global of module.globals ?? []) { variableTypes.set(global.id, global.type); definedVariables.add(global.id); }
-    for (const global of module.globals ?? []) { variableTypes.set(global.id, global.type); definedVariables.add(global.id); }
-    for (const global of module.globals ?? []) { variableTypes.set(global.id, global.type); definedVariables.add(global.id); }
-    for (const global of module.globals ?? []) { variableTypes.set(global.id, global.type); definedVariables.add(global.id); }
+    for (const global of module.globals ?? []) { variableTypes.set(global.id, global.type); definedVariables.add(global.id); } }
     const predecessors = new Map(fn.blocks.map(block => [block.id, new Set()]));
     for (const block of fn.blocks) {
       if (!Array.isArray(block.instructions) || !block.instructions.length) {
@@ -405,6 +404,7 @@ export function validateQIR(module) {
         if (inst.result) {
           if (valueTypes.has(inst.result) || !VALUE_TYPES.has(inst.type)) report("QIR_E_VALUE_TYPE", "Duplicate value or invalid result type", inst.source, { function: fn.id, block: block.id });
           valueTypes.set(inst.result, inst.type);
+          valueLocations.set(inst.result, { block: block.id, index: i });
         }
         if (inst.opcode === "CONST_NUM" && (typeof inst.operands.value !== "number" || !Number.isFinite(inst.operands.value) || inst.type !== "NUM"))
           report("QIR_E_CONSTANT_TYPE", "CONST_NUM requires a finite number and NUM result", inst.source);
@@ -432,6 +432,7 @@ export function validateQIR(module) {
           const hasValue = Object.hasOwn(inst.operands ?? {}, "value");
           if (fn.return_type === "NULL" && hasValue) report("QIR_E_RETURN_TYPE", "Procedure cannot return a value", inst.source);
           if (fn.return_type !== "NULL" && !hasValue) report("QIR_E_RETURN_TYPE", "Function must return a value", inst.source);
+          if (hasValue && valueTypes.has(inst.operands.value) && valueTypes.get(inst.operands.value) !== fn.return_type) report("QIR_E_RETURN_TYPE", "RETURN value type differs from function return type", inst.source);
         }
         if (!["CONST_NUM","CONST_TXT","CONST_BOOL","CONST_NULL","DECLARE","LOAD","STORE_LOCAL","STORE_GLOBAL","UNARY","BINARY","MAKE_LIST","CALL","COMMAND_CALL","BRANCH","JUMP","RETURN"].includes(inst.opcode))
           report("QIR_E_UNKNOWN_OPCODE", "Unknown opcode " + inst.opcode, inst.source);
@@ -461,7 +462,6 @@ export function validateQIR(module) {
         if (old.size !== next.size || [...old].some(value => !next.has(value))) { dominators.set(id, next); changed = true; }
       }
     }
-    const initializedVariables = new Set(fn.id === "fn_0" ? [] : globalIds);
     // Forward must-analysis: a variable is initialized at a block only if every
     // reachable predecessor initializes it before control reaches that block.
     const trackedVariables = new Set();
@@ -522,11 +522,14 @@ export function validateQIR(module) {
         if (inst.opcode === "MAKE_LIST") refs.push(...(op.elements ?? []));
         if (inst.opcode === "CALL" || inst.opcode === "COMMAND_CALL") refs.push(...(op.arguments ?? []));
         if (inst.opcode === "BRANCH") refs.push(op.condition);
+        if (inst.opcode === "STORE_LOCAL" || inst.opcode === "STORE_GLOBAL") refs.push(op.value);
+        if (inst.opcode === "RETURN" && Object.hasOwn(op, "value")) refs.push(op.value);
         for (const ref of refs) if (typeof ref === "string" && ref.startsWith("v_") && !valueTypes.has(ref))
           report("QIR_E_UNDEFINED_VALUE", "Use of undefined value " + ref, inst.source, { function: fn.id, block: block.id });
         if (inst.opcode === "DECLARE" && op.parameter === true) initializedVariables.add(op.variable);
         if (inst.opcode === "LOAD") {
           if (!definedVariables.has(op.variable)) report("QIR_E_UNDECLARED_VARIABLE", "LOAD before DECLARE", inst.source);
+          if (variableTypes.has(op.variable) && inst.type !== variableTypes.get(op.variable)) report("QIR_E_LOAD_TYPE", "LOAD result type differs from variable type", inst.source);
           else if (flow?.trackedVariables.has(op.variable) && !initializedVariables.has(op.variable))
             report("QIR_E_UNINITIALIZED_LOAD", "Variable may be read before initialization on every incoming path", inst.source);
         }
@@ -569,7 +572,8 @@ export function validateQIR(module) {
     }
     for (const block of fn.blocks) {
       if (!reachable.has(block.id)) continue;
-      for (const inst of block.instructions) {
+      for (let instIndex = 0; instIndex < block.instructions.length; instIndex++) {
+        const inst = block.instructions[instIndex];
         const op = inst.operands ?? {};
         const refs = [];
         if (inst.opcode === "UNARY") refs.push(op.value);
@@ -579,8 +583,10 @@ export function validateQIR(module) {
         if (inst.opcode === "BRANCH") refs.push(op.condition);
         for (const ref of refs) {
           if (!valueTypes.has(ref)) continue;
-          const defBlock = fn.blocks.find(candidate => candidate.instructions.some(item => item.result === ref));
-          if (defBlock && !dominators.get(block.id)?.has(defBlock.id))
+          const definition = valueLocations.get(ref);
+          if (definition?.block === block.id && definition.index >= instIndex)
+            report("QIR_E_USE_BEFORE_DEFINITION", "Value is used before its definition in the same block", inst.source, { function: fn.id, block: block.id });
+          else if (definition && definition.block !== block.id && !dominators.get(block.id)?.has(definition.block))
             report("QIR_E_DOMINANCE", "Value definition does not dominate use", inst.source, { function: fn.id, block: block.id });
         }
       }
@@ -620,8 +626,22 @@ export function validateQIR(module) {
 
   for (const fn of functions) {
     for (const block of fn.blocks ?? []) for (const inst of block.instructions ?? []) {
-      if (inst.opcode === "CALL" && !functionById.has(inst.operands?.function))
-        report("QIR_E_CALL_TARGET", "CALL references an unknown function", inst.source);
+      if (inst.opcode === "CALL") {
+        const target = functionById.get(inst.operands?.function);
+        const args = inst.operands?.arguments ?? [];
+        if (!target) report("QIR_E_CALL_TARGET", "CALL references an unknown function", inst.source);
+        else {
+          if (args.length !== target.parameters.length) report("QIR_E_CALL_ARITY", "CALL argument count mismatch", inst.source);
+          else args.forEach((arg, index) => {
+            const actual = valueTypesByFunction.get(fn.id)?.get(arg);
+            if (actual && actual !== target.parameters[index].type) report("QIR_E_CALL_TYPE", "CALL argument type mismatch at position " + (index + 1), inst.source);
+          });
+          if (inst.result && (target.return_type === "NULL" || inst.type !== target.return_type))
+            report("QIR_E_CALL_RESULT", "CALL result is incompatible with target function return type", inst.source);
+          if (!inst.result && target.return_type !== "NULL")
+            report("QIR_E_CALL_RESULT", "Value-returning CALL must capture its result", inst.source);
+        }
+      }
       if (inst.opcode === "COMMAND_CALL" && inst.operands?.command !== "DATA.COUNT")
         report("QIR_E_COMMAND_NOT_ALLOWED", "Only DATA.COUNT may be emitted as COMMAND_CALL", inst.source);
     }
