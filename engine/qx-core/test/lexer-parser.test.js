@@ -91,3 +91,9 @@ test("handles escaped strings and CRLF source locations", () => {
   assert.equal(tokens[6].value, "A\nB");
   assert.equal(tokens.at(-2).line, 2);
 });
+
+
+test("restricts function declarations to top level and RETURN to functions", () => {
+  assert.throws(() => parse("RETURN 1"), error => error.code === "QX2012");
+  assert.throws(() => parse("IF (TRUE)\nFUNCTION nested()\nEND\nEND"), error => error.code === "QX2011");
+});
