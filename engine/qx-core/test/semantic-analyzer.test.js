@@ -69,5 +69,5 @@ test("rejects unknown commands in expression position and does not invent return
 
 test("returns source locations in semantic diagnostics", () => {
   const result = check("\nDATA.CREATE(value, NULL)");
-  assert.deepEqual(result.diagnostics[0].location, { line: 2, column: 19, offset: 19 });
+  assert.deepEqual(result.diagnostics[0].location, { line: 2, column: 20, offset: 20 });
 });
