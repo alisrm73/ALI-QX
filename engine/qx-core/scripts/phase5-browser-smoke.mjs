@@ -1,7 +1,4 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import path from "node:path";
 import http from "node:http";
 import { chromium } from "playwright";
 import { buildWebProject } from "../src/web-backend.js";
@@ -10,19 +7,13 @@ const project = buildWebProject([
   "DATA.CREATE(total, 4 + 5)",
   "PROCESS.CALCULATE(total, total * 2)"
 ].join("\n"), { title: "QX Browser Smoke Test" });
-const directory = mkdtempSync(path.join(tmpdir(), "qx-web-phase5-"));
-for (const [name, content] of Object.entries(project.files)) writeFileSync(path.join(directory, name), content, "utf8");
-
 const types = { "index.html": "text/html; charset=utf-8", "app.js": "text/javascript; charset=utf-8", "styles.css": "text/css; charset=utf-8" };
 const server = http.createServer((request, response) => {
   const name = request.url === "/" ? "index.html" : request.url.slice(1);
   if (!Object.hasOwn(types, name)) { response.writeHead(404).end(); return; }
   response.writeHead(200, { "content-type": types[name], "x-content-type-options": "nosniff" });
-  response.end(requireFile(name));
+  response.end(project.files[name]);
 });
-function requireFile(name) {
-  return project.files[name];
-}
 let browser;
 try {
   await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
@@ -39,5 +30,4 @@ try {
 } finally {
   if (browser) await browser.close();
   await new Promise(resolve => server.close(resolve));
-  rmSync(directory, { recursive: true, force: true });
 }
