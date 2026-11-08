@@ -129,4 +129,4 @@ Use `resolveCommand(domain, command)` to resolve an English or Arabic alias to i
 
 ## Verification
 
-The current phase-4 branch core suite contains **87 tests**, all passing on the verified Node.js 22.16.0 runtime, including QIR lowering, serialization, CFG and validator regressions, plus VM execution, control-flow, call-depth, instruction-budget, division, list, and Unicode NFC comparison cases. The official Unicode 18.0.0 NFC conformance file has **100,855 passing checks and 0 failures**. Execution-time integer validation for remainder operations remains a runtime concern, not a semantic-analysis guarantee.
+The current phase-4 branch core suite contains **90 tests**, all passing on the verified Node.js 22.16.0 runtime, including QIR lowering, serialization, CFG and validator regressions, plus VM execution, control-flow, call-depth, instruction-budget, division, list, and Unicode NFC comparison cases. The official Unicode 18.0.0 NFC conformance file has **100,855 passing checks and 0 failures**. Execution-time integer validation for remainder operations remains a runtime concern, not a semantic-analysis guarantee.
