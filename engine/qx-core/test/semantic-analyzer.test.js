@@ -67,6 +67,23 @@ test("rejects unknown commands in expression position and does not invent return
   assert.equal(result.diagnostics[0].code, "QX3012");
 });
 
+
+test("rejects commands whose semantic contracts are still pending", () => {
+  const result = check('UI.SHOW("not approved")');
+  assert.equal(result.valid, false);
+  assert.ok(result.diagnostics.some(item => item.code === "QX3040"));
+});
+
+test("does not cascade type diagnostics after an earlier ERROR", () => {
+  const result = check([
+    "DATA.CREATE(value, missing)",
+    "DATA.SET(value, 1)",
+    "IF (anotherMissing)",
+    "END"
+  ].join("\n"));
+  assert.deepEqual(result.diagnostics.map(item => item.code), ["QX3003", "QX3003"]);
+});
+
 test("returns source locations in semantic diagnostics", () => {
   const result = check("\nDATA.CREATE(value, NULL)");
   assert.deepEqual(result.diagnostics[0].location, { line: 2, column: 20, offset: 20 });
@@ -136,10 +153,10 @@ test("requires compatible return types on every path and rejects fallthrough pat
 });
 
 test("recognizes procedures without RETURN and prevents using them as values", () => {
-  const procedure = check("FUNCTION log(value)\n UI.SHOW(value)\nEND\nlog(1)");
+  const procedure = check("FUNCTION log(value)\n\nEND\nlog(1)");
   assert.equal(procedure.valid, true);
   assert.equal(procedure.functions[0].kind, "procedure");
-  const asValue = check("FUNCTION log(value)\n UI.SHOW(value)\nEND\nDATA.CREATE(result, log(1))");
+  const asValue = check("FUNCTION log(value)\n\nEND\nDATA.CREATE(result, log(1))");
   assert.equal(asValue.valid, false);
   assert.ok(asValue.diagnostics.some(item => item.code === "QX3018"));
 });
@@ -166,7 +183,7 @@ test("rejects incompatible call arguments and return types", () => {
 });
 
 test("rejects procedure calls embedded in value expressions", () => {
-  const result = check("FUNCTION log(value)\n UI.SHOW(value)\nEND\nDATA.CREATE(answer, log(1) + 2)");
+  const result = check("FUNCTION log(value)\n\nEND\nDATA.CREATE(answer, log(1) + 2)");
   assert.equal(result.valid, false);
   assert.ok(result.diagnostics.some(item => item.code === "QX3039"));
 });
