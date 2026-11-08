@@ -144,7 +144,7 @@ const project = buildWebProject('DATA.CREATE(total, 4 + 5)', { title: "QX Demo" 
 
 The build pipeline parses and semantically analyzes QX, lowers it to QIR 1.0, the compatible QIR 1.1 DATA list extension, or QIR 1.2 UI output extension, validates the QIR, and emits a self-contained browser runtime. The browser runtime supports the QIR 1.0 instruction set plus QIR 1.1 `DATA.ADD` and `DATA.REMOVE`, and QIR 1.2 `UI.SHOW` and `UI.TEXT`. UI output is rendered as safe DOM text via `textContent`. It embeds the Unicode 18.0.0 combining-class table so NFC ordering and equality follow the pinned project data. It renders explicit UI output and resulting global values as text. UI output does not expose HTML, event handlers, network, or host APIs.
 
-Generated projects have no network or host integration API, use DOM `textContent` for output, and include a restrictive Content Security Policy. The generated assets are deterministic for identical QIR and title inputs. This phase does not add commands, alter QX syntax, or implement integrations.
+Generated projects have no network or host integration API, use DOM `textContent` for output, and include a restrictive Content Security Policy. The generated assets are deterministic for identical QIR and title inputs. The browser backend remains network-disabled; host integrations are isolated behind the separately documented broker API and are not available to generated browser projects.
 
 
 ## Host-owned integration broker — phase 6
