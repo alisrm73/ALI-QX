@@ -57,7 +57,14 @@ test("records only the three approved V1 command contracts", () => {
     ],
     result: { kind: "stored", target: "target", type: "BOOL" }
   });
-  assert.equal(COMMAND_REGISTRY.filter(command => command.signatureStatus === "specified").length, 5);
+  assert.equal(COMMAND_REGISTRY.filter(command => command.signatureStatus === "specified").length, 6);
+  assert.deepEqual(resolveCommand("PROCESS", "ADD").signature, {
+    parameters: [
+      { name: "target", type: "Identifier", variableType: "NUM", mustBeDeclared: true },
+      { name: "amount", type: "Expression", resultType: "NUM" }
+    ],
+    result: { kind: "stored", target: "target", type: "NUM" }
+  });
   assert.deepEqual(resolveCommand("DATA", "ADD").signature, {
     parameters: [{ name: "list", type: "LIST" }, { name: "value", types: ["NUM", "TXT", "BOOL", "LIST", "NULL"] }],
     result: { kind: "value", type: "LIST" }
@@ -69,7 +76,7 @@ test("records only the three approved V1 command contracts", () => {
 });
 
 test("enables only the three approved commands after semantic validation", () => {
-  const enabled = new Set(["DATA.COUNT", "DATA.ADD", "DATA.REMOVE", "PROCESS.CALCULATE", "PROCESS.COMPARE"]);
+  const enabled = new Set(["DATA.COUNT", "DATA.ADD", "DATA.REMOVE", "PROCESS.ADD", "PROCESS.CALCULATE", "PROCESS.COMPARE"]);
   for (const command of COMMAND_REGISTRY) {
     assert.equal(command.enabled, enabled.has(command.id));
     assert.equal(isCommandEnabled(command.domain, command.name), enabled.has(command.id));
