@@ -60,11 +60,12 @@ test("records only the three approved V1 command contracts", () => {
   assert.equal(COMMAND_REGISTRY.filter(command => command.signatureStatus === "specified").length, 3);
 });
 
-test("keeps every command disabled until semantic validation is implemented", () => {
+test("enables only the three approved commands after semantic validation", () => {
+  const enabled = new Set(["DATA.COUNT", "PROCESS.CALCULATE", "PROCESS.COMPARE"]);
   for (const command of COMMAND_REGISTRY) {
-    assert.equal(command.enabled, false);
-    assert.equal(isCommandEnabled(command.domain, command.name), false);
-    if (["DATA.COUNT", "PROCESS.CALCULATE", "PROCESS.COMPARE"].includes(command.id)) {
+    assert.equal(command.enabled, enabled.has(command.id));
+    assert.equal(isCommandEnabled(command.domain, command.name), enabled.has(command.id));
+    if (enabled.has(command.id)) {
       assert.equal(command.signatureStatus, "specified");
       assert.notEqual(command.signature, null);
     } else {
