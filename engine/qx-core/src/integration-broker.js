@@ -89,11 +89,17 @@ export function createIntegrationBroker({ connectors, grants = [], limits: overr
     activeRequests++;
     const controller = new AbortController();
     let timeout;
+    let slotReleased = false;
+    const releaseSlot = () => {
+      if (!slotReleased) { slotReleased = true; activeRequests--; }
+    };
     try {
       const invocation = Promise.resolve().then(() => operation.invoke(Object.freeze({
         connector: connectorId, connectorVersion: connector.version, operation: operationId,
         payload, signal: controller.signal
       })));
+      // Keep timed-out, non-cooperative adapters counted until they actually settle.
+      invocation.then(releaseSlot, releaseSlot);
       const deadline = new Promise((_, reject) => {
         timeout = setTimeout(() => {
           controller.abort();
@@ -111,7 +117,6 @@ export function createIntegrationBroker({ connectors, grants = [], limits: overr
       throw new QXIntegrationError("QX_INTEGRATION_ADAPTER_FAILED", "Connector operation failed");
     } finally {
       if (timeout) clearTimeout(timeout);
-      activeRequests--;
     }
   }
   return Object.freeze({ request, get activeRequests() { return activeRequests; } });
