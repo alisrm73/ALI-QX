@@ -82,7 +82,7 @@ The parser recognizes a domain-qualified command call wherever an expression is 
 DATA.CREATE(item, DATA.GET(items, 0))
 ```
 
-This is a syntax/AST capability only. Semantic validation of command availability, signatures, return types, and permissions remains part of the semantic-analysis phase.
+This parser capability is syntax/AST only. Phase 2 validates the three approved command contracts; remaining pending signatures and runtime permission enforcement are not implemented.
 
 
 ## Command registry
