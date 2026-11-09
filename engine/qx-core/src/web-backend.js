@@ -50,11 +50,12 @@ function browserRun(module, combiningClassEntries, uiLock, uiRegistry) {
   let instructionCount=0;
   const outputs=[];
   function validateUITree(treeJson, inst, ctx) {
+    if (new TextEncoder().encode(treeJson).length > 65536) fail("QX_UI_TREE_INVALID", "UI component tree exceeds the byte limit", inst, ctx);
     let tree;
     try { tree = JSON.parse(treeJson); }
     catch { fail("QX_UI_TREE_INVALID", "UI component tree must be valid JSON", inst, ctx); }
     const registry = new Map((uiRegistry || []).map(entry => [entry.type, entry]));
-    if (!uiLock || uiLock.schema !== "QX.UI.COMPONENT-LOCK" || uiLock.version !== "1.0" || !Array.isArray(uiLock.components))
+    if (!uiLock || Object.getPrototypeOf(uiLock) !== Object.prototype || Object.keys(uiLock).sort().join(",") !== "components,schema,version" || uiLock.schema !== "QX.UI.COMPONENT-LOCK" || uiLock.version !== "1.0" || !Array.isArray(uiLock.components))
       fail("QX_UI_LOCK_INVALID", "Invalid UI component lock", inst, ctx);
     const pins = new Map();
     for (const entry of uiLock.components) {
@@ -103,6 +104,7 @@ function browserRun(module, combiningClassEntries, uiLock, uiRegistry) {
       if (!node.props || Object.getPrototypeOf(node.props) !== Object.prototype ||
           Object.keys(node.props).some(key => !Object.hasOwn(definition.props, key)) || Object.keys(node.props).length > 16)
         fail("QX_UI_PROPS_INVALID", "Invalid UI component properties", inst, ctx);
+      if (new TextEncoder().encode(JSON.stringify(node.props)).length > 4096) fail("QX_UI_PROP_LIMIT", "UI component properties exceed the byte limit", inst, ctx);
       for (const [name, rule] of Object.entries(definition.props)) {
         const value = node.props[name];
         if (rule.required && value === undefined) fail("QX_UI_PROP_REQUIRED", "Missing UI component property", inst, ctx);
@@ -179,7 +181,7 @@ function browserRun(module, combiningClassEntries, uiLock, uiRegistry) {
               if(typeof json!=="string"||json.length>LIMITS.maxStringLength)fail("QX_VM_INVALID_TEXT","UI.TREE requires bounded TXT JSON",i,ctx);
               outputs.push({component:"TREE",tree:validateUITree(json,i,ctx),source:i.source});break;
             }
-            if(o.command==="UI.SHOW"&&args.length===1&&["1.2","1.3"].includes(module.version)){outputs.push({component:"SHOW",value:clone(read(args[0],i)),source:i.source});break;}
+            if(o.command==="UI.SHOW"&&args.length===1&&["1.2","1.3","1.4"].includes(module.version)){outputs.push({component:"SHOW",value:clone(read(args[0],i)),source:i.source});break;}
             if(o.command==="UI.TEXT"&&args.length===1&&["1.2","1.3"].includes(module.version)){const value=read(args[0],i);if(typeof value!=="string"||value.length>LIMITS.maxStringLength)fail("QX_VM_INVALID_TEXT","UI.TEXT requires bounded TXT",i,ctx);outputs.push({component:"TEXT",value,source:i.source});break;}
             fail("QX_VM_COMMAND_NOT_ALLOWED","Command is not available in this QIR version",i,ctx);break;
           }
