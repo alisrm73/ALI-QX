@@ -349,8 +349,7 @@ test("validates a tree against the exact pinned version in a multi-version regis
       ...projectLock,
       components: [{
         ...projectLock.components[0],
-        registryRelease: "ui-registry-2.0.0",
-        schemaDigest: hostRegistry.resolve("UI.HEADING", "2.0.0", "ui-registry-2.0.0").schemaDigest
+        registryRelease: "ui-registry-3.0.0"
       }]
     },
     hostRegistry
