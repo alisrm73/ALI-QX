@@ -63,6 +63,7 @@ Error identifiers below are semantic categories, not finalized public error-code
 | CHILD-002 | Forbidden child | Supply a child type disallowed by the parent | Reject child-policy violation |
 | CHILD-003 | Child count boundary | Test exactly at and one over any declared child-count limit | Accept at limit; reject above limit |
 | CHILD-004 | Leaf component children | Add children to a component declared as a leaf | Reject child-policy violation |
+| CHILD-005 | Missing/null children array | Omit `children` or supply `null` on a component node | Reject malformed node; `children: []` is required when empty |
 
 ## 5. Resource-boundary cases
 
@@ -89,7 +90,7 @@ Use controlled registry snapshots. A release fixture includes canonical type, ex
 | REG-001 | Exact resolution | Lock entry matches one published immutable release exactly | Resolve that release |
 | REG-002 | Newer release present | Registry contains pinned release plus a newer release | Continue resolving the pinned release |
 | REG-003 | Missing lock entry | Tree references a component absent from the lock | Reject before rendering |
-| REG-004 | Duplicate lock entry | Two entries claim the same canonical component identity | Reject lock manifest |
+| REG-004 | Duplicate lock entry | Two entries claim the same `(type, contractVersion)` pair | Reject lock manifest |
 | REG-005 | Unknown component | Tree and lock reference a type absent from host registry | Reject unknown type |
 | REG-006 | Unavailable release | Lock references a release not present in registry | Reject unavailable release |
 | REG-007 | Version mismatch | Locked version differs from resolved release | Reject mismatch |
