@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { assertProjectApproved, QXProjectError } from "./project-model.js";
 import { assertProjectTestReport } from "./project-test-suite.js";
 import { assertProjectDeliveryReport } from "./project-delivery.js";
+import { assertProjectDeliveryReport } from "./project-delivery.js";
 
 const CATEGORIES = Object.freeze(["requirement", "data", "integration"]);
 const MAX_ENTRIES = 600;
@@ -164,9 +165,10 @@ function normalizeEntries(project, entries, testReport, deliveryReport) {
   return normalized;
 }
 
-export function assertRequirementCoverageReport(project, testReport, deliveryReport, report) {
+export function assertRequirementCoverageReport(project, plan, testReport, deliveryReport, report) {
   assertProjectApproved(project, { expectedDigest: report?.projectDigest });
-  assertProjectTestReport(project, null, testReport);
+  assertProjectTestReport(project, plan, testReport);
+  assertProjectDeliveryReport(project, plan, testReport, deliveryReport);
   if (!isPlainObject(report) || report.schemaVersion !== "1.0.0" ||
       report.projectId !== project.projectId ||
       report.projectRevision !== project.revision ||
@@ -193,11 +195,13 @@ export function assertRequirementCoverageReport(project, testReport, deliveryRep
   return report;
 }
 
-export function createRequirementCoverageReport(project, testReport, deliveryReport, {
+export function createRequirementCoverageReport(project, plan, testReport, deliveryReport, {
   expectedProjectDigest,
   entries
 } = {}) {
   assertProjectApproved(project, { expectedDigest: expectedProjectDigest });
+  assertProjectTestReport(project, plan, testReport);
+  assertProjectDeliveryReport(project, plan, testReport, deliveryReport);
   if (!isPlainObject(deliveryReport) || deliveryReport.projectDigest !== project.digest ||
       deliveryReport.testReportDigest !== testReport?.digest ||
       !Array.isArray(deliveryReport.items)) {
