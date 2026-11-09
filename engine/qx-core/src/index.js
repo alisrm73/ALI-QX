@@ -56,5 +56,6 @@ export {
 
 export {
   createProjectDeliveryPackage,
-  assertProjectDeliveryReport
+  assertProjectDeliveryReport,
+  assertProjectDeliveryPackage
 } from "./project-delivery.js";
