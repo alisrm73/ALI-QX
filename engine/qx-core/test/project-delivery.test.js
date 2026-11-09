@@ -11,7 +11,7 @@ import { createBuildPlan } from "../src/build-plan.js";
 import { openProjectWorkspace, writeProjectFile } from "../src/project-workspace.js";
 import { runProjectTestSuite } from "../src/project-test-suite.js";
 import {
-  createProjectDeliveryPackage, assertProjectDeliveryReport
+  createProjectDeliveryPackage, assertProjectDeliveryReport, assertProjectDeliveryPackage
 } from "../src/project-delivery.js";
 
 function sha(bytes) {
@@ -80,6 +80,7 @@ test("creates a deterministic package only after files and required tests are ve
   const serialized = JSON.parse(result.packageJson);
   assert.equal(serialized.digest, result.package.digest);
   assert.equal(assertProjectDeliveryReport(project, plan, testReport, result.report), result.report);
+  assert.equal(assertProjectDeliveryPackage(project, plan, testReport, result.package), result.package);
 });
 
 test("blocks delivery when a required file is missing but permits missing optional files", async t => {
@@ -157,6 +158,26 @@ test("rejects stale approvals, duplicate paths, and unsafe paths", async t => {
     expectedProjectDigest: project.digest,
     deliverables: [{ path: "../outside", required: true }]
   }), { code: "QX_DELIVERY_INVALID" });
+});
+
+
+test("requires at least one required deliverable and validates packaged file bytes", async t => {
+  const { project, plan, workspace, testReport } = await fixture(t);
+  await assert.rejects(createProjectDeliveryPackage(workspace, project, plan, testReport, {
+    expectedProjectDigest: project.digest,
+    deliverables: [{ path: "dist/optional.js", required: false }]
+  }), { code: "QX_DELIVERY_INVALID" });
+  const result = await createProjectDeliveryPackage(workspace, project, plan, testReport, {
+    expectedProjectDigest: project.digest,
+    deliverables: [{ path: "dist/index.html", required: true }]
+  });
+  const tampered = {
+    ...result.package,
+    files: result.package.files.map(file => ({ ...file, contentBase64: Buffer.from("tampered").toString("base64") }))
+  };
+  await assert.rejects(async () => assertProjectDeliveryPackage(project, plan, testReport, tampered), {
+    code: "QX_DELIVERY_PACKAGE_INVALID"
+  });
 });
 
 test("delivery report digest rejects modification and mismatched test report", async t => {
