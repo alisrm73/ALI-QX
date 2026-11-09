@@ -318,3 +318,34 @@ test("browser build rejects host-retired exact component pins before rendering",
       error.diagnostics[0].code === "QX_UI_RELEASE_RETIRED"
   );
 });
+
+
+test("browser build preserves deprecated-but-supported exact pins with a warning", () => {
+  const component = {
+    type: "UI.HEADING", contractVersion: "1.0.0", renderer: "heading",
+    props: { level: { type: "number", required: true, integer: true, minimum: 1, maximum: 6 } },
+    children: { text: true, components: [] }
+  };
+  const registry = createUIComponentRegistry({
+    snapshots: [{ registryRelease: "ui-registry-deprecated", components: [component] }]
+  });
+  const pin = registry.resolve("UI.HEADING", "1.0.0", "ui-registry-deprecated");
+  const lifecycleRegistry = createUIComponentLifecycleRegistry({
+    registry,
+    lifecycle: [{
+      registryRelease: pin.registryRelease, type: pin.type, contractVersion: pin.contractVersion,
+      schemaDigest: pin.schemaDigest, lifecycle: "deprecated", supported: true,
+      deprecation: "Use the next reviewed heading release when ready"
+    }],
+    hostPolicy: { revision: "host-policy-deprecated-1", status: "available", entries: [] }
+  });
+  const uiLock = {
+    schema: "QX.UI.COMPONENT-LOCK", version: "1.0",
+    components: [{ type: pin.type, contractVersion: pin.contractVersion,
+      schemaDigest: pin.schemaDigest, registryRelease: pin.registryRelease }]
+  };
+  const project = buildWebProject('UI.TREE("{}")', { uiLock, uiLifecycleRegistry: lifecycleRegistry });
+  assert.equal(project.metadata.uiWarnings.length, 1);
+  assert.equal(project.metadata.uiWarnings[0].code, "QX_UI_RELEASE_DEPRECATED");
+  assert.equal(project.metadata.uiRegistryReleases[0].lifecycle, "deprecated");
+});
