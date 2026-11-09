@@ -162,3 +162,93 @@ test("enforces component ID length at its exact boundary", () => {
     component(invalidId, "UI.TEXT_BLOCK", [{ kind: "text", value: "x" }])
   ]), lock), { code: "QX_UI_ID_INVALID" });
 });
+
+
+test("rejects malformed UI tree envelopes and non-exact root fields", () => {
+  const valid = tree([]);
+  assert.throws(() => validateUIComponentTree({ ...valid, extra: true }, lock), {
+    code: "QX_UI_TREE_INVALID"
+  });
+  assert.throws(() => validateUIComponentTree({ schema: valid.schema, children: [] }, lock), {
+    code: "QX_UI_TREE_INVALID"
+  });
+  assert.throws(() => validateUIComponentTree({ ...valid, version: "2.0" }, lock), {
+    code: "QX_UI_TREE_INVALID"
+  });
+  assert.throws(() => validateUIComponentTree({ ...valid, children: {} }, lock), {
+    code: "QX_UI_TREE_INVALID"
+  });
+});
+
+test("rejects malformed UI component lock envelopes and entries", () => {
+  assert.throws(() => validateUIComponentTree(tree([]), { ...lock, extra: true }), {
+    code: "QX_UI_LOCK_INVALID"
+  });
+  assert.throws(() => validateUIComponentTree(tree([]), {
+    schema: lock.schema, version: lock.version
+  }), { code: "QX_UI_LOCK_INVALID" });
+  assert.throws(() => validateUIComponentTree(tree([]), {
+    ...lock, components: {}
+  }), { code: "QX_UI_LOCK_INVALID" });
+
+  const entry = lock.components[0];
+  const extraField = {
+    ...lock,
+    components: lock.components.map((item, index) => index === 0 ? { ...item, extra: true } : item)
+  };
+  assert.throws(() => validateUIComponentTree(tree([]), extraField), {
+    code: "QX_UI_LOCK_INVALID"
+  });
+  const missingField = {
+    ...lock,
+    components: lock.components.map((item, index) => {
+      if (index !== 0) return item;
+      const { registryRelease, ...rest } = item;
+      return rest;
+    })
+  };
+  assert.throws(() => validateUIComponentTree(tree([]), missingField), {
+    code: "QX_UI_LOCK_INVALID"
+  });
+  const unknownComponent = {
+    ...lock,
+    components: [...lock.components, {
+      ...entry, type: "UI.UNKNOWN"
+    }].sort((a, b) => a.type < b.type ? -1 : a.type > b.type ? 1 : 0)
+  };
+  assert.throws(() => validateUIComponentTree(tree([]), unknownComponent), {
+    code: "QX_UI_UNKNOWN_COMPONENT"
+  });
+});
+
+test("preserves mixed root and nested child order exactly", () => {
+  const input = tree([
+    { kind: "text", value: "before" },
+    component("root", "UI.CONTAINER", [
+      { kind: "text", value: "first" },
+      component("heading", "UI.HEADING", [
+        { kind: "text", value: "middle" }
+      ], { level: 2 }),
+      { kind: "text", value: "last" }
+    ]),
+    { kind: "text", value: "after" }
+  ]);
+  const result = validateUIComponentTree(input, lock);
+  assert.deepEqual(result.children.map(node => node.kind === "text" ? node.value : node.id), [
+    "before", "root", "after"
+  ]);
+  assert.deepEqual(result.children[1].children.map(node =>
+    node.kind === "text" ? node.value : node.id
+  ), ["first", "heading", "last"]);
+});
+
+test("rejects nested object property values instead of accepting unbounded property data", () => {
+  const input = tree([
+    component("heading", "UI.HEADING", [
+      { kind: "text", value: "Title" }
+    ], { level: { nested: { value: 1 } } })
+  ]);
+  assert.throws(() => validateUIComponentTree(input, lock), {
+    code: "QX_UI_PROP_INVALID"
+  });
+});
