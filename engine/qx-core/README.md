@@ -253,3 +253,41 @@ const result = await runQIRAsync(module, { integrationBroker });
 ```
 
 Only trusted host code registers adapters and grants. Adapter credentials and destination restrictions must remain outside QX source and generated browser assets. No production connector is included.
+
+
+### UI component lifecycle — Phase C
+
+The lifecycle-aware host API wraps an immutable Phase B registry with trusted lifecycle metadata and a separate host policy overlay:
+
+```js
+import {
+  createUIComponentLifecycleRegistry,
+  validateUIComponentTreeWithLifecycle
+} from "./src/index.js";
+
+const lifecycleRegistry = createUIComponentLifecycleRegistry({
+  registry: hostRegistry,
+  lifecycle: [{
+    registryRelease: "ui-registry-1.0.0",
+    type: "UI.HEADING",
+    contractVersion: "1.0.0",
+    schemaDigest: headingDigest,
+    lifecycle: "deprecated",
+    supported: true,
+    deprecation: "Use the reviewed replacement when ready"
+  }],
+  hostPolicy: {
+    revision: "host-policy-2026-11",
+    status: "available",
+    entries: []
+  }
+});
+
+const result = validateUIComponentTreeWithLifecycle(tree, projectLock, lifecycleRegistry);
+// result.tree is the validated static tree.
+// result.warnings contains QX_UI_RELEASE_DEPRECATED diagnostics.
+```
+
+Lifecycle states are `active`, `deprecated`, and `retired`. Deprecated releases remain runnable only when host-supported and produce structured warnings. Retired releases fail with `QX_UI_RELEASE_RETIRED`; unsupported releases fail with `QX_UI_RELEASE_UNAVAILABLE`. The host policy overlay is keyed by the exact registry release, component type, contract version, and schema digest. A host revocation overrides historical lifecycle metadata, while an unavailable policy fails closed before validation can return a tree.
+
+This API is additive: the existing `validateUIComponentTree(input, lock, limits)` return shape and the Phase B validator remain unchanged. The host must supply lifecycle metadata and its current trusted policy explicitly. This phase does not implement remote policy distribution, signatures/trust roots, VM/browser injection, upgrade proposals, rollback proposals, or automatic lock changes.
