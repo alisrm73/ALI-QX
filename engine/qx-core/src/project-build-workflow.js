@@ -73,7 +73,7 @@ export async function runProjectBuildWorkflow({
     fail("QX_TEST_REPORT_INVALID", "changedArtifactIds must be an array");
   }
   if (requirementCoverage !== undefined) {
-    assertRequirementCoverageInput(project, requirementCoverage);
+    assertRequirementCoverageInput(project, requirementCoverage, testCases);
   }
   const producedArtifacts = new Set(buildPlan.tasks.flatMap(task => task.outputs));
   if (OUTPUTS.some(output => !producedArtifacts.has(output.artifactId))) {
