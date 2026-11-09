@@ -103,6 +103,50 @@ test("rejects incomplete or extra write permissions before modifying the workspa
   }), { code: "QX_WORKSPACE_FILE_MISSING" });
 });
 
+test("rejects a build plan for another project and invalid permissions before writes", async t => {
+  const { project, buildPlan, workspace, writePermissions, testCases } = await fixture(t);
+  const otherDraft = createProjectDraft({
+    projectId: "different-workflow-project",
+    title: "Other Project",
+    description: "A different approved project",
+    requirements: ["Display an overview"],
+    pages: [{ id: "home", title: "Other Home" }]
+  });
+  const otherReviewed = submitProjectForReview(otherDraft).project;
+  const otherProject = approveProjectDraft(otherReviewed, {
+    approvedDigest: otherReviewed.digest
+  });
+  const otherPlan = createBuildPlan(otherProject, {
+    externalInputs: ["approved-manifest"],
+    tasks: [{
+      id: "static-web-build",
+      dependsOn: [],
+      inputs: ["approved-manifest"],
+      outputs: ["web-index", "web-css", "web-app"]
+    }]
+  });
+
+  await assert.rejects(runProjectBuildWorkflow({
+    workspace, project, expectedProjectDigest: project.digest,
+    buildPlan: otherPlan, writePermissions, testCases,
+    executeTest: async () => ({ status: "passed", summary: "not reached" })
+  }), { code: "QX_BUILD_PLAN_STALE" });
+
+  const wrongDigestPermissions = writePermissions.map(permission => ({
+    ...permission,
+    approvedProjectDigest: "sha256:" + "0".repeat(64)
+  }));
+  await assert.rejects(runProjectBuildWorkflow({
+    workspace, project, expectedProjectDigest: project.digest,
+    buildPlan, writePermissions: wrongDigestPermissions, testCases,
+    executeTest: async () => ({ status: "passed", summary: "not reached" })
+  }), { code: "QX_WORKSPACE_PERMISSION_REQUIRED" });
+
+  await assert.rejects(readProjectFile(workspace, {
+    project, expectedProjectDigest: project.digest, relativePath: "dist/index.html"
+  }), { code: "QX_WORKSPACE_FILE_MISSING" });
+});
+
 test("blocks delivery when a required project test fails", async t => {
   const { project, buildPlan, workspace, writePermissions, testCases } = await fixture(t);
   const result = await runProjectBuildWorkflow({
