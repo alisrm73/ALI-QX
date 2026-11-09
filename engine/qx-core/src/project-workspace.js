@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from "node:crypto";
+import { constants as fsConstants, createHash, randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { assertProjectApproved, QXProjectError } from "./project-model.js";
@@ -217,6 +217,48 @@ export async function openProjectWorkspace({ root, projectId } = {}) {
   const workspace = Object.freeze({ root: canonicalRoot, projectId });
   OPEN_WORKSPACES.add(workspace);
   return workspace;
+}
+
+export async function readProjectFile(workspace, { project, expectedProjectDigest, relativePath } = {}) {
+  assertWorkspace(workspace);
+  assertProjectApproved(project, { expectedDigest: expectedProjectDigest });
+  if (project.projectId !== workspace.projectId) {
+    fail("QX_WORKSPACE_PROJECT_MISMATCH", "Approved project ID does not match the selected workspace");
+  }
+  const resolved = await resolveTarget(workspace, relativePath);
+  const initial = await inspectRegularTarget(resolved.target);
+  if (!initial) fail("QX_WORKSPACE_FILE_MISSING", "Requested project file does not exist");
+  if (initial.size > MAX_FILE_BYTES) {
+    fail("QX_WORKSPACE_CONTENT_INVALID", "File exceeds the 10 MiB workspace read limit");
+  }
+  let handle;
+  try {
+    const flags = fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW ?? 0);
+    handle = await fs.open(resolved.target, flags);
+    const opened = await handle.stat();
+    if (!opened.isFile() || opened.dev !== initial.dev || opened.ino !== initial.ino ||
+        opened.size > MAX_FILE_BYTES) {
+      fail("QX_WORKSPACE_CONCURRENT_CHANGE", "Target changed or became unsafe while it was being opened");
+    }
+    const content = await handle.readFile();
+    const finalInfo = await handle.stat();
+    if (content.length !== finalInfo.size) {
+      fail("QX_WORKSPACE_CONCURRENT_CHANGE", "Target changed while it was being read");
+    }
+    return Object.freeze({
+      relativePath: resolved.relativePath,
+      content,
+      contentDigest: hash(content),
+      size: content.length
+    });
+  } catch (error) {
+    if (error.code === "ELOOP") {
+      fail("QX_WORKSPACE_PATH_UNSAFE", "Symbolic-link targets are not permitted");
+    }
+    throw error;
+  } finally {
+    await handle?.close();
+  }
 }
 
 export async function writeProjectFile(workspace, {
