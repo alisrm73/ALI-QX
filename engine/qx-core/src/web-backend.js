@@ -102,11 +102,16 @@ function browserRun(module, combiningClassEntries, uiLock, uiRegistry) {
       if (ids.has(node.id)) fail("QX_UI_ID_DUPLICATE", "Duplicate UI component ID", inst, ctx);
       ids.add(node.id);
       if (policy && !policy.components.includes(node.type)) fail("QX_UI_CHILD_POLICY", "Component child is not permitted", inst, ctx);
+      const availableReleases = (uiRegistry || []).filter(entry => entry.type === node.type);
+      if (availableReleases.length === 0) fail("QX_UI_UNKNOWN_COMPONENT", "Unknown UI component type", inst, ctx);
       const pin = pins.get(node.type + "@" + node.version);
-      const definition = pin && registry.get(node.type + "@" + node.version + "@" + pin.registryRelease);
-      if (!definition) fail("QX_UI_UNKNOWN_COMPONENT", "Unknown UI component type", inst, ctx);
-      if (node.version !== definition.contractVersion) fail("QX_UI_VERSION_MISMATCH", "UI component version mismatch", inst, ctx);
-      if (!pins.has(node.type + "@" + node.version)) fail("QX_UI_LOCK_MISSING", "Missing exact UI component lock pin", inst, ctx);
+      if (!pin) {
+        if (!availableReleases.some(entry => entry.contractVersion === node.version))
+          fail("QX_UI_VERSION_MISMATCH", "UI component version mismatch", inst, ctx);
+        fail("QX_UI_LOCK_MISSING", "Missing exact UI component lock pin", inst, ctx);
+      }
+      const definition = registry.get(node.type + "@" + node.version + "@" + pin.registryRelease);
+      if (!definition) fail("QX_UI_RELEASE_UNAVAILABLE", "Exact UI component release is unavailable", inst, ctx);
       if (!node.props || Object.getPrototypeOf(node.props) !== Object.prototype ||
           Object.keys(node.props).some(key => !Object.hasOwn(definition.props, key)) || Object.keys(node.props).length > 16)
         fail("QX_UI_PROPS_INVALID", "Invalid UI component properties", inst, ctx);
