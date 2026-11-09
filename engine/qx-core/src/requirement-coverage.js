@@ -78,6 +78,7 @@ function normalizeEntries(project, entries, testReport, deliveryReport) {
   const required = requirementsOf(project);
   const expected = new Map(required.map(item => [item.category + ":" + item.index, item]));
   const seen = new Set();
+  const allCriteriaIds = new Set();
   let criteriaCount = 0;
   const testResults = new Map(testReport.results.map(item => [item.testId, item]));
   const evidence = new Map(deliveryReport.items
@@ -111,10 +112,12 @@ function normalizeEntries(project, entries, testReport, deliveryReport) {
       if (!isPlainObject(criterion) ||
           Object.keys(criterion).some(key => !["id", "description", "testIds", "evidencePaths"].includes(key)) ||
           !["id", "description", "testIds", "evidencePaths"].every(key => Object.hasOwn(criterion, key)) ||
-          typeof criterion.id !== "string" || !ID_PATTERN.test(criterion.id) || criteriaIds.has(criterion.id)) {
-        fail("QX_REQUIREMENT_COVERAGE_INVALID", "Acceptance criteria require unique valid IDs, descriptions, tests, and evidence paths");
+          typeof criterion.id !== "string" || !ID_PATTERN.test(criterion.id) ||
+          criteriaIds.has(criterion.id) || allCriteriaIds.has(criterion.id)) {
+        fail("QX_REQUIREMENT_COVERAGE_INVALID", "Acceptance criteria require globally unique valid IDs, descriptions, tests, and evidence paths");
       }
       criteriaIds.add(criterion.id);
+      allCriteriaIds.add(criterion.id);
       const description = requireText(criterion.description, "acceptanceCriteria[" + criterionIndex + "].description", 1000);
       if (!Array.isArray(criterion.testIds) || criterion.testIds.length > 100 ||
           criterion.testIds.some(id => typeof id !== "string" || !ID_PATTERN.test(id)) ||
@@ -221,6 +224,8 @@ export function assertRequirementCoverageInput(project, entries, testCases) {
   const expected = new Set(required.map(item => item.category + ":" + item.index));
   const knownTests = new Set(testCases.filter(item => isPlainObject(item) && typeof item.id === "string").map(item => item.id));
   const seen = new Set();
+  const criteriaIds = new Set();
+  let criteriaCount = 0;
   for (const entry of entries) {
     if (!isPlainObject(entry) || CATEGORIES.includes(entry.category) === false ||
         !Number.isSafeInteger(entry.requirementIndex) || entry.requirementIndex < 0 ||
@@ -235,18 +240,26 @@ export function assertRequirementCoverageInput(project, entries, testCases) {
     seen.add(key);
     if (entry.clarification !== undefined) requireText(entry.clarification, "clarification", 1000);
     for (const criterion of entry.acceptanceCriteria) {
+      criteriaCount += 1;
+      if (criteriaCount > MAX_CRITERIA) {
+        fail("QX_REQUIREMENT_COVERAGE_INVALID", "Total acceptance criteria exceed the supported limit before build writes");
+      }
       if (!isPlainObject(criterion) ||
           Object.keys(criterion).some(key => !["id", "description", "testIds", "evidencePaths"].includes(key)) ||
+          !["id", "description", "testIds", "evidencePaths"].every(key => Object.hasOwn(criterion, key)) ||
           typeof criterion.id !== "string" || !ID_PATTERN.test(criterion.id) ||
+          criteriaIds.has(criterion.id) ||
           typeof criterion.description !== "string" || criterion.description.trim().length === 0 ||
+          criterion.description.length > 1000 ||
           !Array.isArray(criterion.testIds) || criterion.testIds.length > 100 ||
-          criterion.testIds.some(id => typeof id !== "string" || !knownTests.has(id)) ||
+          criterion.testIds.some(id => typeof id !== "string" || !ID_PATTERN.test(id) || !knownTests.has(id)) ||
           new Set(criterion.testIds).size !== criterion.testIds.length ||
           !Array.isArray(criterion.evidencePaths) || criterion.evidencePaths.length > 100 ||
           criterion.evidencePaths.some(path => !safeEvidencePath(path)) ||
           new Set(criterion.evidencePaths).size !== criterion.evidencePaths.length) {
-        fail("QX_REQUIREMENT_COVERAGE_INVALID", "Acceptance criteria must reference declared tests and safe evidence paths before build writes");
+        fail("QX_REQUIREMENT_COVERAGE_INVALID", "Acceptance criteria must have globally unique IDs, bounded descriptions, declared tests, and safe evidence paths before build writes");
       }
+      criteriaIds.add(criterion.id);
     }
   }
   if (seen.size !== required.length) {
