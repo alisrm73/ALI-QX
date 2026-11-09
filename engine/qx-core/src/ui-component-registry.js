@@ -2,9 +2,8 @@ import { createHash } from "node:crypto";
 
 const SEMVER_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$/;
 const REGISTRY_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
-const COMPONENT_TYPE_PATTERN = /^[A-Z][A-Z0-9]*(?:[._][A-Z0-9]+)*$/;
+const COMPONENT_TYPE_PATTERN = /^[A-Z][A-Z0-9_]*(?:\.[A-Z][A-Z0-9_]*)*$/;
 const RENDERER_PATTERN = /^[a-z][a-z0-9-]*$/;
-const DIGEST_PATTERN = /^sha256:[0-9a-f]{64}$/;
 
 export class QXUIRegistryError extends Error {
   constructor(code, message) {
