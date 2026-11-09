@@ -66,15 +66,18 @@ function isSemver(value) {
 }
 
 export function getUIComponentRegistry() {
-  return Object.freeze(registry.listReleases(undefined, REGISTRY_RELEASE).map(item => Object.freeze({
-    type: item.type,
-    contractVersion: item.contractVersion,
-    schemaDigest: item.schemaDigest,
-    registryRelease: item.registryRelease,
-    renderer: item.renderer,
-    props: item.props,
-    children: item.children
-  })));
+  return Object.freeze(definitions.map(definition => {
+    const item = registry.resolve(definition.type, definition.contractVersion, REGISTRY_RELEASE);
+    return Object.freeze({
+      type: item.type,
+      contractVersion: item.contractVersion,
+      schemaDigest: item.schemaDigest,
+      registryRelease: item.registryRelease,
+      renderer: item.renderer,
+      props: item.props,
+      children: item.children
+    });
+  }));
 }
 
 export function createDefaultUILock() {
