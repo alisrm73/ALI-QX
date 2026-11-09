@@ -41,6 +41,11 @@ function cloneJSON(value, seen = new WeakSet()) {
         registryFail("Registry arrays must contain only indexed data values");
       }
     }
+    const indexedKeys = Object.keys(descriptors).filter(key => key !== "length");
+    if (indexedKeys.length !== value.length ||
+        indexedKeys.some((key, index) => key !== String(index))) {
+      registryFail("Registry arrays must be dense and ordered");
+    }
     const result = value.map(item => cloneJSON(item, seen));
     seen.delete(value);
     return result;
@@ -53,7 +58,12 @@ function cloneJSON(value, seen = new WeakSet()) {
     if (typeof key !== "string" || !descriptor.enumerable || !Object.hasOwn(descriptor, "value")) {
       registryFail("Registry objects must contain only enumerable string data properties");
     }
-    result[key] = cloneJSON(descriptor.value, seen);
+    Object.defineProperty(result, key, {
+      value: cloneJSON(descriptor.value, seen),
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
   }
   seen.delete(value);
   return result;
