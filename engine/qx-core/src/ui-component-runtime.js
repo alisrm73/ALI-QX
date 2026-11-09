@@ -136,11 +136,15 @@ function validateLock(input) {
     fail("QX_UI_LOCK_INVALID", "Invalid UI component lock envelope");
   const seen = new Set();
   const entries = new Map();
+  let previousType = null, previousVersion = null;
   for (const entry of lock.components) {
     if (!exactKeys(entry, ["type", "contractVersion", "schemaDigest", "registryRelease"]) ||
         typeof entry.type !== "string" || !isSemver(entry.contractVersion) ||
         !digestPattern.test(entry.schemaDigest) || typeof entry.registryRelease !== "string" || !entry.registryRelease)
       fail("QX_UI_LOCK_INVALID", "Invalid UI component lock entry");
+    if (previousType !== null && (entry.type < previousType || (entry.type === previousType && entry.contractVersion < previousVersion)))
+      fail("QX_UI_LOCK_ORDER", "UI lock entries must be sorted by type and contract version");
+    previousType = entry.type; previousVersion = entry.contractVersion;
     const key = entry.type + "@" + entry.contractVersion;
     if (seen.has(key)) fail("QX_UI_LOCK_DUPLICATE", "Duplicate UI lock entry: " + key);
     seen.add(key);
