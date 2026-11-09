@@ -97,10 +97,70 @@ export function assertProjectDeliveryReport(project, plan, testReport, report) {
       !Array.isArray(report.issues) ||
       !["ready", "blocked"].includes(report.status) ||
       typeof report.digest !== "string" ||
-      report.digest !== digest(reportContent(report))) {
-    fail("QX_DELIVERY_INVALID", "Delivery report is malformed, stale, or its digest does not match");
+      report.digest !== digest(reportContent(report)) ||
+      report.items.some(item => !isPlainObject(item) ||
+        typeof item.path !== "string" || typeof item.required !== "boolean" ||
+        !["included", "missing", "unverified"].includes(item.status) ||
+        !Number.isSafeInteger(item.size) || item.size < 0) ||
+      report.issues.some(issue => !isPlainObject(issue) ||
+        typeof issue.code !== "string" || typeof issue.message !== "string") ||
+      report.summary.total !== report.items.length ||
+      report.summary.included !== report.items.filter(item => item.status === "included").length ||
+      report.summary.missing !== report.items.filter(item => item.status === "missing").length ||
+      report.summary.unverified !== report.items.filter(item => item.status === "unverified").length ||
+      report.summary.requiredMissing !== report.items.filter(item => item.required && item.status === "missing").length ||
+      report.status !== (report.issues.length === 0 ? "ready" : "blocked") ||
+      (report.status === "ready" && (typeof report.packageDigest !== "string" || report.issues.length !== 0)) ||
+      (report.status === "blocked" && report.packageDigest !== null)) {
+    fail("QX_DELIVERY_INVALID", "Delivery report is malformed, stale, or internally inconsistent");
   }
   return report;
+}
+
+
+export function assertProjectDeliveryPackage(project, plan, testReport, packageValue) {
+  assertProjectApproved(project, { expectedDigest: packageValue?.projectDigest });
+  assertBuildPlanForProject(project, plan);
+  assertProjectTestReport(project, plan, testReport);
+  if (!isPlainObject(packageValue) || packageValue.schemaVersion !== "1.0.0" ||
+      packageValue.projectId !== project.projectId ||
+      packageValue.projectRevision !== project.revision ||
+      packageValue.projectDigest !== project.digest ||
+      packageValue.buildPlanDigest !== plan.digest ||
+      packageValue.testReportDigest !== testReport.digest ||
+      !Array.isArray(packageValue.files) ||
+      typeof packageValue.digest !== "string" ||
+      packageValue.digest !== digest({
+        schemaVersion: packageValue.schemaVersion,
+        projectId: packageValue.projectId,
+        projectRevision: packageValue.projectRevision,
+        projectDigest: packageValue.projectDigest,
+        buildPlanDigest: packageValue.buildPlanDigest,
+        testReportDigest: packageValue.testReportDigest,
+        files: packageValue.files
+      })) {
+    fail("QX_DELIVERY_PACKAGE_INVALID", "Delivery package is malformed, stale, or its digest does not match");
+  }
+  let totalBytes = 0;
+  const seen = new Set();
+  for (const file of packageValue.files) {
+    if (!isPlainObject(file) || typeof file.path !== "string" ||
+        seen.has(file.path) || typeof file.contentBase64 !== "string" ||
+        !/^sha256:[a-f0-9]{64}$/.test(file.contentDigest) ||
+        !Number.isSafeInteger(file.size) || file.size < 0) {
+      fail("QX_DELIVERY_PACKAGE_INVALID", "Delivery package contains an invalid file entry");
+    }
+    seen.add(file.path);
+    const bytes = Buffer.from(file.contentBase64, "base64");
+    if (bytes.length !== file.size || hash(bytes) !== file.contentDigest) {
+      fail("QX_DELIVERY_PACKAGE_INVALID", "Packaged file content does not match its size or digest");
+    }
+    totalBytes += bytes.length;
+    if (totalBytes > MAX_PACKAGE_BYTES) {
+      fail("QX_DELIVERY_PACKAGE_INVALID", "Delivery package exceeds the total size limit");
+    }
+  }
+  return packageValue;
 }
 
 export async function createProjectDeliveryPackage(workspace, project, plan, testReport, {
@@ -111,8 +171,9 @@ export async function createProjectDeliveryPackage(workspace, project, plan, tes
   assertBuildPlanForProject(project, plan);
   assertProjectTestReport(project, plan, testReport);
   if (!Array.isArray(deliverables) || deliverables.length === 0 ||
-      deliverables.length > MAX_DELIVERABLES) {
-    fail("QX_DELIVERY_INVALID", "deliverables must contain between 1 and " + MAX_DELIVERABLES + " entries");
+      deliverables.length > MAX_DELIVERABLES ||
+      !deliverables.some(item => item && item.required === true)) {
+    fail("QX_DELIVERY_INVALID", "deliverables must contain between 1 and " + MAX_DELIVERABLES + " entries and at least one required file");
   }
 
   const seen = new Set();
