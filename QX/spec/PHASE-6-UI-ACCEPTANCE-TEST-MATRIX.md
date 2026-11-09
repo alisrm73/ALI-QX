@@ -1,15 +1,15 @@
 # Phase 6 UI Tree and Registry — Acceptance Test Matrix
 
-**Status:** Acceptance matrix for the static UI runtime candidate in PR #12; final release gate pending CI and review.  
+**Status:** Acceptance matrix for the static UI runtime merged through PR #12; broader acceptance remains gated by the cases below.  
 **Applies to:** `PHASE-6-UI-COMPONENT-TREE-CONTRACT.md` and `PHASE-6-UI-REGISTRY-VERSIONING-CONTRACT.md`.  
-**Runtime status:** A host registry, lock validator, bounded tree validator, VM `UI.TREE` path, and safe static-browser renderer are implemented on the PR #12 feature branch. The branch is not merged.  
+**Runtime status:** A host registry, lock validator, bounded tree validator, VM `UI.TREE` path, and safe static-browser renderer are merged into `main` through PR #12.  
 **Compatibility invariant:** QIR 1.0–1.3 remain unchanged; QIR 1.4 retains existing `UI.TEXT` / `UI.SHOW` behavior while adding `UI.TREE`.
 
 ## 1. Purpose and execution gate
 
 This matrix turns the two UI contracts into observable acceptance cases. It remains the normative acceptance checklist; executable coverage is added in `engine/qx-core/test/ui-component-runtime.test.js`, `qir.test.js`, `vm.test.js`, and `web-backend-runtime.test.js`.
 
-Further component activation MUST NOT begin until the owning contracts, serialization boundary, and host registry interface have been reviewed. The project lock-file convention is now fixed for future QX projects: `qx.ui-lock.json` at the project root, as a separate sidecar file. The repository currently exposes `engine/qx-core/package.json` as engine-package metadata but has no QX project manifest; this documentation change does not create a project file or treat the engine package manifest as one.
+No additional component types may be activated until their contracts, serialization boundaries, and host registry interfaces are reviewed. The project lock-file convention is `qx.ui-lock.json` at the QX project root. The sample at `engine/qx-core/examples/ui-tree-static/` demonstrates this sidecar separately from `engine/qx-core/package.json`.
 
 Some cases are now automated for the three registered static components. A case is **not passed** merely because its expected behavior is documented or because unrelated existing tests pass; the remaining acceptance rows continue to gate broader component registration.
 
@@ -23,7 +23,7 @@ Some cases are now automated for the three registered static components. A case 
 - **Lock-file fixture:** use the exact `QX.UI.COMPONENT-LOCK` schema and `qx.ui-lock.json` project-root sidecar convention; each component node's `version` must equal the matched lock entry's `contractVersion`.
 - **Resource tests:** use small configurable limits in test fixtures; production defaults must be separately justified and documented before activation.
 
-Error identifiers below are semantic categories, not finalized public error-code strings. Stable identifiers and their exact payload shape must be fixed in the implementation contract before runtime activation.
+Error identifiers below are semantic categories. The current implementation exposes stable UI diagnostic codes; this matrix does not yet map every row to one exact code and payload shape.
 
 ## 3. Tree-envelope and node-schema cases
 
@@ -170,7 +170,7 @@ A passing compatibility case must be demonstrated by the existing relevant execu
 
 ## 11. End-to-end sample project gate
 
-Before any component-tree feature is enabled, create a small, reviewable sample project that:
+The static runtime now has a small sample project in `engine/qx-core/examples/ui-tree-static/`. It must continue to satisfy these checks:
 
 - uses only host-registered static components;
 - contains nested components and literal text in a meaningful order;
@@ -180,11 +180,11 @@ Before any component-tree feature is enabled, create a small, reviewable sample 
 - demonstrates rejection of at least one invalid tree and one invalid lock manifest;
 - preserves the existing QIR 1.0–1.3 and UI.TEXT/UI.SHOW test results.
 
-The sample must be reviewed independently. It is not a substitute for the unit and contract cases above.
+The sample includes positive VM execution, static browser build, and negative invalid-tree/invalid-lock checks; `ui-tree-example.test.js` runs it under the core test suite. Independent review of the sample remains required. It is not a substitute for the unit and contract cases above.
 
-## 12. Exit criteria
+## 12. Exit criteria for broader UI acceptance
 
-The UI tree and registry/versioning work may be considered ready for implementation review only when:
+The UI tree and registry/versioning work may be considered fully accepted for broader expansion only when:
 
 1. Every applicable case has an executable test with a traceable requirement.
 2. Positive, negative, boundary, determinism, and whole-tree rejection cases pass.
@@ -197,4 +197,4 @@ The UI tree and registry/versioning work may be considered ready for implementat
 9. Runtime limits and stable public diagnostics are documented.
 10. A final security and compatibility review finds no unresolved release-blocking issue.
 
-Until these conditions are met, the two UI contracts and this matrix remain proposals. They do not authorize runtime activation, component registration, or a change to the existing QX command set.
+The three static presentation components and `UI.TREE` are already implemented in `main`. These conditions remain the gate for declaring the broader UI work complete or registering additional components; they do not authorize interactive behavior, arbitrary styling, or host capabilities.

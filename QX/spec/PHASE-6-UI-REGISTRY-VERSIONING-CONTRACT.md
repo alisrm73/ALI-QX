@@ -1,6 +1,6 @@
 # UI Component Registry and Project Version Pinning — Phase 6
 
-**Status:** Runtime implementation candidate in PR #12; host registry and exact lock validation are implemented on the feature branch, pending final CI and review.  
+**Status:** Host registry and exact lock validation for the three built-in static components are implemented in `main` through PR #12. Broader registry lifecycle requirements remain separately gated.  
 **Scope:** Host registry identity, immutable component contract releases, deterministic resolution, and project-level version locks.  
 **Compatibility:** QIR 1.0–1.3 remain unchanged. QIR 1.4 introduces `UI.TREE`; existing `UI.TEXT` / `UI.SHOW` behavior is retained.
 
@@ -15,7 +15,7 @@ It defines:
 - deterministic validation and failure behavior;
 - an explicit upgrade workflow.
 
-The current candidate adds the statement-only `UI.TREE(TXT)` command and a host-controlled renderer for the three static component releases listed in the registry. It does not enable events, fetch packages, or grant host capabilities. The UI tree contract remains a separate structural contract.
+The merged runtime provides the statement-only `UI.TREE(TXT)` command and a host-controlled renderer for the three static component releases listed in the registry. It does not enable events, fetch packages, or grant host capabilities. The UI tree contract remains a separate structural contract.
 
 ## 2. Identity model
 
@@ -53,7 +53,7 @@ The registry MUST reject duplicate canonical identities and duplicate release ve
 
 ## 4. Project lock model
 
-A project that uses component trees MUST carry a separate UTF-8 JSON lock file named **`qx.ui-lock.json` at the root of that QX project**. This is a sidecar file; it is not the repository root, the engine package root, or an assumed field inside another manifest. The current repository exposes `engine/qx-core/package.json` as engine-package metadata but does not define a QX project manifest or an existing component-lock convention. Therefore this contract reserves the sidecar path for future QX projects without creating a project file or changing the engine package metadata in this documentation-only change.
+A project that uses component trees MUST carry a separate UTF-8 JSON lock file named **`qx.ui-lock.json` at the root of that QX project**. This is a sidecar file; it is not the repository root, the engine package root, or an assumed field inside another manifest. The repository exposes `engine/qx-core/package.json` as engine-package metadata but does not define one canonical QX project manifest. The sample at `engine/qx-core/examples/ui-tree-static/` demonstrates the sidecar convention with its own `qx.ui-lock.json`; it does not alter engine package metadata.
 
 The lock file has this exact top-level shape (entry values below are illustrative):
 
@@ -150,7 +150,7 @@ Presentation-only components MUST remain incapable of network, filesystem, stora
 
 Project manifests and tree data are untrusted input. They MUST be parsed and validated as bounded data; they MUST NOT be evaluated as code.
 
-## 10. Acceptance criteria before implementation
+## 10. Acceptance criteria for broader registry lifecycle support
 
 This policy is not implemented until tests demonstrate:
 1. exact version resolution and stable schema-digest matching;
@@ -163,4 +163,4 @@ This policy is not implemented until tests demonstrate:
 8. no project-controlled renderer or capability escalation;
 9. compatibility with the UI tree contract and existing QIR 1.0–1.3 behavior.
 
-Until these criteria are implemented and independently verified, this document is a design proposal only. It enables no new runtime behavior.
+Exact lock validation and pin resolution for the three built-in releases are implemented and covered by tests. Multi-release lifecycle behavior, deprecation/retirement, and explicit upgrade/rollback workflows remain outside the current runtime. This document does not authorize components or capabilities beyond the host registry.
