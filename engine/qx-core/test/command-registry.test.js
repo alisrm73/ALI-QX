@@ -8,7 +8,7 @@ import {
 } from "../src/command-registry.js";
 
 test("registers exactly the V1 command catalog", () => {
-  assert.equal(COMMAND_REGISTRY.length, 17);
+  assert.equal(COMMAND_REGISTRY.length, 18);
   assert.deepEqual(
     [...new Set(COMMAND_REGISTRY.map(command => command.domain))],
     ["DATA", "UI", "PROCESS", "INTEGRATION", "QX"]
@@ -57,7 +57,7 @@ test("records the approved V1 command contracts", () => {
     ],
     result: { kind: "stored", target: "target", type: "BOOL" }
   });
-  assert.equal(COMMAND_REGISTRY.filter(command => command.signatureStatus === "specified").length, 9);
+  assert.equal(COMMAND_REGISTRY.filter(command => command.signatureStatus === "specified").length, 10);
   assert.deepEqual(resolveCommand("INTEGRATION", "REQUEST").signature, {
     parameters: [
       { name: "connector", type: "TXT" },
@@ -89,10 +89,14 @@ test("records the approved V1 command contracts", () => {
     parameters: [{ name: "text", type: "TXT" }],
     result: { kind: "effect", component: "TEXT" }
   });
+  assert.deepEqual(resolveCommand("UI", "TREE").signature, {
+    parameters: [{ name: "treeJson", type: "TXT" }],
+    result: { kind: "effect", component: "TREE" }
+  });
 });
 
 test("enables only commands with approved semantic contracts", () => {
-  const enabled = new Set(["DATA.COUNT", "DATA.ADD", "DATA.REMOVE", "UI.SHOW", "UI.TEXT", "PROCESS.ADD", "PROCESS.CALCULATE", "PROCESS.COMPARE", "INTEGRATION.REQUEST"]);
+  const enabled = new Set(["DATA.COUNT", "DATA.ADD", "DATA.REMOVE", "UI.SHOW", "UI.TEXT", "UI.TREE", "PROCESS.ADD", "PROCESS.CALCULATE", "PROCESS.COMPARE", "INTEGRATION.REQUEST"]);
   for (const command of COMMAND_REGISTRY) {
     assert.equal(command.enabled, enabled.has(command.id));
     assert.equal(isCommandEnabled(command.domain, command.name), enabled.has(command.id));
