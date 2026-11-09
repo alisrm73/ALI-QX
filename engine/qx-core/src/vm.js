@@ -298,7 +298,7 @@ function createQIRExecution(module, options = {}) {
               outputs.push(Object.freeze({ component: "SHOW", value: cloneValue(readValue(frame, args[0], instruction)), source: instruction.source }));
               break;
             }
-            if (op.command === "UI.TEXT" && args.length === 1 && ["1.2", "1.3"].includes(module.version)) {
+            if (op.command === "UI.TEXT" && args.length === 1 && ["1.2", "1.3", "1.4"].includes(module.version)) {
               const value = readValue(frame, args[0], instruction);
               if (typeof value !== "string") throw runtimeError("QX_VM_INVALID_TEXT", "UI.TEXT requires TXT", instruction, context);
               ensureString(value, instruction, frame);
