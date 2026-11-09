@@ -39,7 +39,7 @@ function validateTuple(record, label) {
   }
 }
 
-function validateHostPolicy(policy) {
+function validateHostPolicy(policy, registry) {
   if (!exactKeys(policy, ["revision", "status", "entries"]) ||
       typeof policy.revision !== "string" || !REGISTRY_ID.test(policy.revision) ||
       !["available", "unavailable"].includes(policy.status) ||
@@ -59,6 +59,15 @@ function validateHostPolicy(policy) {
     }, "Host policy entry");
     if (!["retired", "unsupported"].includes(entry.decision)) {
       lifecycleFail("Host policy decision must be retired or unsupported");
+    }
+    let registered;
+    try {
+      registered = registry.resolve(entry.type, entry.contractVersion, entry.registryRelease);
+    } catch {
+      lifecycleFail("Host policy entry does not identify a published exact component release");
+    }
+    if (registered.schemaDigest !== entry.schemaDigest) {
+      lifecycleFail("Host policy entry schema digest does not match its immutable registry release");
     }
     const key = tupleKey(entry);
     if (entries.has(key)) lifecycleFail("Host policy contains a duplicate exact release decision");
@@ -119,7 +128,7 @@ export function createUIComponentLifecycleRegistry(input = {}) {
     }));
   }
 
-  const policy = validateHostPolicy(input.hostPolicy);
+  const policy = validateHostPolicy(input.hostPolicy, input.registry);
 
   function resolve(type, contractVersion, registryRelease) {
     if (policy.status !== "available") {
