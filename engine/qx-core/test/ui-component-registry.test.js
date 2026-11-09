@@ -80,6 +80,11 @@ test("rejects conflicting schema digests for the same component contract version
 
 test("rejects duplicate snapshot IDs, duplicate contract pins, and malformed definitions", () => {
   assert.throws(() => createUIComponentRegistry({
+    snapshots: [{ registryRelease: "ui-registry-1.0.0", components: [heading("1.0.0")] }],
+    unexpected: true
+  }), { code: "QX_UI_REGISTRY_INVALID" });
+
+  assert.throws(() => createUIComponentRegistry({
     snapshots: [
       { registryRelease: "ui-registry-1.0.0", components: [heading("1.0.0")] },
       { registryRelease: "ui-registry-1.0.0", components: [heading("2.0.0")] }
@@ -97,6 +102,17 @@ test("rejects duplicate snapshot IDs, duplicate contract pins, and malformed def
     snapshots: [{
       registryRelease: "ui-registry-1.0.0",
       components: [{ ...heading("1.0.0"), renderer: "project-supplied renderer" }]
+    }]
+  }), { code: "QX_UI_REGISTRY_INVALID" });
+
+  const textWithNumericBounds = {
+    ...heading("1.0.0"),
+    props: { title: { type: "string", minimum: 1 } }
+  };
+  assert.throws(() => createUIComponentRegistry({
+    snapshots: [{
+      registryRelease: "ui-registry-1.0.0",
+      components: [textWithNumericBounds]
     }]
   }), { code: "QX_UI_REGISTRY_INVALID" });
 });
