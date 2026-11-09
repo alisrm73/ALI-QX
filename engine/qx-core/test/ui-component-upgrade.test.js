@@ -4,11 +4,14 @@ import { createUIComponentRegistry } from "../src/ui-component-registry.js";
 import { createUIComponentLifecycleRegistry } from "../src/ui-component-lifecycle.js";
 import { proposeUIComponentUpgrade } from "../src/ui-component-upgrade.js";
 
-const heading = (version, minimum = 1) => ({
+const heading = (version, minimum = 1, requireTone = false) => ({
   type: "UI.HEADING",
   contractVersion: version,
   renderer: "heading",
-  props: { level: { type: "number", required: true, integer: true, minimum, maximum: 6 } },
+  props: {
+    level: { type: "number", required: true, integer: true, minimum, maximum: 6 },
+    ...(requireTone ? { tone: { type: "string", required: true } } : {})
+  },
   children: { text: true, components: [] }
 });
 
@@ -38,11 +41,6 @@ const sourceSnapshot = {
   registryRelease: "ui-registry-1.0.0",
   components: [heading("1.0.0")]
 };
-const targetSnapshot = {
-  registryRelease: "ui-registry-2.0.0",
-  components: [heading("2.0.0")]
-};
-
 function fixture(targetComponents = [heading("2.0.0")], targetStates = {}) {
   const sourceRegistry = lifecycleRegistry([sourceSnapshot]);
   const targetSnapshots = [
@@ -96,12 +94,13 @@ function fixture(targetComponents = [heading("2.0.0")], targetStates = {}) {
   return { sourceRegistry, targetRegistry, lock, tree, mapping };
 }
 
-const request = (input, mappings) => ({
+const request = (input, mappings, targetTree) => ({
   tree: input.tree,
   lock: input.lock,
   sourceRegistry: input.sourceRegistry,
   targetRegistry: input.targetRegistry,
-  mappings
+  mappings,
+  ...(targetTree === undefined ? {} : { targetTree })
 });
 
 test("returns an exact deterministic lock and tree proposal without mutating source inputs", () => {
@@ -141,6 +140,22 @@ test("rejects implicit component type changes", () => {
 test("rejects a target whose schema cannot validate the existing tree", () => {
   const input = fixture([heading("2.0.0", 3)]);
   assert.throws(() => proposeUIComponentUpgrade(request(input, [input.mapping])), { code: "QX_UI_UPGRADE_INCOMPATIBLE" });
+});
+
+test("accepts an explicitly transformed tree when the target schema requires new properties", () => {
+  const input = fixture([heading("2.0.0", 1, true)]);
+  const transformedTree = {
+    ...input.tree,
+    children: [{
+      ...input.tree.children[0],
+      version: "2.0.0",
+      props: { level: 2, tone: "info" }
+    }]
+  };
+  const proposal = proposeUIComponentUpgrade(request(input, [input.mapping], transformedTree));
+  assert.deepEqual(proposal.tree.children[0].props, { level: 2, tone: "info" });
+  assert.equal(proposal.lock.components[0].contractVersion, "2.0.0");
+  assert.equal(input.tree.children[0].props.tone, undefined);
 });
 
 test("does not propose a target release retired by current host policy", () => {
