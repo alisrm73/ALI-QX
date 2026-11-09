@@ -45,12 +45,14 @@ const targetSnapshot = {
 
 function fixture(targetComponents = [heading("2.0.0")], targetStates = {}) {
   const sourceRegistry = lifecycleRegistry([sourceSnapshot]);
-  const targetRegistry = lifecycleRegistry([
+  const targetSnapshots = [
     sourceSnapshot,
     { registryRelease: "ui-registry-2.0.0", components: targetComponents }
-  ], targetStates);
+  ];
+  const targetCatalog = createUIComponentRegistry({ snapshots: targetSnapshots });
+  const targetRegistry = lifecycleRegistry(targetSnapshots, targetStates);
   const sourceRecord = sourceRegistry.resolve("UI.HEADING", "1.0.0", "ui-registry-1.0.0");
-  const targetRecord = targetRegistry.resolve(
+  const targetRecord = targetCatalog.resolve(
     targetComponents[0].type,
     targetComponents[0].contractVersion,
     "ui-registry-2.0.0"
@@ -138,20 +140,14 @@ test("rejects implicit component type changes", () => {
 
 test("rejects a target whose schema cannot validate the existing tree", () => {
   const input = fixture([heading("2.0.0", 3)]);
-  assert.throws(() => proposeUIComponentUpgrade({
-    ...input,
-    mappings: [input.mapping]
-  }), { code: "QX_UI_UPGRADE_INCOMPATIBLE" });
+  assert.throws(() => proposeUIComponentUpgrade(request(input, [input.mapping])), { code: "QX_UI_UPGRADE_INCOMPATIBLE" });
 });
 
 test("does not propose a target release retired by current host policy", () => {
   const input = fixture([heading("2.0.0")], {
     "2.0.0": { lifecycle: "retired" }
   });
-  assert.throws(() => proposeUIComponentUpgrade({
-    ...input,
-    mappings: [input.mapping]
-  }), { code: "QX_UI_RELEASE_RETIRED" });
+  assert.throws(() => proposeUIComponentUpgrade(request(input, [input.mapping])), { code: "QX_UI_RELEASE_RETIRED" });
 });
 
 test("rejects duplicate source mappings", () => {
