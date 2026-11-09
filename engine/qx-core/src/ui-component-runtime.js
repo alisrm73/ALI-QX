@@ -88,7 +88,7 @@ function isSemver(value) {
   if (typeof value !== "string") return false;
   const match = semver.exec(value);
   if (!match) return false;
-  return !(match[4] && match[4].split(".").some(part => /^\\d+$/.test(part) && part.length > 1 && part.startsWith("0")));
+  return !(match[4] && match[4].split(".").some(part => /^\d+$/.test(part) && part.length > 1 && part.startsWith("0")));
 }
 
 export function getUIComponentRegistry() {
