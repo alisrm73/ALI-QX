@@ -694,7 +694,7 @@ export function validateQIR(module) {
             report("QIR_E_CALL_RESULT", "Value-returning CALL must capture its result", inst.source);
         }
       }
-      if (inst.opcode === "COMMAND_CALL" && !["DATA.COUNT", ...(["1.1", "1.2", "1.3"].includes(module.version) ? ["DATA.ADD", "DATA.REMOVE"] : []), ...(["1.2", "1.3"].includes(module.version) ? ["UI.SHOW", "UI.TEXT"] : []), ...(module.version === "1.3" || module.version === "1.4" ? ["INTEGRATION.REQUEST"] : []), ...(module.version === "1.4" ? ["UI.TREE"] : [])].includes(inst.operands?.command))
+      if (inst.opcode === "COMMAND_CALL" && !["DATA.COUNT", ...(["1.1", "1.2", "1.3", "1.4"].includes(module.version) ? ["DATA.ADD", "DATA.REMOVE"] : []), ...(["1.2", "1.3", "1.4"].includes(module.version) ? ["UI.SHOW", "UI.TEXT"] : []), ...(module.version === "1.3" || module.version === "1.4" ? ["INTEGRATION.REQUEST"] : []), ...(module.version === "1.4" ? ["UI.TREE"] : [])].includes(inst.operands?.command))
         report("QIR_E_COMMAND_NOT_ALLOWED", "Command is not allowed by this QIR version", inst.source);
     }
   }
