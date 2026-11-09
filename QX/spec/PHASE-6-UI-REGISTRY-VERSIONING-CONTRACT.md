@@ -1,8 +1,8 @@
 # UI Component Registry and Project Version Pinning — Phase 6
 
-**Status:** Proposed normative policy for review; documentation only.  
+**Status:** Runtime implementation candidate in PR #12; host registry and exact lock validation are implemented on the feature branch, pending final CI and review.  
 **Scope:** Host registry identity, immutable component contract releases, deterministic resolution, and project-level version locks.  
-**Compatibility:** Does not change QIR 1.0–1.3, the existing command registry, or the current UI.TEXT/UI.SHOW runtime.
+**Compatibility:** QIR 1.0–1.3 remain unchanged. QIR 1.4 introduces `UI.TREE`; existing `UI.TEXT` / `UI.SHOW` behavior is retained.
 
 ## 1. Goals and non-goals
 
@@ -15,7 +15,7 @@ It defines:
 - deterministic validation and failure behavior;
 - an explicit upgrade workflow.
 
-It does not implement a component renderer, add UI commands, enable events, fetch packages, or grant host capabilities. The UI tree contract remains a separate structural contract.
+The current candidate adds the statement-only `UI.TREE(TXT)` command and a host-controlled renderer for the three static component releases listed in the registry. It does not enable events, fetch packages, or grant host capabilities. The UI tree contract remains a separate structural contract.
 
 ## 2. Identity model
 
