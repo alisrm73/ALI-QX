@@ -21,6 +21,11 @@ function hash(data) {
   return "sha256:" + createHash("sha256").update(data).digest("hex");
 }
 
+function isWithinRoot(root, candidate) {
+  const relative = path.relative(root, candidate);
+  return relative === "" || (!relative.startsWith(".." + path.sep) && relative !== ".." && !path.isAbsolute(relative));
+}
+
 function projectKey(projectId) {
   return createHash("sha256").update(projectId, "utf8").digest("hex").slice(0, 32);
 }
@@ -62,7 +67,7 @@ async function assertDirectoryNoSymlink(targetPath, expectedRoot) {
     fail("QX_WORKSPACE_PATH_UNSAFE", "A workspace directory is missing, not a directory, or is a symbolic link");
   }
   const actual = await fs.realpath(targetPath);
-  if (actual !== expectedRoot && !actual.startsWith(expectedRoot + path.sep)) {
+  if (!isWithinRoot(expectedRoot, actual)) {
     fail("QX_WORKSPACE_PATH_UNSAFE", "Workspace path resolves outside the selected root");
   }
   return info;
@@ -219,6 +224,9 @@ export async function writeProjectFile(workspace, {
 } = {}) {
   assertWorkspace(workspace);
   assertProjectApproved(project, { expectedDigest: expectedProjectDigest });
+  if (project.projectId !== workspace.projectId) {
+    fail("QX_WORKSPACE_PROJECT_MISMATCH", "Approved project ID does not match the selected workspace");
+  }
   const resolved = await resolveTarget(workspace, relativePath);
   assertPermission(permission, { operation: "write", relativePath: resolved.relativePath, project });
   const bytes = Buffer.isBuffer(content) ? content : Buffer.from(
@@ -270,6 +278,9 @@ export async function restoreProjectFile(workspace, {
 } = {}) {
   assertWorkspace(workspace);
   assertProjectApproved(project, { expectedDigest: expectedProjectDigest });
+  if (project.projectId !== workspace.projectId) {
+    fail("QX_WORKSPACE_PROJECT_MISMATCH", "Approved project ID does not match the selected workspace");
+  }
   const resolved = await resolveTarget(workspace, relativePath);
   assertPermission(permission, { operation: "restore", relativePath: resolved.relativePath, project });
   if (permission.backupId !== backupId) {
