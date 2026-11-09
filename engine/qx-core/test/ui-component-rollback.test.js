@@ -132,7 +132,7 @@ test("requires one explicit mapping for every current lock entry", () => {
   const input = fixture();
   assert.throws(
     () => proposeUIComponentRollback(request(input, [])),
-    { code: "QX_UI_ROLLBACK_INCOMPATIBLE" }
+    { code: "QX_UI_ROLLBACK_INVALID" }
   );
 });
 
@@ -141,7 +141,7 @@ test("rejects a mapping that does not identify the exact current pin", () => {
   assert.throws(() => proposeUIComponentRollback(request(input, [{
     ...input.mapping,
     from: { ...input.mapping.from, schemaDigest: "sha256:" + "0".repeat(64) }
-  }])), { code: "QX_UI_ROLLBACK_INCOMPATIBLE" });
+  }])), { code: "QX_UI_ROLLBACK_INVALID" });
 });
 
 test("rejects an implicit component type change", () => {
@@ -149,7 +149,7 @@ test("rejects an implicit component type change", () => {
   assert.throws(() => proposeUIComponentRollback(request(input, [{
     ...input.mapping,
     to: { ...input.mapping.to, type: "UI.TEXT_BLOCK" }
-  }])), { code: "QX_UI_ROLLBACK_INCOMPATIBLE" });
+  }])), { code: "QX_UI_ROLLBACK_INVALID" });
 });
 
 test("rejects a historical target retired by current host policy", () => {
@@ -166,7 +166,7 @@ test("rejects a historical target that cannot validate the current tree", () => 
   const input = fixture({}, [heading("1.0.0", 3)]);
   assert.throws(
     () => proposeUIComponentRollback(request(input, [input.mapping])),
-    { code: "QX_UI_ROLLBACK_INCOMPATIBLE" }
+    { code: "QX_UI_ROLLBACK_INVALID" }
   );
 });
 
