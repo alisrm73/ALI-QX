@@ -1,6 +1,6 @@
 # 7.8 — Integrated Approved Project Build Workflow
 
-**Status:** Implemented on `phase7/project-build-test-delivery`; fresh CI verification pending.
+**Status:** Implemented on `phase7/project-build-test-delivery`; integration and compatibility CI passed on head `40879d47444a2935ad73a3d093fdf4b6c70e63e4`. Additional mismatched-plan and permission regression tests are committed on a newer head; their CI is pending.
 **Parent:** Phase 7 / PR #27. Keep the PR Draft and open.
 
 ## 1. Goal
@@ -50,7 +50,7 @@ The current manifest stores natural-language requirement strings without structu
 
 ## 6. Acceptance criteria
 
-- [ ] Stale/unapproved projects and mismatched plans are rejected before writes.
+- [x] Stale/unapproved projects and mismatched plans are rejected before writes.
 - [ ] Missing, duplicate, unexpected, or wrong-digest output permissions are rejected before writes.
 - [ ] The plan must produce all three generated web artifacts.
 - [ ] Approved manifest generates source and deterministic static web assets.
