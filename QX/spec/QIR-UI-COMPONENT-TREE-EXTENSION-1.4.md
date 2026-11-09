@@ -1,6 +1,6 @@
 # QIR UI Component Tree Extension — Version 1.4
 
-- **Status:** Implementation candidate in ALI-QX PR #12; pending final CI, review, and merge.
+- **Status:** Implemented in `main` through ALI-QX PR #12. The PR-head `validate`, `qir`, and `browser` checks passed before merge.
 - **Base:** QIR 1.0, 1.1, 1.2, and 1.3 remain valid and retain their prior semantics.
 - **Scope:** Add the statement-only `UI.TREE(TXT)` effect for validated, declarative static component trees.
 - **Security boundary:** Component resolution is host-controlled and exact-version pinned. Tree data is never executable code.
