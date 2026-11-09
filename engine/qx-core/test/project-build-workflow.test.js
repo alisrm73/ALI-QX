@@ -130,7 +130,7 @@ test("rejects a build plan for another project and invalid permissions before wr
     workspace, project, expectedProjectDigest: project.digest,
     buildPlan: otherPlan, writePermissions, testCases,
     executeTest: async () => ({ status: "passed", summary: "not reached" })
-  }), { code: "QX_BUILD_PLAN_STALE" });
+  }), { code: "QX_PROJECT_BUILD_NOT_APPROVED" });
 
   const wrongDigestPermissions = writePermissions.map(permission => ({
     ...permission,
