@@ -5,6 +5,13 @@ import { assertProjectApproved, QXProjectError } from "./project-model.js";
 
 const METADATA_DIR = ".qx-workspace";
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
+const OPEN_WORKSPACES = new WeakSet();
+
+function assertWorkspace(workspace) {
+  if (!workspace || typeof workspace !== "object" || !OPEN_WORKSPACES.has(workspace)) {
+    fail("QX_WORKSPACE_CONFIG_INVALID", "Workspace must be created by openProjectWorkspace");
+  }
+}
 
 function fail(code, message) {
   throw new QXProjectError(code, message);
@@ -194,12 +201,15 @@ export async function openProjectWorkspace({ root, projectId } = {}) {
     if (error instanceof QXProjectError) throw error;
     fail("QX_WORKSPACE_CONFIG_INVALID", "Selected workspace root does not exist or cannot be accessed");
   }
-  return Object.freeze({ root: canonicalRoot, projectId });
+  const workspace = Object.freeze({ root: canonicalRoot, projectId });
+  OPEN_WORKSPACES.add(workspace);
+  return workspace;
 }
 
 export async function writeProjectFile(workspace, {
   project, expectedProjectDigest, relativePath, content, permission
 } = {}) {
+  assertWorkspace(workspace);
   assertProjectApproved(project, { expectedDigest: expectedProjectDigest });
   const resolved = await resolveTarget(workspace, relativePath);
   assertPermission(permission, { operation: "write", relativePath: resolved.relativePath, project });
@@ -286,8 +296,16 @@ export async function restoreProjectFile(workspace, {
 }
 
 export async function readProjectChangeLog(workspace) {
-  const { projectDir, logPath } = await ensureMetadata(workspace);
-  await assertDirectoryNoSymlink(projectDir, workspace.root);
+  assertWorkspace(workspace);
+  const projectDir = path.join(workspace.root, METADATA_DIR, projectKey(workspace.projectId));
+  const logPath = path.join(projectDir, "changes.jsonl");
+  try {
+    await assertDirectoryNoSymlink(path.join(workspace.root, METADATA_DIR), workspace.root);
+    await assertDirectoryNoSymlink(projectDir, workspace.root);
+  } catch (error) {
+    if (error.code === "ENOENT") return Object.freeze([]);
+    throw error;
+  }
   const info = await inspectRegularTarget(logPath);
   if (!info) return Object.freeze([]);
   const content = await fs.readFile(logPath, "utf8");
