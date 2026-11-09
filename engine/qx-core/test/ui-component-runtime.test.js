@@ -115,7 +115,10 @@ test("accepts exact resource boundaries and rejects the first value beyond each 
   assert.throws(() => validateUIComponentTree(twoNodes, lock, { maxNodes: 1 }), {
     code: "QX_UI_TREE_NODES"
   });
-  assert.throws(() => validateUIComponentTree(twoNodes, lock, { maxTextLength: 0 }), TypeError);
+  const overlongText = tree([{ kind: "text", value: "ab" }]);
+  assert.throws(() => validateUIComponentTree(overlongText, lock, { maxTextLength: 1 }), {
+    code: "QX_UI_TEXT_LIMIT"
+  });
   assert.throws(() => validateUIComponentTree(twoNodes, lock, { maxTextLength: 1, maxTotalTextLength: 1 }), {
     code: "QX_UI_TEXT_LIMIT"
   });
