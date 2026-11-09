@@ -150,9 +150,36 @@ export function assertProjectTestReport(project, plan, report) {
       report.projectDigest !== project.digest ||
       report.buildPlanDigest !== plan.digest ||
       !isPlainObject(report.fileDigests) || !Array.isArray(report.results) ||
-      !isPlainObject(report.summary) || typeof report.digest !== "string" ||
+      !isPlainObject(report.summary) || !["all", "affected"].includes(report.scope) ||
+      !Array.isArray(report.selectedTestIds) || typeof report.digest !== "string" ||
       report.digest !== digest(reportContent(report))) {
     fail("QX_TEST_REPORT_INVALID", "Test report is malformed, stale, or its digest does not match");
+  }
+  normalizeFileDigests(report.fileDigests);
+  const counts = {
+    total: report.results.length,
+    selected: report.results.filter(item => item.status !== "not_run").length,
+    passed: report.results.filter(item => item.status === "passed").length,
+    failed: report.results.filter(item => item.status === "failed").length,
+    skipped: report.results.filter(item => item.status === "skipped").length,
+    notRun: report.results.filter(item => item.status === "not_run").length,
+    requiredUnsuccessful: report.results.filter(item =>
+      item.required === true && item.status !== "passed"
+    ).length
+  };
+  if (report.results.some(item => !isPlainObject(item) ||
+      typeof item.testId !== "string" || !TEST_LEVELS.includes(item.level) ||
+      typeof item.required !== "boolean" || !TEST_STATUSES.includes(item.status) ||
+      typeof item.summary !== "string" ||
+      (item.status === "passed" && item.error !== null) ||
+      (item.status !== "passed" && !isPlainObject(item.error))) ||
+      canonicalJSON(counts) !== canonicalJSON(report.summary) ||
+      canonicalJSON(report.selectedTestIds) !== canonicalJSON(
+        report.results.filter(item => item.status !== "not_run").map(item => item.testId)
+      ) ||
+      report.status !== (counts.failed > 0 ? "failed" :
+        counts.requiredUnsuccessful > 0 ? "incomplete" : "passed")) {
+    fail("QX_TEST_REPORT_INVALID", "Test report results or aggregate summary are inconsistent");
   }
   return report;
 }
