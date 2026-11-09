@@ -127,7 +127,7 @@ For every component tree:
 2. Match each node to exactly one entry by canonical `(type, version)`.
 3. Resolve the exact `registryRelease` and component record.
 4. Compare type, contract version, registry release, and schema digest.
-5. Enforce lifecycle and host-support policy.
+5. Enforce snapshot lifecycle metadata and the current host-controlled revocation/support overlay.
 6. Validate node properties and child policy against that resolved record.
 7. Render only after the entire tree passes validation.
 
@@ -234,7 +234,8 @@ The implementation must add executable tests for:
 14. Invalid rollback fails and leaves current project unchanged.
 15. Runtime validation never mutates the lock or tree.
 16. Existing three static component contracts continue to pass all current tests.
-17. QIR 1.0–1.4, VM, browser, and integration tests remain green.\n18. A historical snapshot that marks a release active is still rejected when the current host overlay revokes that exact release.\n19. Project-supplied lock/tree data cannot add, remove, or bypass a host revocation.\n20. Host policy unavailability or unverifiable policy state fails closed before rendering.
+17. QIR 1.0–1.4, VM, browser, and integration tests remain green.
+18. A historical snapshot that marks a release active is still rejected when the current host overlay revokes that exact release.\n19. Project-supplied lock/tree data cannot add, remove, or bypass a host revocation.\n20. Host policy unavailability or unverifiable policy state fails closed before rendering.
 
 Tests must use isolated in-memory host registry fixtures and must not require network access.
 
