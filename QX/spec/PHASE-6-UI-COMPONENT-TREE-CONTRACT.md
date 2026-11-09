@@ -52,9 +52,9 @@ Only two node kinds are permitted.
 - `kind` is exactly `component`.
 - `id` is a non-empty, bounded string unique across the entire tree.
 - `type` is a canonical, case-sensitive identifier resolved only through the approved registry.
-- `version` pins the component contract version for this node.
+- `version` pins the component contract version for this node. It MUST exactly match the `contractVersion` in the single lock entry selected by this node's canonical `type`; a mismatch is rejected before rendering.
 - `props` is a JSON object validated against that component version's property schema. An empty object is used when no properties are required.
-- `children` is an ordered array of text or component nodes. A component contract may restrict whether children are allowed and which child categories are valid.
+- `children` is a REQUIRED ordered array of text or component nodes. Use an empty array when the component has no children. A component contract may restrict whether children are allowed and which child categories are valid.
 
 ### 3.2 Text node
 
@@ -106,10 +106,11 @@ A string that resembles HTML or script remains plain text and MUST never be eval
 
 ## 6. Children policy
 
-- `children` is always an ordered array when present; the canonical serialized form includes it on component nodes, including empty arrays.
+- `children` is REQUIRED on every component node and MUST be an array; use `[]` when there are no children. Omission, `null`, or any non-array value is invalid.
+- Text nodes are leaves and MUST NOT contain a `children` field.
 - Only the two node kinds defined in section 3 may appear.
 - The component registry schema declares whether a component accepts children, whether text children are permitted, and any allowed child component types.
-- Components that do not declare child support MUST receive an empty children array.
+- Components that do not declare child support MUST receive an empty `children` array.
 - No implicit wrapping, coercion, or child reordering is performed.
 
 ## 7. Registry and component contract boundary
@@ -160,7 +161,7 @@ Event handlers are not serialized into the tree. A future event system must use 
 - Existing QIR 1.0–1.3 behavior remains unchanged.
 - A future QIR bridge for component trees requires a separate extension proposal specifying serialization, validation, VM behavior, browser behavior, compatibility, and tests.
 - A breaking tree grammar change requires a new tree-schema major version. Compatible additions require a documented minor version and explicit unknown-field policy.
-- Projects pin each component contract version; no automatic upgrade or substitution is allowed.
+- Projects pin each component contract version in the project lock manifest described by `PHASE-6-UI-REGISTRY-VERSIONING-CONTRACT.md`; every component node's `version` MUST match its exact lock entry. No automatic upgrade or substitution is allowed.
 
 ## 11. Error contract
 
