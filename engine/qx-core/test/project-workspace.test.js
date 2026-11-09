@@ -42,6 +42,22 @@ test("requires an existing absolute root and canonicalizes it", async t => {
   });
 });
 
+
+test("does not create missing parent directories or accept forged workspace handles", async t => {
+  const { project, workspace } = await fixture(t);
+  const relativePath = "new-folder/app.js";
+  await assert.rejects(writeProjectFile(workspace, {
+    project, expectedProjectDigest: project.digest, relativePath, content: "blocked",
+    permission: permission(project, "write", relativePath, { mode: "create" })
+  }), { code: "QX_WORKSPACE_PARENT_MISSING" });
+  await assert.rejects(writeProjectFile({
+    root: workspace.root, projectId: project.projectId
+  }, {
+    project, expectedProjectDigest: project.digest, relativePath: "src/app.js", content: "blocked",
+    permission: permission(project, "write", "src/app.js", { mode: "create" })
+  }), { code: "QX_WORKSPACE_CONFIG_INVALID" });
+});
+
 test("requires exact approval and explicit create permission for each write", async t => {
   const { project, workspace, projectRoot } = await fixture(t);
   await assert.rejects(writeProjectFile(workspace, {
