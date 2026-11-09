@@ -199,3 +199,15 @@ test("rejects stale host policy tuples instead of silently ignoring revocation",
     }])
   }), { code: "QX_UI_LIFECYCLE_INVALID" });
 });
+
+test("fails closed when an exact release has no lifecycle/support record", () => {
+  const registry = baseRegistry();
+  const lifecycleRegistry = createUIComponentLifecycleRegistry({
+    registry,
+    lifecycle: [],
+    hostPolicy: policy()
+  });
+  assert.throws(() =>
+    validateUIComponentTreeWithLifecycle(tree(), lockFor(registry), lifecycleRegistry),
+  { code: "QX_UI_RELEASE_UNAVAILABLE" });
+});
