@@ -3,6 +3,7 @@ import { analyze } from "./semantic-analyzer.js";
 import { lowerToQIR, serializeQIR, validateQIR } from "./qir.js";
 import { COMBINING_CLASS, UNICODE_VERSION } from "./unicode-data.js";
 import { getUIComponentRegistry, validateUIComponentTree } from "./ui-component-runtime.js";
+import { validateUIComponentTreeWithLifecycle } from "./ui-component-lifecycle.js";
 
 export class QXWebBuildError extends Error {
   constructor(code, message, diagnostics = []) {
@@ -54,7 +55,7 @@ function browserRun(module, combiningClassEntries, uiLock, uiRegistry) {
     let tree;
     try { tree = JSON.parse(treeJson); }
     catch { fail("QX_UI_TREE_INVALID", "UI component tree must be valid JSON", inst, ctx); }
-    const registry = new Map((uiRegistry || []).map(entry => [entry.type, entry]));
+    const registry = new Map((uiRegistry || []).map(entry => [entry.type + "@" + entry.contractVersion + "@" + entry.registryRelease, entry]));
     if (!uiLock || Object.getPrototypeOf(uiLock) !== Object.prototype || Object.keys(uiLock).sort().join(",") !== "components,schema,version" || uiLock.schema !== "QX.UI.COMPONENT-LOCK" || uiLock.version !== "1.0" || !Array.isArray(uiLock.components))
       fail("QX_UI_LOCK_INVALID", "Invalid UI component lock", inst, ctx);
     const pins = new Map();
@@ -69,10 +70,10 @@ function browserRun(module, combiningClassEntries, uiLock, uiRegistry) {
       previousType = entry.type; previousVersion = entry.contractVersion;
       const key = entry.type + "@" + entry.contractVersion;
       if (pins.has(key)) fail("QX_UI_LOCK_DUPLICATE", "Duplicate UI lock entry", inst, ctx);
-      const registered = registry.get(entry.type);
-      if (!registered) fail("QX_UI_UNKNOWN_COMPONENT", "Unknown UI component in lock", inst, ctx);
-      if (entry.contractVersion !== registered.contractVersion || entry.registryRelease !== registered.registryRelease)
-        fail("QX_UI_RELEASE_UNAVAILABLE", "Exact UI component release is unavailable", inst, ctx);
+      const registered = registry.get(entry.type + "@" + entry.contractVersion + "@" + entry.registryRelease);
+      if (!registered) fail("QX_UI_RELEASE_UNAVAILABLE", "Exact UI component release is unavailable", inst, ctx);
+      if (registered.lifecycle === "retired") fail("QX_UI_RELEASE_RETIRED", "Exact UI component release is retired", inst, ctx);
+      if (registered.supported !== true) fail("QX_UI_RELEASE_UNAVAILABLE", "Exact UI component release is unsupported by this host", inst, ctx);
       if (entry.schemaDigest !== registered.schemaDigest)
         fail("QX_UI_DIGEST_MISMATCH", "UI component schema digest mismatch", inst, ctx);
       pins.set(key, entry);
@@ -101,7 +102,8 @@ function browserRun(module, combiningClassEntries, uiLock, uiRegistry) {
       if (ids.has(node.id)) fail("QX_UI_ID_DUPLICATE", "Duplicate UI component ID", inst, ctx);
       ids.add(node.id);
       if (policy && !policy.components.includes(node.type)) fail("QX_UI_CHILD_POLICY", "Component child is not permitted", inst, ctx);
-      const definition = registry.get(node.type);
+      const pin = pins.get(node.type + "@" + node.version);
+      const definition = pin && registry.get(node.type + "@" + node.version + "@" + pin.registryRelease);
       if (!definition) fail("QX_UI_UNKNOWN_COMPONENT", "Unknown UI component type", inst, ctx);
       if (node.version !== definition.contractVersion) fail("QX_UI_VERSION_MISMATCH", "UI component version mismatch", inst, ctx);
       if (!pins.has(node.type + "@" + node.version)) fail("QX_UI_LOCK_MISSING", "Missing exact UI component lock pin", inst, ctx);
@@ -219,10 +221,11 @@ function run() {
       if(item.component==="TEXT"){
         const text=document.createElement("p");text.className="qx-ui-text";text.textContent=item.value;root.append(text);
       }else if(item.component==="TREE"){
-        const registry=new Map((uiRegistry||[]).map(entry=>[entry.type,entry]));
+        const registry=new Map((uiRegistry||[]).map(entry=>[entry.type+"@"+entry.contractVersion+"@"+entry.registryRelease,entry]));
         const renderNode=node=>{
           if(node.kind==="text")return document.createTextNode(node.value);
-          const definition=registry.get(node.type);
+          const pin=(uiLock.components||[]).find(entry=>entry.type===node.type&&entry.contractVersion===node.version);
+          const definition=pin&&registry.get(node.type+"@"+node.version+"@"+pin.registryRelease);
           let element;
           if(definition.renderer==="container"){element=document.createElement("div");element.className="qx-ui-container";}
           else if(definition.renderer==="text-block"){element=document.createElement("p");element.className="qx-ui-text-block";}
@@ -266,13 +269,27 @@ export function generateWebAssets(qir, options = {}) {
   if(diagnostics.length)throw new QXWebBuildError("QX_WEB_INVALID_QIR","Cannot build invalid QIR",diagnostics);
   const hasUITree=[qir.initializer,...qir.functions].some(fn=>
     fn.blocks.some(block=>block.instructions.some(inst=>inst.opcode==="COMMAND_CALL"&&inst.operands?.command==="UI.TREE")));
-  let uiLock=null, uiRegistry=[];
+  let uiLock=null, uiRegistry=[], uiWarnings=[];
   if(hasUITree){
     if(!options.uiLock)throw new QXWebBuildError("QX_WEB_UI_LOCK_REQUIRED","UI.TREE requires the project's qx.ui-lock.json manifest");
     try{
-      validateUIComponentTree({schema:"QX.UI.TREE",version:"1.0",children:[]},options.uiLock);
       uiLock=typeof options.uiLock==="string"?JSON.parse(options.uiLock):options.uiLock;
-      uiRegistry=getUIComponentRegistry();
+      const emptyTree={schema:"QX.UI.TREE",version:"1.0",children:[]};
+      if(options.uiLifecycleRegistry){
+        const lifecycleResult=validateUIComponentTreeWithLifecycle(emptyTree,uiLock,options.uiLifecycleRegistry);
+        uiWarnings=lifecycleResult.warnings;
+        uiRegistry=uiLock.components.map(pin=>({
+          ...options.uiLifecycleRegistry.resolve(pin.type,pin.contractVersion,pin.registryRelease)
+        }));
+      }else{
+        validateUIComponentTree(emptyTree,uiLock);
+        const available=getUIComponentRegistry();
+        uiRegistry=uiLock.components.map(pin=>{
+          const definition=available.find(item=>item.type===pin.type&&item.contractVersion===pin.contractVersion&&item.registryRelease===pin.registryRelease);
+          if(!definition)throw Object.assign(new Error("Exact UI component release is unavailable"),{code:"QX_UI_RELEASE_UNAVAILABLE"});
+          return {...definition,lifecycle:"active",supported:true};
+        });
+      }
     }catch(error){
       throw new QXWebBuildError("QX_WEB_UI_LOCK_INVALID","UI component lock validation failed", [{ code: error.code || "QX_UI_LOCK_INVALID", message: "The supplied UI lock does not match the host registry" }]);
     }
@@ -309,7 +326,7 @@ export function generateWebAssets(qir, options = {}) {
     "@media (max-width: 520px) { .qx-shell { margin: 18px auto; } .qx-header, .qx-value { padding: 18px; } }"
   ].join("\n");
   return Object.freeze({format:"QX_WEB_PROJECT_V1",files:Object.freeze({"index.html":html,"styles.css":css,"app.js":appJS}),
-    metadata:Object.freeze({qirVersion:qir.version,unicodeVersion:UNICODE_VERSION,runtime:"browser-qir-compatible",networkAccess:false})});
+    metadata:Object.freeze({qirVersion:qir.version,unicodeVersion:UNICODE_VERSION,runtime:"browser-qir-compatible",networkAccess:false,...(hasUITree?{uiRegistryReleases:Object.freeze(uiRegistry.map(item=>({type:item.type,contractVersion:item.contractVersion,registryRelease:item.registryRelease,lifecycle:item.lifecycle,supported:item.supported}))),uiWarnings:Object.freeze(uiWarnings)}:{})})});
 }
 export function buildWebProject(source, options = {}) {
   if(typeof source!=="string")throw new TypeError("QX source must be a string");
