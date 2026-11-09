@@ -1,6 +1,6 @@
 # 7.7 — Deterministic Project-to-QX Source Generator
 
-**Status:** Approved direction; implementation not yet started.
+**Status:** Initial implementation committed; verification in progress.
 **Target branch:** `phase7/project-build-test-delivery`
 **Parent work:** PR #27 (keep Draft/open; do not merge without explicit approval).
 
@@ -24,7 +24,7 @@ It maps the approved manifest's existing fields into a deterministic static UI t
 - Stable node IDs are derived only from validated page IDs and fixed prefixes.
 - All user-provided strings are JSON-serialized as data; they are never interpolated as executable QX syntax.
 
-The generator returns a structured result containing the generated QX source, serialized UI tree, and exact UI component lock. The generated source is a single `UI.TREE(<JSON text>)` statement compatible with the existing parser, semantic analyzer, QIR, VM, and static Web Backend.
+The generator returns a structured result containing the generated QX source, serialized UI tree, exact UI component lock, and a frozen `unmappedRequirements` list. Requirements, data requirements, and integration requirements are explicitly listed there because this static slice does not implement their behavior; they must not be mistaken for completed features. The generated source is a single `UI.TREE(<JSON text>)` statement compatible with the existing parser, semantic analyzer, QIR, VM, and static Web Backend.
 
 ## 3. Determinism and approval boundary
 
@@ -64,7 +64,8 @@ No QX V1 grammar, command registry, UI component contract, lifecycle policy, exi
 - [ ] Validate the tree using the exact UI registry and lock.
 - [ ] Generated source passes parse, semantic analysis, QIR lowering/validation, and VM execution.
 - [ ] Generated source builds static `index.html`, `styles.css`, and `app.js` through the existing Web Backend.
-- [ ] Negative tests prove unsupported/invalid component trees and stale approval are rejected.
+- [ ] Negative tests prove unsupported/invalid component trees, stale approval, and unexpected manifest fields are rejected.
+- [ ] Requirements not implemented by this static generator are returned explicitly in `unmappedRequirements` and never silently discarded.
 - [ ] No filesystem mutation occurs in the generator itself.
 - [ ] A subsequent orchestration slice proves the complete approved-manifest-to-delivery path before phase 7 can close.
 
