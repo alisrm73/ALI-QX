@@ -16,3 +16,8 @@ export {
   validateUIComponentTree,
   validateUIComponentTreeWithRegistry
 } from "./ui-component-runtime.js";
+
+export {
+  createUIComponentLifecycleRegistry,
+  validateUIComponentTreeWithLifecycle
+} from "./ui-component-lifecycle.js";
