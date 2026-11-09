@@ -132,6 +132,21 @@ test("rejects a build plan for another project and invalid permissions before wr
     executeTest: async () => ({ status: "passed", summary: "not reached" })
   }), { code: "QX_PROJECT_BUILD_NOT_APPROVED" });
 
+  const incompletePlan = createBuildPlan(project, {
+    externalInputs: ["approved-manifest"],
+    tasks: [{
+      id: "incomplete-web-build",
+      dependsOn: [],
+      inputs: ["approved-manifest"],
+      outputs: ["web-index", "web-css"]
+    }]
+  });
+  await assert.rejects(runProjectBuildWorkflow({
+    workspace, project, expectedProjectDigest: project.digest,
+    buildPlan: incompletePlan, writePermissions, testCases,
+    executeTest: async () => ({ status: "passed", summary: "not reached" })
+  }), { code: "QX_PROJECT_WORKFLOW_PLAN_INVALID" });
+
   const duplicatePermissions = [
     writePermissions[0],
     writePermissions[0],
