@@ -247,6 +247,17 @@ test("QIR 1.2 retains DATA list extension operations", () => {
   assert.deepEqual(validateQIR(qir), []);
 });
 
+test("lowers UI.TREE into QIR 1.4 and rejects it in older QIR modules", () => {
+  const qir = compile('UI.TREE("{\\"schema\\":\\"QX.UI.TREE\\",\\"version\\":\\"1.0\\",\\"children\\":[]} ")');
+  assert.equal(qir.version, "1.4");
+  const call = qir.initializer.blocks.flatMap(block => block.instructions)
+    .find(inst => inst.opcode === "COMMAND_CALL" && inst.operands.command === "UI.TREE");
+  assert.ok(call);
+  assert.equal(call.type, undefined);
+  const older = { ...qir, version: "1.3" };
+  assert.ok(validateQIR(older).some(item => item.code === "QIR_E_COMMAND_SIGNATURE"));
+});
+
 test("QIR 1.1 rejects UI output commands", () => {
   const qir = compile('UI.TEXT("hello")');
   const bad = JSON.parse(JSON.stringify(qir));
