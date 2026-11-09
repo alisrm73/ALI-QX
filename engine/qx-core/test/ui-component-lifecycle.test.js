@@ -186,3 +186,17 @@ function createUIComponentLifecycleRegistryFixture(registry, lifecycleEntries, p
     })
   };
 }
+
+test("rejects stale host policy tuples instead of silently ignoring revocation", () => {
+  const registry = baseRegistry();
+  const key = exact(registry);
+  assert.throws(() => createUIComponentLifecycleRegistry({
+    registry,
+    lifecycle: [],
+    hostPolicy: policy([{
+      ...key,
+      schemaDigest: "sha256:" + "f".repeat(64),
+      decision: "retired"
+    }])
+  }), { code: "QX_UI_LIFECYCLE_INVALID" });
+});
