@@ -87,12 +87,7 @@ export function proposeUIComponentUpgrade(input = {}) {
   );
   const sourceLock = cloneValidatedLock(input.lock);
   const sourceEntries = sourceLock.components;
-  const sourceByTuple = new Map(sourceEntries.map(entry => [tupleKey({
-    registryRelease: entry.registryRelease,
-    type: entry.type,
-    contractVersion: entry.contractVersion,
-    schemaDigest: entry.schemaDigest
-  }), entry]));
+  const mappedSourceEntries = new Set();
 
   const mappingsBySource = new Map();
   const targetsByNode = new Map();
@@ -105,10 +100,10 @@ export function proposeUIComponentUpgrade(input = {}) {
     }
     validateTuple(mapping.from, "Upgrade source mapping");
     validateTuple(mapping.to, "Upgrade target mapping");
-    const sourceKey = tupleKey(mapping.from);
-    const sourceEntry = sourceByTuple.get(sourceKey);
+    const sourceEntry = sourceEntries.find(entry =>
+      TUPLE_KEYS.every(key => entry[key] === mapping.from[key]));
     if (!sourceEntry) upgradeFail("Upgrade mapping does not match an exact source lock entry");
-    if (mappingsBySource.has(sourceKey)) upgradeFail("Duplicate mapping for one exact source lock entry");
+    if (mappedSourceEntries.has(sourceEntry)) upgradeFail("Duplicate mapping for one exact source lock entry");
     if (mapping.from.type !== mapping.to.type) {
       upgradeFail("A component upgrade cannot silently change the component type");
     }
@@ -135,13 +130,12 @@ export function proposeUIComponentUpgrade(input = {}) {
     const targetKey = lockKey(targetEntry);
     if (targetLockKeys.has(targetKey)) upgradeFail("Multiple source entries map to the same target lock entry");
     targetLockKeys.add(targetKey);
-    mappingsBySource.set(sourceKey, targetEntry);
+    mappedSourceEntries.add(sourceEntry);
     targetsByNode.set(lockKey(sourceEntry), targetEntry);
     targetLockEntries.push(targetEntry);
   }
 
-  if (mappingsBySource.size !== sourceEntries.length ||
-      sourceByTuple.size !== mappingsBySource.size) {
+  if (mappedSourceEntries.size !== sourceEntries.length) {
     upgradeFail("Every source lock entry, including unused entries, requires exactly one explicit target mapping");
   }
 
