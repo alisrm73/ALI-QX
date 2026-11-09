@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createUIComponentRegistry } from "./ui-component-registry.js";
 
 export const UI_TREE_LIMITS = Object.freeze({
   maxSerializedBytes: 65536,
@@ -13,23 +13,6 @@ export const UI_TREE_LIMITS = Object.freeze({
 const REGISTRY_RELEASE = "ui-registry-1.0.0";
 const TREE_SCHEMA = "QX.UI.TREE";
 const LOCK_SCHEMA = "QX.UI.COMPONENT-LOCK";
-
-function canonicalJSON(value) {
-  if (value === null || typeof value === "string" || typeof value === "boolean") return JSON.stringify(value);
-  if (typeof value === "number") {
-    if (!Number.isFinite(value)) throw new TypeError("Canonical JSON requires finite numbers");
-    return JSON.stringify(value);
-  }
-  if (Array.isArray(value)) return "[" + value.map(canonicalJSON).join(",") + "]";
-  if (value && Object.getPrototypeOf(value) === Object.prototype) {
-    return "{" + Object.keys(value).sort().map(key => JSON.stringify(key) + ":" + canonicalJSON(value[key])).join(",") + "}";
-  }
-  throw new TypeError("Value is not canonical JSON data");
-}
-
-function digest(schema) {
-  return "sha256:" + createHash("sha256").update(canonicalJSON(schema), "utf8").digest("hex");
-}
 
 const definitions = [
   {
@@ -55,18 +38,9 @@ const definitions = [
   }
 ];
 
-const registry = new Map(definitions.map(definition => {
-  freezeDeep(definition.props);
-  freezeDeep(definition.children);
-  const schema = freezeDeep({
-    type: definition.type,
-    contractVersion: definition.contractVersion,
-    props: definition.props,
-    children: definition.children,
-    renderer: definition.renderer
-  });
-  return [definition.type, freezeDeep({ ...definition, schema, schemaDigest: digest(schema) })];
-}));
+const registry = createUIComponentRegistry({
+  snapshots: [{ registryRelease: REGISTRY_RELEASE, components: definitions }]
+});
 
 export class QXUIError extends Error {
   constructor(code, message, nodeId = null) {
@@ -92,15 +66,18 @@ function isSemver(value) {
 }
 
 export function getUIComponentRegistry() {
-  return Object.freeze([...registry.values()].map(item => Object.freeze({
-    type: item.type,
-    contractVersion: item.contractVersion,
-    schemaDigest: item.schemaDigest,
-    registryRelease: REGISTRY_RELEASE,
-    renderer: item.renderer,
-    props: item.props,
-    children: item.children
-  })));
+  return Object.freeze(definitions.map(definition => {
+    const item = registry.resolve(definition.type, definition.contractVersion, REGISTRY_RELEASE);
+    return Object.freeze({
+      type: item.type,
+      contractVersion: item.contractVersion,
+      schemaDigest: item.schemaDigest,
+      registryRelease: item.registryRelease,
+      renderer: item.renderer,
+      props: item.props,
+      children: item.children
+    });
+  }));
 }
 
 export function createDefaultUILock() {
@@ -130,7 +107,7 @@ function parseData(input, code, description, maxBytes) {
   return value;
 }
 
-function validateLock(input) {
+function validateLock(input, registryInput) {
   const lock = parseData(input, "QX_UI_LOCK_INVALID", "UI lock", UI_TREE_LIMITS.maxSerializedBytes);
   if (!exactKeys(lock, ["schema", "version", "components"]) || lock.schema !== LOCK_SCHEMA || lock.version !== "1.0" || !Array.isArray(lock.components))
     fail("QX_UI_LOCK_INVALID", "Invalid UI component lock envelope");
@@ -148,13 +125,19 @@ function validateLock(input) {
     const key = entry.type + "@" + entry.contractVersion;
     if (seen.has(key)) fail("QX_UI_LOCK_DUPLICATE", "Duplicate UI lock entry: " + key);
     seen.add(key);
-    const registered = registry.get(entry.type);
-    if (!registered) fail("QX_UI_UNKNOWN_COMPONENT", "Component is not present in the host registry: " + entry.type);
-    if (entry.registryRelease !== REGISTRY_RELEASE || entry.contractVersion !== registered.contractVersion)
-      fail("QX_UI_RELEASE_UNAVAILABLE", "The exact component release is not available: " + key);
+    if (registryInput.listReleases(entry.type).length === 0)
+      fail("QX_UI_UNKNOWN_COMPONENT", "Component is not present in the host registry: " + entry.type);
+    let registered;
+    try {
+      registered = registryInput.resolve(entry.type, entry.contractVersion, entry.registryRelease);
+    } catch (error) {
+      if (error?.code === "QX_UI_RELEASE_UNAVAILABLE")
+        fail("QX_UI_RELEASE_UNAVAILABLE", "The exact component release is not available: " + key);
+      throw error;
+    }
     if (entry.schemaDigest !== registered.schemaDigest)
       fail("QX_UI_DIGEST_MISMATCH", "Component contract digest does not match the host registry: " + entry.type);
-    entries.set(key, entry);
+    entries.set(key, registered);
   }
   return entries;
 }
@@ -167,13 +150,17 @@ function freezeDeep(value) {
   return value;
 }
 
-export function validateUIComponentTree(input, lockInput, limits = {}) {
+export function validateUIComponentTreeWithRegistry(input, lockInput, registryInput, limits = {}) {
+  if (!registryInput || typeof registryInput.resolve !== "function" ||
+      typeof registryInput.listReleases !== "function" || typeof registryInput.getRelease !== "function") {
+    throw new TypeError("A host UI component registry is required");
+  }
   const activeLimits = { ...UI_TREE_LIMITS, ...limits };
   for (const [name, value] of Object.entries(activeLimits)) {
     if (!Number.isSafeInteger(value) || value < 1) throw new TypeError(name + " must be a positive safe integer");
   }
   const raw = parseData(input, "QX_UI_TREE_INVALID", "UI component tree", activeLimits.maxSerializedBytes);
-  const lock = validateLock(lockInput);
+  const lock = validateLock(lockInput, registryInput);
   if (!exactKeys(raw, ["schema", "version", "children"]) || raw.schema !== TREE_SCHEMA || raw.version !== "1.0" || !Array.isArray(raw.children))
     fail("QX_UI_TREE_INVALID", "Invalid UI component tree envelope");
 
@@ -202,12 +189,24 @@ export function validateUIComponentTree(input, lockInput, limits = {}) {
     ids.add(node.id);
     if (parentPolicy && !parentPolicy.components.includes(node.type))
       fail("QX_UI_CHILD_POLICY", "Parent component does not permit child type " + node.type, node.id);
-    const definition = registry.get(node.type);
-    if (!definition) fail("QX_UI_UNKNOWN_COMPONENT", "Unknown UI component type: " + node.type, node.id);
-    if (node.version !== definition.contractVersion)
-      fail("QX_UI_VERSION_MISMATCH", "Component node version does not match the registered contract", node.id);
-    if (!lock.has(node.type + "@" + node.version))
-      fail("QX_UI_LOCK_MISSING", "No exact lock entry exists for " + node.type + "@" + node.version, node.id);
+    const availableReleases = registryInput.listReleases(node.type);
+    if (availableReleases.length === 0)
+      fail("QX_UI_UNKNOWN_COMPONENT", "Unknown UI component type: " + node.type, node.id);
+    const key = node.type + "@" + node.version;
+    const lockedRelease = lock.get(key);
+    if (!lockedRelease) {
+      if (!availableReleases.some(item => item.contractVersion === node.version))
+        fail("QX_UI_VERSION_MISMATCH", "Component node version does not match an available contract", node.id);
+      fail("QX_UI_LOCK_MISSING", "No exact lock entry exists for " + key, node.id);
+    }
+    let definition;
+    try {
+      definition = registryInput.resolve(node.type, node.version, lockedRelease.registryRelease);
+    } catch (error) {
+      if (error?.code === "QX_UI_RELEASE_UNAVAILABLE")
+        fail("QX_UI_RELEASE_UNAVAILABLE", "The exact component release is not available: " + key, node.id);
+      throw error;
+    }
     if (!allowedKeys(node.props, Object.keys(definition.props)) || Object.keys(node.props).length > activeLimits.maxProperties)
       fail("QX_UI_PROPS_INVALID", "Invalid or unknown component properties", node.id);
     for (const [name, rule] of Object.entries(definition.props)) {
@@ -226,4 +225,9 @@ export function validateUIComponentTree(input, lockInput, limits = {}) {
 
   const children = raw.children.map(node => visit(node, 1));
   return freezeDeep({ schema: TREE_SCHEMA, version: "1.0", children });
+}
+
+
+export function validateUIComponentTree(input, lockInput, limits = {}) {
+  return validateUIComponentTreeWithRegistry(input, lockInput, registry, limits);
 }

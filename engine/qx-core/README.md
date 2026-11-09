@@ -111,6 +111,38 @@ LIST equality remains deliberately rejected because QIR V1 does not define its e
 
 The VM requires the project lock through `runQIR(qir, { uiLock })` and rejects missing or mismatched pins and invalid trees before producing output. The static browser backend requires the same lock via `buildWebProject(source, { uiLock })` and renders approved components using safe DOM element and text-node APIs. Interactive components, events, input, arbitrary styling, navigation, and host capabilities remain disabled.
 
+### Host registry core — Phase B
+
+The host can construct an immutable registry catalog containing multiple exact component versions and immutable registry snapshots:
+
+```js
+import { createUIComponentRegistry, validateUIComponentTreeWithRegistry } from "./src/index.js";
+
+const headingV1 = {
+  type: "UI.HEADING",
+  contractVersion: "1.0.0",
+  renderer: "heading",
+  props: { level: { type: "number", required: true, integer: true, minimum: 1, maximum: 6 } },
+  children: { text: true, components: [] }
+};
+const headingV2 = { ...headingV1, contractVersion: "2.0.0" };
+
+const registry = createUIComponentRegistry({
+  snapshots: [
+    { registryRelease: "ui-registry-1.0.0", components: [headingV1] },
+    { registryRelease: "ui-registry-2.0.0", components: [headingV1, headingV2] }
+  ]
+});
+
+const release = registry.resolve("UI.HEADING", "1.0.0", "ui-registry-1.0.0");
+// release.schemaDigest and release.registryRelease are exact immutable pins.
+const validatedTree = validateUIComponentTreeWithRegistry(tree, projectLock, registry);
+```
+
+A snapshot ID is an exact opaque host identifier; each snapshot also exposes a deterministic SHA-256 content digest. Component schema digests are computed from canonical schema data. The same `(type, contractVersion)` cannot be republished with a different schema digest. Registry enumeration is deterministic and never chooses a version for resolution.
+
+The original `getUIComponentRegistry()`, `createDefaultUILock()`, and `validateUIComponentTree(input, lock, limits)` APIs remain compatible. The new validator is a separate host API so the existing third argument remains resource limits. This phase exposes the multi-version registry and exact validator; VM/browser injection and lifecycle/revocation policy are not part of this slice.
+
 ## Diagnostics note
 
 Diagnostics currently provide stable codes and English messages with source positions. Arabic message localization and project-language selection are later diagnostics-layer work.
