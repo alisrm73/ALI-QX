@@ -85,7 +85,7 @@ The QIR V1 normative specification is maintained at `QX/spec/QIR-V1.md`.
 
 `lowerToQIR(program, semanticAnalysis)` converts a semantically valid Program AST to QIR V1. `validateQIR(module)` returns structured diagnostics; `serializeQIR(module)` emits canonical JSON; `parseQIR(json)` parses and validates serialized QIR. The module initializer is `fn_0`; source functions receive stable `fn_1` onward identifiers in source order. The QIR module carries the Unicode 18.0.0 version marker and source start locations.
 
-The phase-3 QIR 1.0 implementation is consumed by the phase-4 VM described below. QIR 1.0 remains unchanged; modules using `DATA.ADD` or `DATA.REMOVE` are emitted as QIR 1.1 under `QX/spec/QIR-DATA-LIST-EXTENSION-1.1.md`; modules using `UI.SHOW` or `UI.TEXT` use QIR 1.2 under `QX/spec/QIR-UI-OUTPUT-EXTENSION-1.2.md`.
+The phase-3 QIR 1.0 implementation is consumed by the phase-4 VM described below. QIR 1.0 remains unchanged; modules using `DATA.ADD` or `DATA.REMOVE` are emitted as QIR 1.1 under `QX/spec/QIR-DATA-LIST-EXTENSION-1.1.md`; modules using `UI.SHOW` or `UI.TEXT` use QIR 1.2 under `QX/spec/QIR-UI-OUTPUT-EXTENSION-1.2.md`; modules using `UI.TREE` use QIR 1.4 under `QX/spec/QIR-UI-COMPONENT-TREE-EXTENSION-1.4.md`. QIR 1.4 retains all prior DATA, UI output, and integration contracts.
 
 ## QX Virtual Machine — phase 4 (complete)
 
@@ -101,9 +101,15 @@ const qir = lowerToQIR(ast, semantic);
 const result = runQIR(qir);
 ```
 
-The VM executes the module initializer, local/global storage, constants, unary/binary operations, lists, function calls, branches, jumps, returns, `DATA.COUNT`, `DATA.ADD`, `DATA.REMOVE`, `UI.SHOW`, and `UI.TEXT`. ADD/REMOVE return deep-copied lists and never mutate their inputs; REMOVE validates a zero-based safe-integer index. Runtime limits cover instruction count, call depth, list length, and string length. The VM has no host I/O, filesystem, network, or dynamic code execution interface.
+The VM executes the module initializer, local/global storage, constants, unary/binary operations, lists, function calls, branches, jumps, returns, `DATA.COUNT`, `DATA.ADD`, `DATA.REMOVE`, `UI.SHOW`, `UI.TEXT`, and QIR 1.4 `UI.TREE`. ADD/REMOVE return deep-copied lists and never mutate their inputs; REMOVE validates a zero-based safe-integer index. Runtime limits cover instruction count, call depth, list length, and string length. The VM has no host I/O, filesystem, network, or dynamic code execution interface.
 
 LIST equality remains deliberately rejected because QIR V1 does not define its equality semantics. Phase 4 was merged into `main`; its original validation suite contained 90 passing tests.
+
+## Static UI component trees — QIR 1.4
+
+`UI.TREE(TXT)` validates and emits a declarative static component tree. The built-in host registry currently exposes `UI.CONTAINER`, `UI.TEXT_BLOCK`, and `UI.HEADING`, all at contract version `1.0.0`. Every component must be pinned by the project's `qx.ui-lock.json`; the host does not select a latest version or substitute a renderer. `createDefaultUILock()` returns the lock entries for the built-in registry but does not write project files.
+
+The VM requires the project lock through `runQIR(qir, { uiLock })` and rejects missing or mismatched pins and invalid trees before producing output. The static browser backend requires the same lock via `buildWebProject(source, { uiLock })` and renders approved components using safe DOM element and text-node APIs. Interactive components, events, input, arbitrary styling, navigation, and host capabilities remain disabled.
 
 ## Diagnostics note
 
@@ -122,7 +128,7 @@ This parser capability is syntax/AST only. Phase 2 validates the three approved 
 
 ## Command registry
 
-The registry contains 17 QX V1 command names. Nine commands currently have enabled semantic contracts: `DATA.COUNT`, `DATA.ADD`, `DATA.REMOVE`, `UI.SHOW`, `UI.TEXT`, `PROCESS.ADD`, `PROCESS.CALCULATE`, `PROCESS.COMPARE`, and `INTEGRATION.REQUEST`. `DATA.GET` remains pending and disabled.
+The registry contains 18 QX V1 command names. Ten commands currently have enabled semantic contracts: `DATA.COUNT`, `DATA.ADD`, `DATA.REMOVE`, `UI.SHOW`, `UI.TEXT`, `UI.TREE`, `PROCESS.ADD`, `PROCESS.CALCULATE`, `PROCESS.COMPARE`, and `INTEGRATION.REQUEST`. `DATA.GET` remains pending and disabled.
 
 Use `resolveCommand(domain, command)` to resolve an English or Arabic alias to its canonical entry, and `isCommandEnabled(domain, command)` to inspect registry enablement. Enablement here denotes an approved semantic contract, not runtime availability; execution remains unimplemented until the VM phase.
 
@@ -142,7 +148,7 @@ const project = buildWebProject('DATA.CREATE(total, 4 + 5)', { title: "QX Demo" 
 // project.files: index.html, styles.css, app.js
 ```
 
-The build pipeline parses and semantically analyzes QX, lowers it to QIR 1.0, the compatible QIR 1.1 DATA list extension, QIR 1.2 UI output extension, or QIR 1.3 asynchronous integration extension, then validates the QIR. The static browser runtime supports local execution through QIR 1.2 and rejects modules containing `INTEGRATION.REQUEST`; QIR 1.3 integration requests require a trusted host runtime and broker. UI output is rendered as safe DOM text via `textContent`. It embeds the Unicode 18.0.0 combining-class table so NFC ordering and equality follow the pinned project data. It renders explicit UI output and resulting global values as text. UI output does not expose HTML, event handlers, network, or host APIs.
+The build pipeline parses and semantically analyzes QX, lowers it to QIR 1.0, the compatible QIR 1.1 DATA list extension, QIR 1.2 UI output extension, or QIR 1.3 asynchronous integration extension, then validates the QIR. The static browser runtime supports local execution through QIR 1.4, including lock-pinned `UI.TREE` static components, and rejects modules containing `INTEGRATION.REQUEST`; QIR 1.3 integration requests require a trusted host runtime and broker. UI output is rendered as safe DOM text via `textContent`. It embeds the Unicode 18.0.0 combining-class table so NFC ordering and equality follow the pinned project data. It renders explicit UI output and resulting global values as text. UI output does not expose HTML, event handlers, network, or host APIs.
 
 Generated projects have no network or host integration API, use DOM `textContent` for output, and include a restrictive Content Security Policy. The generated assets are deterministic for identical QIR and title inputs. The browser backend remains network-disabled; host integrations are isolated behind the separately documented broker API and are not available to generated browser projects.
 
