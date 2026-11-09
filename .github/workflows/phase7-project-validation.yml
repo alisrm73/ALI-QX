@@ -32,3 +32,12 @@ jobs:
       - name: Run QX core and project workflow tests
         working-directory: engine/qx-core
         run: npm test
+      - name: Install temporary browser test dependency
+        working-directory: engine/qx-core
+        run: npm install --no-save playwright
+      - name: Install Chromium
+        working-directory: engine/qx-core
+        run: npx playwright install --with-deps chromium
+      - name: Run integrated phase 7 browser acceptance
+        working-directory: engine/qx-core
+        run: node scripts/phase7-project-browser-smoke.mjs
