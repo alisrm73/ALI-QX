@@ -23,7 +23,7 @@ const tasks = [
 test("creates a deterministic topological plan tied to the approved project revision", () => {
   const project = approvedProject();
   const first = createBuildPlan(project, { expectedProjectDigest: project.digest, tasks, externalInputs: ["source-tree", "asset-source"] });
-  const second = createBuildPlan(project, { expectedProjectDigest: project.digest, tasks: [...tasks].reverse() });
+  const second = createBuildPlan(project, { expectedProjectDigest: project.digest, tasks: [...tasks].reverse(), externalInputs: ["source-tree", "asset-source"] });
   assert.deepEqual(first.order, ["assets", "lint", "compile", "bundle", "package"]);
   assert.equal(first.digest, second.digest);
   assert.equal(first.projectDigest, project.digest);
