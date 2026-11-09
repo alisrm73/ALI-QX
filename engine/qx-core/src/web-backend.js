@@ -207,46 +207,57 @@ function browserRun(module, combiningClassEntries, uiLock, uiRegistry) {
 function browserEntry(module, runProgram, combiningClassEntries, uiLock, uiRegistry) {
 const root=document.getElementById("qx-output");
 const status=document.getElementById("qx-status");
-try {
-  const result=runProgram(module, combiningClassEntries, uiLock, uiRegistry);
-  status.textContent="Execution completed";
-  for(const item of result.outputs||[]){
-    if(item.component==="TEXT"){
-      const text=document.createElement("p");text.className="qx-ui-text";text.textContent=item.value;root.append(text);
-    }else if(item.component==="TREE"){
-      const registry=new Map((uiRegistry||[]).map(entry=>[entry.type,entry]));
-      const renderNode=node=>{
-        if(node.kind==="text")return document.createTextNode(node.value);
-        const definition=registry.get(node.type);
-        let element;
-        if(definition.renderer==="container"){element=document.createElement("div");element.className="qx-ui-container";}
-        else if(definition.renderer==="text-block"){element=document.createElement("p");element.className="qx-ui-text-block";}
-        else if(definition.renderer==="heading"){element=document.createElement("h"+node.props.level);element.className="qx-ui-heading";}
-        else throw new Error("Unsupported host UI renderer");
-        for(const child of node.children)element.append(renderNode(child));
-        return element;
-      };
-      for(const child of item.tree.children)root.append(renderNode(child));
-    }else if(item.component==="SHOW"){
-      const section=document.createElement("section");section.className="qx-ui-show";
-      const pre=document.createElement("pre");pre.textContent=typeof item.value==="string"?item.value:JSON.stringify(item.value,null,2);
-      section.append(pre);root.append(section);
+const runButton=document.getElementById("qx-run-button");
+function run() {
+  root.replaceChildren();
+  status.textContent="Running QX program…";
+  try {
+    const result=runProgram(module, combiningClassEntries, uiLock, uiRegistry);
+    status.textContent="Execution completed";
+    for(const item of result.outputs||[]){
+      if(item.component==="TEXT"){
+        const text=document.createElement("p");text.className="qx-ui-text";text.textContent=item.value;root.append(text);
+      }else if(item.component==="TREE"){
+        const registry=new Map((uiRegistry||[]).map(entry=>[entry.type,entry]));
+        const renderNode=node=>{
+          if(node.kind==="text")return document.createTextNode(node.value);
+          const definition=registry.get(node.type);
+          let element;
+          if(definition.renderer==="container"){element=document.createElement("div");element.className="qx-ui-container";}
+          else if(definition.renderer==="text-block"){element=document.createElement("p");element.className="qx-ui-text-block";}
+          else if(definition.renderer==="heading"){element=document.createElement("h"+node.props.level);element.className="qx-ui-heading";}
+          else throw new Error("Unsupported host UI renderer");
+          for(const child of node.children)element.append(renderNode(child));
+          return element;
+        };
+        for(const child of item.tree.children)root.append(renderNode(child));
+      }else if(item.component==="SHOW"){
+        const section=document.createElement("section");section.className="qx-ui-show";
+        const pre=document.createElement("pre");pre.textContent=typeof item.value==="string"?item.value:JSON.stringify(item.value,null,2);
+        section.append(pre);root.append(section);
+      }
     }
+    const entries=Object.entries(result.globals);
+    if(!entries.length&&!(result.outputs||[]).length){const p=document.createElement("p");p.textContent="Program completed. No UI output or global values were produced.";root.append(p);}
+    for(const [name,value] of entries){
+      const section=document.createElement("section");section.className="qx-value";
+      const h=document.createElement("h2");h.textContent=name;
+      const pre=document.createElement("pre");pre.textContent=JSON.stringify(value,null,2);
+      section.append(h,pre);root.append(section);
+    }
+    const meta=document.createElement("p");meta.className="qx-meta";meta.textContent=result.instructionCount+" instructions executed";root.append(meta);
+  } catch(error) {
+    status.textContent="Execution failed";
+    const detail=document.createElement("pre");detail.className="qx-error";
+    detail.textContent=(error.code||"QX_RUNTIME_ERROR")+": "+error.message+(error.location?" (line "+error.location.line+", column "+error.location.column+")":"");
+    root.append(detail);
   }
-  const entries=Object.entries(result.globals);
-  if(!entries.length&&!(result.outputs||[]).length){const p=document.createElement("p");p.textContent="Program completed. No UI output or global values were produced.";root.append(p);}
-  for(const [name,value] of entries){
-    const section=document.createElement("section");section.className="qx-value";
-    const h=document.createElement("h2");h.textContent=name;
-    const pre=document.createElement("pre");pre.textContent=JSON.stringify(value,null,2);
-    section.append(h,pre);root.append(section);
-  }
-  const meta=document.createElement("p");meta.className="qx-meta";meta.textContent=result.instructionCount+" instructions executed";root.append(meta);
-} catch(error) {
-  status.textContent="Execution failed";
-  const detail=document.createElement("pre");detail.className="qx-error";
-  detail.textContent=(error.code||"QX_RUNTIME_ERROR")+": "+error.message+(error.location?" (line "+error.location.line+", column "+error.location.column+")":"");
-  root.append(detail);
+}
+if(runButton){
+  status.textContent="Ready to run";
+  runButton.addEventListener("click",run);
+}else{
+  run();
 }
 }
 export function generateWebAssets(qir, options = {}) {
@@ -279,7 +290,8 @@ export function generateWebAssets(qir, options = {}) {
     "<title>"+escapeHTML(title)+"</title>","<link rel=\"stylesheet\" href=\"./styles.css\">",
     "<script defer src=\"./app.js\"></script>","</head><body><main class=\"qx-shell\">",
     "<header class=\"qx-header\"><p class=\"qx-eyebrow\">ALI-QX · WEB BACKEND</p><h1>"+escapeHTML(title)+"</h1>",
-    "<p>Generated from a validated QIR module.</p><p id=\"qx-status\" class=\"qx-status\" role=\"status\" aria-live=\"polite\">Starting QX program…</p></header>",
+    "<p>Generated from a validated QIR module.</p><p id=\"qx-status\" class=\"qx-status\" role=\"status\" aria-live=\"polite\">Ready to run</p>",
+    "<button id=\\"qx-run-button\\" class=\\"qx-run-button\\" type=\\"button\\">Run QX program</button></header>",
     "<div id=\"qx-output\" class=\"qx-output\" aria-live=\"polite\"></div>",
     "<footer>QX V1 · Local execution · No network integrations</footer></main></body></html>"
   ].join("\n");
@@ -289,7 +301,7 @@ export function generateWebAssets(qir, options = {}) {
     ".qx-shell { width: min(880px, calc(100% - 32px)); margin: 48px auto; }",
     ".qx-header, .qx-value { background: #fff; border: 1px solid #e2e7ef; border-radius: 18px; padding: 24px; box-shadow: 0 8px 30px rgb(23 32 51 / 5%); }",
     ".qx-eyebrow, .qx-meta { color: #68758b; font-size: .78rem; letter-spacing: .08em; }",
-    "h1 { margin: .25rem 0; font-size: clamp(1.8rem, 5vw, 2.6rem); } .qx-status { color: #176b46; font-weight: 650; }",
+    "h1 { margin: .25rem 0; font-size: clamp(1.8rem, 5vw, 2.6rem); } .qx-status { color: #176b46; font-weight: 650; } .qx-run-button { margin-top: 8px; padding: 11px 18px; border: 0; border-radius: 10px; background: #2457c5; color: #fff; font: inherit; font-weight: 650; cursor: pointer; } .qx-run-button:focus-visible { outline: 3px solid #91b4ff; outline-offset: 3px; } .qx-run-button:hover { background: #1946a8; }",
     ".qx-output { display: grid; gap: 14px; margin-top: 18px; } .qx-ui-container { display: grid; gap: 12px; padding: 18px; border: 1px solid #e2e7ef; border-radius: 14px; background: #fff; } .qx-ui-text-block { margin: 0; line-height: 1.6; } .qx-ui-heading { margin: 0; } .qx-value h2 { margin: 0 0 12px; font-size: 1rem; } .qx-ui-text, .qx-ui-show { margin: 0; padding: 16px 18px; border: 1px solid #e2e7ef; border-radius: 12px; background: #fff; line-height: 1.6; overflow-wrap: anywhere; } .qx-ui-show pre { background: transparent; padding: 0; }",
     "pre { margin: 0; padding: 14px; border-radius: 10px; overflow: auto; background: #f5f7fa; white-space: pre-wrap; overflow-wrap: anywhere; }",
     ".qx-error { color: #9b2525; border: 1px solid #efcaca; background: #fff7f7; } footer { margin: 24px 4px; color: #758198; font-size: .8rem; }",
