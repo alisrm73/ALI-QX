@@ -283,9 +283,13 @@ export function generateWebAssets(qir, options = {}) {
       if(options.uiLifecycleRegistry){
         const lifecycleResult=validateUIComponentTreeWithLifecycle(emptyTree,uiLock,options.uiLifecycleRegistry);
         uiWarnings=lifecycleResult.warnings;
-        uiRegistry=uiLock.components.map(pin=>({
-          ...options.uiLifecycleRegistry.resolve(pin.type,pin.contractVersion,pin.registryRelease)
-        }));
+        uiRegistry=options.uiLifecycleRegistry.listReleases().map(record=>{
+          try{
+            return {...options.uiLifecycleRegistry.resolve(record.type,record.contractVersion,record.registryRelease)};
+          }catch(error){
+            return {...record,lifecycle:error?.code==="QX_UI_RELEASE_RETIRED"?"retired":"unavailable",supported:false};
+          }
+        });
       }else{
         validateUIComponentTree(emptyTree,uiLock);
         const available=getUIComponentRegistry();
@@ -331,7 +335,7 @@ export function generateWebAssets(qir, options = {}) {
     "@media (max-width: 520px) { .qx-shell { margin: 18px auto; } .qx-header, .qx-value { padding: 18px; } }"
   ].join("\n");
   return Object.freeze({format:"QX_WEB_PROJECT_V1",files:Object.freeze({"index.html":html,"styles.css":css,"app.js":appJS}),
-    metadata:Object.freeze({qirVersion:qir.version,unicodeVersion:UNICODE_VERSION,runtime:"browser-qir-compatible",networkAccess:false,...(hasUITree?{uiRegistryReleases:Object.freeze(uiRegistry.map(item=>({type:item.type,contractVersion:item.contractVersion,registryRelease:item.registryRelease,lifecycle:item.lifecycle,supported:item.supported}))),uiWarnings:Object.freeze(uiWarnings)}:{})})});
+    metadata:Object.freeze({qirVersion:qir.version,unicodeVersion:UNICODE_VERSION,runtime:"browser-qir-compatible",networkAccess:false,...(hasUITree?{uiRegistryReleases:Object.freeze(uiLock.components.map(pin=>{const item=uiRegistry.find(record=>record.type===pin.type&&record.contractVersion===pin.contractVersion&&record.registryRelease===pin.registryRelease);return {type:item.type,contractVersion:item.contractVersion,registryRelease:item.registryRelease,lifecycle:item.lifecycle,supported:item.supported};})),uiWarnings:Object.freeze(uiWarnings)}:{})})});
 }
 export function buildWebProject(source, options = {}) {
   if(typeof source!=="string")throw new TypeError("QX source must be a string");
