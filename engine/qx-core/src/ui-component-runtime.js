@@ -113,7 +113,10 @@ function parseData(input, code, description, maxBytes) {
   }
   if (!value || typeof value !== "object" || Array.isArray(value) || Object.getPrototypeOf(value) !== Object.prototype)
     fail(code, description + " must be a plain JSON object");
-  if (Buffer.byteLength(JSON.stringify(value), "utf8") > maxBytes) fail(code, description + " exceeds the byte limit");
+  let serialized;
+  try { serialized = JSON.stringify(value); }
+  catch { fail(code, description + " must contain only JSON data"); }
+  if (Buffer.byteLength(serialized, "utf8") > maxBytes) fail(code, description + " exceeds the byte limit");
   return value;
 }
 
