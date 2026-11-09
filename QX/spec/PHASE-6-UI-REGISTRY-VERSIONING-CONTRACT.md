@@ -53,33 +53,53 @@ The registry MUST reject duplicate canonical identities and duplicate release ve
 
 ## 4. Project lock model
 
-A project that uses component trees MUST carry an explicit component lock manifest. The exact filename and integration point with the existing project manifest are implementation decisions and are not fixed by this proposal.
+A project that uses component trees MUST carry a separate UTF-8 JSON lock file named **`qx.ui-lock.json` at the root of that QX project**. This is a sidecar file; it is not the repository root, the engine package root, or an assumed field inside another manifest. The current repository exposes `engine/qx-core/package.json` as engine-package metadata but does not define a QX project manifest or an existing component-lock convention. Therefore this contract reserves the sidecar path for future QX projects without creating a project file or changing the engine package metadata in this documentation-only change.
 
-Each lock entry contains:
-- canonical component type;
-- exact contract version;
-- contract schema digest;
-- registry release identifier.
+The lock file has this exact top-level shape (entry values below are illustrative):
 
-The lock manifest also declares its own format version. It MUST NOT reuse the QIR version or UI tree-schema version.
+```json
+{
+  "schema": "QX.UI.COMPONENT-LOCK",
+  "version": "1.0",
+  "components": [
+    {
+      "type": "UI.TEXT_BLOCK",
+      "contractVersion": "1.0.0",
+      "schemaDigest": "sha256:…",
+      "registryRelease": "ui-registry-2026.01"
+    }
+  ]
+}
+```
+
+- `schema` is the exact discriminator `QX.UI.COMPONENT-LOCK`.
+- `version` is the lock-file format version, independent of QIR and tree-schema versions.
+- `components` is an array of exact immutable component-release pins.
+- Each entry contains a canonical component `type`, exact semantic `contractVersion`, `schemaDigest`, and exact `registryRelease` identifier.
+- `schemaDigest` uses the `sha256:` prefix followed by the lowercase hexadecimal SHA-256 digest of the canonical published component-contract schema.
+
+A lock entry is uniquely identified by the pair `(type, contractVersion)`. Duplicate pairs are invalid; distinct versions of one type may coexist only when each is explicitly pinned. Each component node resolves by the exact pair formed from its `type` and `version`, and that node version MUST equal the lock entry's `contractVersion`. The digest and registry release are taken only from the lock entry and MUST match the immutable host registry record.
 
 Rules:
-1. Every component node in a project tree resolves to exactly one lock entry.
+1. Every component node resolves to exactly one lock entry matching both canonical `type` and exact `version`.
 2. Every lock entry resolves to an exact immutable host registry release.
-3. Missing entries, duplicate entries, digest mismatches, and unavailable releases are errors.
+3. Missing entries, duplicate `(type, contractVersion)` pairs, digest mismatches, and unavailable releases are errors.
 4. No latest-version lookup, version range, wildcard, fallback renderer, or silent substitution is permitted during build or execution.
-5. A project with no component tree does not need a component lock manifest.
+5. A project with no component tree does not need `qx.ui-lock.json`.
 6. Unused lock entries may be reported as warnings, but MUST NOT change resolution.
+7. Entries are serialized in deterministic ascending order by canonical `type`, then `contractVersion`; the `components` array is never used as a fallback or priority order.
 
 ## 5. Deterministic resolution
 
 Resolution follows this order:
-1. Validate the lock manifest format and reject unknown fields.
-2. Validate each entry's canonical type and exact version syntax.
-3. Resolve the exact release identifier in the trusted host registry.
-4. Compare canonical type, version, and schema digest.
-5. Validate each tree node against the resolved release's property and child schemas.
-6. Apply the release's declared limits before rendering.
+1. Locate `qx.ui-lock.json` at the QX project root; if a component tree exists and the file is missing, reject the project.
+2. Validate the lock-file schema discriminator, format version, required fields, and unknown-field policy.
+3. Validate each entry's canonical type, exact semantic version, `sha256:` digest syntax, and registry release identifier; reject duplicate `(type, contractVersion)` pairs.
+4. For each component node, match exactly one lock entry by `(type, version)`; reject missing or ambiguous matches.
+5. Resolve the exact `registryRelease` and component release in the trusted host registry.
+6. Compare canonical type, contract version, schema digest, and registry release identifier with the immutable registry record.
+7. Validate each tree node against the resolved release's property and child schemas.
+8. Apply the release's declared limits before rendering.
 
 Any failure rejects the component tree before rendering. The runtime MUST NOT partially render a tree after a resolution or validation failure.
 
