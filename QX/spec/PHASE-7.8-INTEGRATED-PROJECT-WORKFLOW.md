@@ -1,6 +1,6 @@
 # 7.8 — Integrated Approved Project Build Workflow
 
-**Status:** Implemented on `phase7/project-build-test-delivery`; integration and compatibility CI passed on head `40879d47444a2935ad73a3d093fdf4b6c70e63e4`. Additional mismatched-plan and permission regression tests are committed on a newer head; their CI is pending.
+**Status:** Implementation and integration tests committed on `phase7/project-build-test-delivery`; fresh CI is pending on latest head `70ec5f32fdb15564b746d6e906401509ab746928`. The previous head `40879d47444a2935ad73a3d093fdf4b6c70e63e4` passed all five workflows.
 **Parent:** Phase 7 / PR #27. Keep the PR Draft and open.
 
 ## 1. Goal
@@ -51,14 +51,14 @@ The current manifest stores natural-language requirement strings without structu
 ## 6. Acceptance criteria
 
 - [x] Stale/unapproved projects and mismatched plans are rejected before writes.
-- [ ] Missing, duplicate, unexpected, or wrong-digest output permissions are rejected before writes.
-- [ ] The plan must produce all three generated web artifacts.
-- [ ] Approved manifest generates source and deterministic static web assets.
-- [ ] All three files are written only through the protected workspace API.
-- [ ] Tests run with actual written-file digests and required failures block delivery.
-- [ ] Delivery package contains all three generated assets and validates against the same project, plan, and test report.
-- [ ] Unmapped requirements force `requires_requirement_review`, never `ready`.
-- [ ] Partial write failure semantics and non-transactional behavior are documented.
+- [x] Missing, duplicate, unexpected, or wrong-digest output permissions are rejected before writes.
+- [x] The plan must produce all three generated web artifacts.
+- [x] Approved manifest generates source and deterministic static web assets.
+- [x] All three files are written only through the protected workspace API.
+- [x] Tests run with actual written-file digests and required failures block delivery.
+- [x] Delivery package contains all three generated assets and validates against the same project, plan, and test report.
+- [x] Unmapped requirements force `requires_requirement_review`, never `ready`.
+- [x] Partial write failure semantics and non-transactional behavior are documented.
 - [ ] All phase 3–7 and browser compatibility workflows pass on the final head.
 
 ## 7. Limits
