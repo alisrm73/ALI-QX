@@ -25,6 +25,8 @@ export {
 export { proposeUIComponentUpgrade } from "./ui-component-upgrade.js";
 export { proposeUIComponentRollback } from "./ui-component-rollback.js";
 
+export { generateQXSourceFromProject } from "./project-source-generator.js";
+
 export {
   QXProjectError,
   createProjectDraft,
