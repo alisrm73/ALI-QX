@@ -141,7 +141,9 @@ test("browser runtime renders validated UI.TREE with safe DOM text nodes", () =>
 
 test("browser build requires and validates the exact UI component lock", () => {
   assert.throws(() => buildWebProject('UI.TREE("{}")'), { code: "QX_WEB_UI_LOCK_REQUIRED" });
-  const badLock = { ...createDefaultUILock(), components: [] };
+  const validLock = createDefaultUILock();
+  const badLock = { ...validLock, components: validLock.components.map(entry => entry.type === "UI.HEADING"
+    ? { ...entry, schemaDigest: "sha256:" + "0".repeat(64) } : entry) };
   assert.throws(() => buildWebProject('UI.TREE("{}")', { uiLock: badLock }), { code: "QX_WEB_UI_LOCK_INVALID" });
 });
 
