@@ -252,3 +252,42 @@ test("rejects nested object property values instead of accepting unbounded prope
     code: "QX_UI_PROP_INVALID"
   });
 });
+
+
+test("keeps generated registry lock snapshots deterministic and immutable", () => {
+  const first = createDefaultUILock();
+  const second = createDefaultUILock();
+  assert.deepEqual(first, second);
+  assert.deepEqual(first.components.map(entry => entry.type), [
+    "UI.CONTAINER", "UI.HEADING", "UI.TEXT_BLOCK"
+  ]);
+  assert.equal(Object.isFrozen(first), true);
+  assert.equal(Object.isFrozen(first.components), true);
+  assert.ok(first.components.every(entry => Object.isFrozen(entry)));
+  assert.throws(() => { first.components[0].contractVersion = "2.0.0"; }, TypeError);
+  assert.throws(() => { first.components.push(first.components[0]); }, TypeError);
+});
+
+test("rejects unavailable older and newer releases without silent version fallback", () => {
+  for (const unsupportedVersion of ["0.9.0", "1.1.0"]) {
+    const unavailable = {
+      ...lock,
+      components: lock.components.map(entry => entry.type === "UI.HEADING"
+        ? { ...entry, contractVersion: unsupportedVersion } : entry)
+    };
+    assert.throws(() => validateUIComponentTree(tree([]), unavailable), {
+      code: "QX_UI_RELEASE_UNAVAILABLE"
+    });
+  }
+});
+
+test("rejects a lock pin from a different registry release", () => {
+  const foreignRegistry = {
+    ...lock,
+    components: lock.components.map(entry => entry.type === "UI.HEADING"
+      ? { ...entry, registryRelease: "ui-registry-2.0.0" } : entry)
+  };
+  assert.throws(() => validateUIComponentTree(tree([]), foreignRegistry), {
+    code: "QX_UI_RELEASE_UNAVAILABLE"
+  });
+});
