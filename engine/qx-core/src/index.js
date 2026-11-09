@@ -62,3 +62,9 @@ export {
   assertProjectDeliveryReport,
   assertProjectDeliveryPackage
 } from "./project-delivery.js";
+
+export {
+  assertRequirementCoverageInput,
+  createRequirementCoverageReport,
+  assertRequirementCoverageReport
+} from "./requirement-coverage.js";
