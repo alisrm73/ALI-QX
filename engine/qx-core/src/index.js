@@ -53,3 +53,8 @@ export {
   runProjectTestSuite,
   assertProjectTestReport
 } from "./project-test-suite.js";
+
+export {
+  createProjectDeliveryPackage,
+  assertProjectDeliveryReport
+} from "./project-delivery.js";
