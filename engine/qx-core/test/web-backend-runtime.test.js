@@ -1,7 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import vm from "node:vm";
-import { buildWebProject, QXWebBuildError } from "../src/web-backend.js";
+import { buildWebProject, generateWebAssets, QXWebBuildError } from "../src/web-backend.js";
+import { parse } from "../src/parser.js";
+import { analyze } from "../src/semantic-analyzer.js";
+import { lowerToQIR } from "../src/qir.js";
 import { createDefaultUILock } from "../src/ui-component-runtime.js";
 
 test("generated browser runtime executes QIR and renders global results", () => {
@@ -203,3 +206,35 @@ test("static browser builds remain network-disabled for local UI programs", () =
   assert.equal(project.metadata.networkAccess, false);
 });
 
+
+
+test("web backend produces byte-for-byte deterministic assets for identical inputs", () => {
+  const source = [
+    "DATA.CREATE(total, 4 + 5)",
+    'UI.TEXT("Stable output")',
+    "PROCESS.CALCULATE(total, total * 2)"
+  ].join("\n");
+  const first = buildWebProject(source, { title: "Deterministic QX Project" });
+  const second = buildWebProject(source, { title: "Deterministic QX Project" });
+  assert.deepEqual(Object.keys(first.files).sort(), ["app.js", "index.html", "styles.css"]);
+  for (const name of Object.keys(first.files)) {
+    assert.equal(first.files[name], second.files[name], name + " must be byte-for-byte deterministic");
+  }
+  assert.deepEqual(first.metadata, second.metadata);
+});
+
+test("web asset generation rejects invalid QIR before producing files", () => {
+  const source = "DATA.CREATE(value, 1)";
+  const ast = parse(source);
+  const semantic = analyze(ast);
+  assert.equal(semantic.valid, true);
+  const qir = lowerToQIR(ast, semantic);
+  qir.version = "999.0";
+  assert.throws(
+    () => generateWebAssets(qir),
+    error => error instanceof QXWebBuildError &&
+      error.code === "QX_WEB_INVALID_QIR" &&
+      Array.isArray(error.diagnostics) &&
+      error.diagnostics.length > 0
+  );
+});
