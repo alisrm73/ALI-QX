@@ -89,7 +89,9 @@ export function getUIComponentRegistry() {
     contractVersion: item.contractVersion,
     schemaDigest: item.schemaDigest,
     registryRelease: REGISTRY_RELEASE,
-    renderer: item.renderer
+    renderer: item.renderer,
+    props: item.props,
+    children: item.children
   })));
 }
 
