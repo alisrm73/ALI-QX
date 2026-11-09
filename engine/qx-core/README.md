@@ -118,10 +118,19 @@ The host can construct an immutable registry catalog containing multiple exact c
 ```js
 import { createUIComponentRegistry, validateUIComponentTreeWithRegistry } from "./src/index.js";
 
+const headingV1 = {
+  type: "UI.HEADING",
+  contractVersion: "1.0.0",
+  renderer: "heading",
+  props: { level: { type: "number", required: true, integer: true, minimum: 1, maximum: 6 } },
+  children: { text: true, components: [] }
+};
+const headingV2 = { ...headingV1, contractVersion: "2.0.0" };
+
 const registry = createUIComponentRegistry({
   snapshots: [
-    { registryRelease: "ui-registry-1.0.0", components: [/* host-owned definitions */] },
-    { registryRelease: "ui-registry-2.0.0", components: [/* host-owned definitions */] }
+    { registryRelease: "ui-registry-1.0.0", components: [headingV1] },
+    { registryRelease: "ui-registry-2.0.0", components: [headingV1, headingV2] }
   ]
 });
 
