@@ -30,7 +30,7 @@ function tupleKey(record) {
 }
 
 function validateTuple(record, label) {
-  if (!exactKeys(record, ["registryRelease", "type", "contractVersion", "schemaDigest"]) ||
+  if (!record || typeof record !== "object" || Array.isArray(record) ||
       typeof record.registryRelease !== "string" || !REGISTRY_ID.test(record.registryRelease) ||
       typeof record.type !== "string" || !TYPE.test(record.type) ||
       typeof record.contractVersion !== "string" || !SEMVER.test(record.contractVersion) ||
