@@ -169,6 +169,9 @@ function validateComponentDefinition(input) {
     if (rule.required !== undefined && typeof rule.required !== "boolean") registryFail("Property required flag must be Boolean");
     if (rule.integer !== undefined && typeof rule.integer !== "boolean") registryFail("Property integer flag must be Boolean");
     if (rule.integer === true && rule.type !== "number") registryFail("Only numeric properties may require integers");
+    if ((rule.minimum !== undefined || rule.maximum !== undefined) && rule.type !== "number") {
+      registryFail("Property numeric bounds require a numeric property type");
+    }
     for (const key of ["minimum", "maximum"]) {
       if (rule[key] !== undefined && (typeof rule[key] !== "number" || !Number.isFinite(rule[key]))) {
         registryFail("Property numeric bounds must be finite numbers");
@@ -226,7 +229,11 @@ function snapshotRecord(registryRelease, definitions) {
   return freezeDeep({ registryRelease, snapshotDigest, components });
 }
 
-export function createUIComponentRegistry({ snapshots } = {}) {
+export function createUIComponentRegistry(input = {}) {
+  if (!exactKeys(input, ["snapshots"])) {
+    registryFail("Registry input must contain exactly snapshots");
+  }
+  const { snapshots } = input;
   if (!Array.isArray(snapshots) || snapshots.length === 0) {
     registryFail("A registry must contain at least one immutable snapshot");
   }
