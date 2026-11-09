@@ -15,16 +15,19 @@ function exactKeys(value, keys) {
     Object.keys(value).length === keys.length && keys.every(key => Object.hasOwn(value, key));
 }
 
+function allowedKeys(value, required, optional = []) {
+  return value !== null && typeof value === "object" && !Array.isArray(value) &&
+    Object.getPrototypeOf(value) === Object.prototype &&
+    required.every(key => Object.hasOwn(value, key)) &&
+    Object.keys(value).every(key => required.includes(key) || optional.includes(key));
+}
+
 function freezeDeep(value) {
   if (value && typeof value === "object" && !Object.isFrozen(value)) {
     for (const child of Object.values(value)) freezeDeep(child);
     Object.freeze(value);
   }
   return value;
-}
-
-function tupleKey(value) {
-  return TUPLE_KEYS.map(key => value[key]).join("\u0000");
 }
 
 function lockKey(value) {
@@ -74,7 +77,7 @@ function rewriteTree(node, targets) {
  * separately reviewed tree transformation rather than an implicit rewrite.
  */
 export function proposeUIComponentUpgrade(input = {}) {
-  if (!exactKeys(input, ["tree", "lock", "sourceRegistry", "targetRegistry", "mappings"]) ||
+  if (!allowedKeys(input, ["tree", "lock", "sourceRegistry", "targetRegistry", "mappings"], ["targetTree"]) ||
       !input.sourceRegistry || typeof input.sourceRegistry.resolve !== "function" ||
       !input.targetRegistry || typeof input.targetRegistry.resolve !== "function" ||
       !Array.isArray(input.mappings)) {
@@ -143,7 +146,7 @@ export function proposeUIComponentUpgrade(input = {}) {
       a.contractVersion < b.contractVersion ? -1 :
         a.contractVersion > b.contractVersion ? 1 : 0);
 
-  const proposedTree = {
+  const proposedTree = input.targetTree ?? {
     schema: sourceResult.tree.schema,
     version: sourceResult.tree.version,
     children: sourceResult.tree.children.map(node => rewriteTree(node, targetsByNode))
