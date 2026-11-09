@@ -606,7 +606,7 @@ export function validateQIR(module) {
           } else if (op.command === "DATA.REMOVE") {
             if (!["1.1", "1.2", "1.3"].includes(module.version) || args.length !== 2 || valueTypes.get(args[0]) !== "LIST" || valueTypes.get(args[1]) !== "NUM" || !inst.result || inst.type !== "LIST") report("QIR_E_COMMAND_SIGNATURE", "DATA.REMOVE requires LIST and NUM index, and returns LIST in QIR 1.1 or later", inst.source);
           } else if (op.command === "UI.SHOW") {
-            if (!["1.2", "1.3"].includes(module.version) || args.length !== 1 || !VALUE_TYPES.has(valueTypes.get(args[0])) || inst.result || inst.type) report("QIR_E_COMMAND_SIGNATURE", "UI.SHOW requires one QX value and has no result in QIR 1.2", inst.source);
+            if (!["1.2", "1.3", "1.4"].includes(module.version) || args.length !== 1 || !VALUE_TYPES.has(valueTypes.get(args[0])) || inst.result || inst.type) report("QIR_E_COMMAND_SIGNATURE", "UI.SHOW requires one QX value and has no result in QIR 1.2", inst.source);
           } else if (op.command === "UI.TEXT") {
             if (!["1.2", "1.3"].includes(module.version) || args.length !== 1 || valueTypes.get(args[0]) !== "TXT" || inst.result || inst.type) report("QIR_E_COMMAND_SIGNATURE", "UI.TEXT requires one TXT and has no result in QIR 1.2", inst.source);
           } else if (op.command === "UI.TREE") {
