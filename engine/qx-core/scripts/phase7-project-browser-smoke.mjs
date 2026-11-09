@@ -124,6 +124,7 @@ try {
     }
   });
 
+  console.log("Phase 7 browser test results:", JSON.stringify(result.testReport.results));
   assert.equal(result.testReport.status, "passed");
   assert.deepEqual(result.testReport.summary, {
     total: 5, selected: 5, passed: 5, failed: 0, skipped: 0, notRun: 0, requiredUnsuccessful: 0
