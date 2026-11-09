@@ -1,17 +1,17 @@
 # Phase 6 UI Tree and Registry — Acceptance Test Matrix
 
-**Status:** Proposed acceptance plan; documentation only.  
+**Status:** Acceptance matrix for the static UI runtime candidate in PR #12; final release gate pending CI and review.  
 **Applies to:** `PHASE-6-UI-COMPONENT-TREE-CONTRACT.md` and `PHASE-6-UI-REGISTRY-VERSIONING-CONTRACT.md`.  
-**Runtime status:** No component-tree validator, component registry, lock-manifest resolver, or component-tree renderer is enabled by this document.  
-**Compatibility invariant:** QIR 1.0–1.3 and the existing `UI.TEXT` / `UI.SHOW` behavior remain unchanged.
+**Runtime status:** A host registry, lock validator, bounded tree validator, VM `UI.TREE` path, and safe static-browser renderer are implemented on the PR #12 feature branch. The branch is not merged.  
+**Compatibility invariant:** QIR 1.0–1.3 remain unchanged; QIR 1.4 retains existing `UI.TEXT` / `UI.SHOW` behavior while adding `UI.TREE`.
 
 ## 1. Purpose and execution gate
 
-This matrix turns the two proposed UI contracts into observable acceptance cases. It is a test-design artifact, not an executable test suite.
+This matrix turns the two UI contracts into observable acceptance cases. It remains the normative acceptance checklist; executable coverage is added in `engine/qx-core/test/ui-component-runtime.test.js`, `qir.test.js`, `vm.test.js`, and `web-backend-runtime.test.js`.
 
-Implementation MUST NOT begin until the owning contracts, serialization boundary, and host registry interface have been reviewed. The project lock-file convention is now fixed for future QX projects: `qx.ui-lock.json` at the project root, as a separate sidecar file. The repository currently exposes `engine/qx-core/package.json` as engine-package metadata but has no QX project manifest; this documentation change does not create a project file or treat the engine package manifest as one.
+Further component activation MUST NOT begin until the owning contracts, serialization boundary, and host registry interface have been reviewed. The project lock-file convention is now fixed for future QX projects: `qx.ui-lock.json` at the project root, as a separate sidecar file. The repository currently exposes `engine/qx-core/package.json` as engine-package metadata but has no QX project manifest; this documentation change does not create a project file or treat the engine package manifest as one.
 
-Each case below becomes an automated test when its corresponding validator/resolver/renderer exists. A case is **not passed** merely because its expected behavior is documented or because unrelated existing tests pass.
+Some cases are now automated for the three registered static components. A case is **not passed** merely because its expected behavior is documented or because unrelated existing tests pass; the remaining acceptance rows continue to gate broader component registration.
 
 ## 2. Test conventions
 
