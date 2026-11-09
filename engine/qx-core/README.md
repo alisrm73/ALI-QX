@@ -75,7 +75,7 @@ Implemented:
 - Function parameter and return-type inference from body constraints and all call sites, including uncalled functions, forward calls, nested calls, and recursion.
 - Validation of every RETURN path, incompatible return types, fallthrough, unresolved parameter types, and procedure/value-use boundaries.
 - Rejects commands whose semantic contracts are still pending instead of silently accepting them as statements.
-- Semantic contracts for `DATA.COUNT`, `DATA.ADD`, `DATA.REMOVE`, `UI.SHOW`, `UI.TEXT`, `PROCESS.ADD`, `PROCESS.CALCULATE`, `PROCESS.COMPARE`, and `INTEGRATION.REQUEST`. `DATA.ADD` and `DATA.REMOVE` are expression-only immutable list operations introduced by the QIR 1.1 extension. `PROCESS.ADD` increments an existing NUM target using QIR 1.0 load-add-store lowering; `UI.SHOW` and `UI.TEXT` are statement-only output effects in the QIR 1.2 extension; `DATA.GET` remains disabled.
+- Semantic contracts for `DATA.COUNT`, `DATA.ADD`, `DATA.REMOVE`, `UI.SHOW`, `UI.TEXT`, `UI.TREE`, `PROCESS.ADD`, `PROCESS.CALCULATE`, `PROCESS.COMPARE`, and `INTEGRATION.REQUEST`. `DATA.ADD` and `DATA.REMOVE` are expression-only immutable list operations introduced by the QIR 1.1 extension. `PROCESS.ADD` increments an existing NUM target using QIR 1.0 load-add-store lowering; `UI.SHOW` and `UI.TEXT` are statement-only output effects in the QIR 1.2 extension; `DATA.GET` remains disabled.
 
 A procedure without RETURN may be called as a standalone statement, but cannot supply a value to an expression. A successful parse alone does not prove semantic correctness.
 
@@ -130,12 +130,12 @@ This parser capability is syntax/AST only. Phase 2 validates the three approved 
 
 The registry contains 18 QX V1 command names. Ten commands currently have enabled semantic contracts: `DATA.COUNT`, `DATA.ADD`, `DATA.REMOVE`, `UI.SHOW`, `UI.TEXT`, `UI.TREE`, `PROCESS.ADD`, `PROCESS.CALCULATE`, `PROCESS.COMPARE`, and `INTEGRATION.REQUEST`. `DATA.GET` remains pending and disabled.
 
-Use `resolveCommand(domain, command)` to resolve an English or Arabic alias to its canonical entry, and `isCommandEnabled(domain, command)` to inspect registry enablement. Enablement here denotes an approved semantic contract, not runtime availability; execution remains unimplemented until the VM phase.
+Use `resolveCommand(domain, command)` to resolve an English or Arabic alias to its canonical entry, and `isCommandEnabled(domain, command)` to inspect registry enablement. Enablement denotes an approved semantic contract; runtime availability is still constrained by the supported VM/browser backend and exact UI lock requirements.
 
 
 ## Verification
 
-The phase-4 validation baseline contained **90 passing tests**. The phase-6 DATA/PROCESS/UI implementation branch currently runs **114 core tests** on Node.js 22.16.0, including QIR 1.1/1.2, immutable list behavior, UI output effects, Web Backend build, output-safety, browser-runtime, and pinned Unicode normalization coverage. A separate Chromium smoke test also passes against the generated site. The official Unicode 18.0.0 NFC conformance file has **100,855 passing checks and 0 failures**. Execution-time integer validation for remainder operations remains a runtime concern, not a semantic-analysis guarantee.
+The phase-4 validation baseline contained **90 passing tests**. The PR #12 head passed **155 core tests** on Node.js 22.16.0, including QIR 1.4 static UI trees, exact lock validation, VM execution, browser-runtime validation, and compatibility coverage. PR #12 also passed the separate Chromium smoke workflow. The sample in `examples/ui-tree-static/` is covered by `test/ui-tree-example.test.js`. A separate Chromium smoke test also passes against the generated site. The official Unicode 18.0.0 NFC conformance file has **100,855 passing checks and 0 failures**. Execution-time integer validation for remainder operations remains a runtime concern, not a semantic-analysis guarantee.
 
 ## Web Backend — phase 5
 
@@ -148,7 +148,7 @@ const project = buildWebProject('DATA.CREATE(total, 4 + 5)', { title: "QX Demo" 
 // project.files: index.html, styles.css, app.js
 ```
 
-The build pipeline parses and semantically analyzes QX, lowers it to QIR 1.0, the compatible QIR 1.1 DATA list extension, QIR 1.2 UI output extension, or QIR 1.3 asynchronous integration extension, then validates the QIR. The static browser runtime supports local execution through QIR 1.4, including lock-pinned `UI.TREE` static components, and rejects modules containing `INTEGRATION.REQUEST`; QIR 1.3 integration requests require a trusted host runtime and broker. UI output is rendered as safe DOM text via `textContent`. It embeds the Unicode 18.0.0 combining-class table so NFC ordering and equality follow the pinned project data. It renders explicit UI output and resulting global values as text. UI output does not expose HTML, event handlers, network, or host APIs.
+The build pipeline parses and semantically analyzes QX, lowers it to QIR 1.0, the compatible QIR 1.1 DATA list extension, QIR 1.2 UI output extension, QIR 1.3 asynchronous integration extension, or QIR 1.4 static UI component-tree extension, then validates the QIR. The static browser runtime supports local execution through QIR 1.4, including lock-pinned `UI.TREE` static components, and rejects modules containing `INTEGRATION.REQUEST`; QIR 1.3 integration requests require a trusted host runtime and broker. UI output is rendered as safe DOM text via `textContent`. It embeds the Unicode 18.0.0 combining-class table so NFC ordering and equality follow the pinned project data. It renders explicit UI output and resulting global values as text. UI output does not expose HTML, event handlers, network, or host APIs.
 
 Generated projects have no network or host integration API, use DOM `textContent` for output, and include a restrictive Content Security Policy. The generated assets are deterministic for identical QIR and title inputs. The browser backend remains network-disabled; host integrations are isolated behind the separately documented broker API and are not available to generated browser projects.
 
