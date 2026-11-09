@@ -156,6 +156,14 @@ export function assertProjectTestReport(project, plan, report) {
     fail("QX_TEST_REPORT_INVALID", "Test report is malformed, stale, or its digest does not match");
   }
   normalizeFileDigests(report.fileDigests);
+  if (report.results.some(item => !isPlainObject(item) ||
+      typeof item.testId !== "string" || !TEST_LEVELS.includes(item.level) ||
+      typeof item.required !== "boolean" || !TEST_STATUSES.includes(item.status) ||
+      typeof item.summary !== "string" ||
+      ((item.status === "passed" || item.status === "not_run") && item.error !== null) ||
+      ((item.status === "failed" || item.status === "skipped") && !isPlainObject(item.error)))) {
+    fail("QX_TEST_REPORT_INVALID", "Test report contains malformed result entries");
+  }
   const counts = {
     total: report.results.length,
     selected: report.results.filter(item => item.status !== "not_run").length,
@@ -167,19 +175,13 @@ export function assertProjectTestReport(project, plan, report) {
       item.required === true && item.status !== "passed"
     ).length
   };
-  if (report.results.some(item => !isPlainObject(item) ||
-      typeof item.testId !== "string" || !TEST_LEVELS.includes(item.level) ||
-      typeof item.required !== "boolean" || !TEST_STATUSES.includes(item.status) ||
-      typeof item.summary !== "string" ||
-      (item.status === "passed" && item.error !== null) ||
-      (item.status !== "passed" && !isPlainObject(item.error))) ||
-      canonicalJSON(counts) !== canonicalJSON(report.summary) ||
+  if (canonicalJSON(counts) !== canonicalJSON(report.summary) ||
       canonicalJSON(report.selectedTestIds) !== canonicalJSON(
         report.results.filter(item => item.status !== "not_run").map(item => item.testId)
       ) ||
       report.status !== (counts.failed > 0 ? "failed" :
         counts.requiredUnsuccessful > 0 ? "incomplete" : "passed")) {
-    fail("QX_TEST_REPORT_INVALID", "Test report results or aggregate summary are inconsistent");
+    fail("QX_TEST_REPORT_INVALID", "Test report aggregate summary is inconsistent");
   }
   return report;
 }
