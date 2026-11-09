@@ -256,12 +256,6 @@ Only trusted host code registers adapters and grants. Adapter credentials and de
 
 
 
-### Explicit UI upgrade proposals — Phase D
-
-`proposeUIComponentUpgrade({ tree, lock, sourceRegistry, targetRegistry, mappings })` validates the current tree and lock against the exact source lifecycle registry, then builds a new lock/tree proposal against the exact target lifecycle registry. Every source lock entry—including unused entries—requires one explicit mapping with complete source and target tuples (registry release, component type, contract version, and schema digest).
-
-The proposal preserves component types and existing props/children, changes only explicitly mapped contract versions, and validates the resulting tree against the target contracts and current host policy. Incompatible properties, missing mappings, duplicate targets, stale digests, retired releases, and unavailable releases are rejected. The result is immutable and includes source/target deprecation warnings and policy revisions. Neither the source tree nor source lock is modified or written to disk; a schema change requiring a tree transformation must be handled by a separately reviewed transformation before proposing the upgrade.
-
 ### UI component lifecycle — Phase C
 
 The lifecycle-aware host API wraps an immutable Phase B registry with trusted lifecycle metadata and a separate host policy overlay:
@@ -298,3 +292,9 @@ const result = validateUIComponentTreeWithLifecycle(tree, projectLock, lifecycle
 Lifecycle states are `active`, `deprecated`, and `retired`. Deprecated releases remain runnable only when host-supported and produce structured warnings. Retired releases fail with `QX_UI_RELEASE_RETIRED`; unsupported releases fail with `QX_UI_RELEASE_UNAVAILABLE`. The host policy overlay is keyed by the exact registry release, component type, contract version, and schema digest. A host revocation overrides historical lifecycle metadata, while an unavailable policy fails closed before validation can return a tree.
 
 This API is additive: the existing `validateUIComponentTree(input, lock, limits)` return shape and the Phase B validator remain unchanged. The host must supply lifecycle metadata and its current trusted policy explicitly. This phase does not implement remote policy distribution, signatures/trust roots, VM/browser injection, rollback proposals, or automatic lock changes.
+
+### Explicit UI upgrade proposals — Phase D
+
+`proposeUIComponentUpgrade({ tree, lock, sourceRegistry, targetRegistry, mappings, targetTree? })` validates the current tree and lock against the exact source lifecycle registry, then builds a new lock/tree proposal against the exact target lifecycle registry. Every source lock entry—including unused entries—requires one explicit mapping with complete source and target tuples (registry release, component type, contract version, and schema digest).
+
+Without `targetTree`, the proposal preserves the existing component types, properties, and children and changes only explicitly mapped contract versions. When a target schema requires a reviewed transformation, the caller may supply that transformed candidate as `targetTree`; it is validated against the exact target contracts and current host policy. Missing mappings, duplicate targets, stale digests, incompatible trees, retired releases, and unavailable releases are rejected. The immutable result includes the proposed lock/tree, source/target deprecation warnings, and policy revisions. Neither the source tree nor source lock is modified or written to disk.
