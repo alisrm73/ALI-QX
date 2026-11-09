@@ -24,3 +24,13 @@ export {
 
 export { proposeUIComponentUpgrade } from "./ui-component-upgrade.js";
 export { proposeUIComponentRollback } from "./ui-component-rollback.js";
+
+export {
+  QXProjectError,
+  createProjectDraft,
+  submitProjectForReview,
+  approveProjectDraft,
+  rejectProjectDraft,
+  reviseProjectDraft,
+  assertProjectApproved
+} from "./project-model.js";
