@@ -65,7 +65,7 @@ The lock file has this exact top-level shape (entry values below are illustrativ
     {
       "type": "UI.TEXT_BLOCK",
       "contractVersion": "1.0.0",
-      "schemaDigest": "sha256:…",
+      "schemaDigest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
       "registryRelease": "ui-registry-2026.01"
     }
   ]
@@ -76,7 +76,8 @@ The lock file has this exact top-level shape (entry values below are illustrativ
 - `version` is the lock-file format version, independent of QIR and tree-schema versions.
 - `components` is an array of exact immutable component-release pins.
 - Each entry contains a canonical component `type`, exact semantic `contractVersion`, `schemaDigest`, and exact `registryRelease` identifier.
-- `schemaDigest` uses the `sha256:` prefix followed by the lowercase hexadecimal SHA-256 digest of the canonical published component-contract schema.
+- `contractVersion` MUST be an exact Semantic Versioning 2.0.0 version string; ranges, wildcards, and a leading `v` are invalid.
+- `schemaDigest` uses the `sha256:` prefix followed by the lowercase hexadecimal SHA-256 digest of the published component-contract schema serialized as deterministic UTF-8 JSON using RFC 8785 JSON Canonicalization Scheme (JCS).
 
 A lock entry is uniquely identified by the pair `(type, contractVersion)`. Duplicate pairs are invalid; distinct versions of one type may coexist only when each is explicitly pinned. Each component node resolves by the exact pair formed from its `type` and `version`, and that node version MUST equal the lock entry's `contractVersion`. The digest and registry release are taken only from the lock entry and MUST match the immutable host registry record.
 
