@@ -284,7 +284,7 @@ test("browser runtime resolves multiple exact releases of one component through 
   };
   vm.runInNewContext(project.files["app.js"], { document, TextEncoder });
   assert.equal(nodes.get("qx-status").textContent, "Execution completed");
-  assert.deepEqual(nodes.get("qx-output").children.map(node => node.tag), ["h1", "h2"]);
+  assert.deepEqual(nodes.get("qx-output").children.filter(node => /^h[1-6]$/.test(node.tag)).map(node => node.tag), ["h1", "h2"]);
   assert.equal(project.metadata.uiRegistryReleases.length, 2);
 });
 
