@@ -23,3 +23,4 @@ export {
 } from "./ui-component-lifecycle.js";
 
 export { proposeUIComponentUpgrade } from "./ui-component-upgrade.js";
+export { proposeUIComponentRollback } from "./ui-component-rollback.js";
