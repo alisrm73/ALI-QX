@@ -180,6 +180,20 @@ export function assertRequirementCoverageReport(project, plan, testReport, deliv
       typeof report.digest !== "string" || report.digest !== digest(coverageContent(report))) {
     fail("QX_REQUIREMENT_COVERAGE_INVALID", "Requirement coverage report is malformed, stale, or has an invalid digest");
   }
+  const recomputedEntries = normalizeEntries(project, report.entries.map(item => ({
+    category: item.category,
+    requirementIndex: item.requirementIndex,
+    acceptanceCriteria: item.acceptanceCriteria.map(criterion => ({
+      id: criterion.id,
+      description: criterion.description,
+      testIds: criterion.testIds,
+      evidencePaths: criterion.evidencePaths
+    })),
+    ...(item.clarification === null ? {} : { clarification: item.clarification })
+  })), testReport, deliveryReport);
+  if (canonicalJSON(recomputedEntries) !== canonicalJSON(report.entries)) {
+    fail("QX_REQUIREMENT_COVERAGE_INVALID", "Requirement coverage entries do not match verified test and delivery evidence");
+  }
   const covered = report.entries.filter(item => item.status === "covered").length;
   const partiallyCovered = report.entries.filter(item => item.status === "partially_covered").length;
   const uncovered = report.entries.filter(item => item.status === "uncovered").length;
