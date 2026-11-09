@@ -209,6 +209,28 @@ export function assertRequirementCoverageReport(project, plan, testReport, deliv
   return report;
 }
 
+
+export function assertRequirementCoverageInput(project, entries) {
+  const required = requirementsOf(project);
+  if (!Array.isArray(entries) || entries.length !== required.length) {
+    fail("QX_REQUIREMENT_COVERAGE_INCOMPLETE", "Every project requirement, data requirement, and integration requirement must be mapped before build writes");
+  }
+  const expected = new Set(required.map(item => item.category + ":" + item.index));
+  const seen = new Set();
+  for (const entry of entries) {
+    if (!isPlainObject(entry) || !CATEGORIES.includes(entry.category) ||
+        !Number.isSafeInteger(entry.requirementIndex) || entry.requirementIndex < 0) {
+      fail("QX_REQUIREMENT_COVERAGE_INVALID", "Each requirement mapping needs a valid category and requirement index");
+    }
+    const key = entry.category + ":" + entry.requirementIndex;
+    if (!expected.has(key) || seen.has(key)) {
+      fail("QX_REQUIREMENT_COVERAGE_INVALID", "Requirement mappings contain an unknown or duplicate requirement");
+    }
+    seen.add(key);
+  }
+  return true;
+}
+
 export function createRequirementCoverageReport(project, plan, testReport, deliveryReport, {
   expectedProjectDigest,
   entries
