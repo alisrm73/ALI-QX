@@ -84,8 +84,8 @@ try {
       if (testCase.id === "component.static-ui") {
         assert.match(files["dist/app.js"], /qx-ui-heading/);
       } else if (testCase.id === "contract.asset-links") {
-        assert.match(files["dist/index.html"], /styles\\.css/);
-        assert.match(files["dist/index.html"], /app\\.js/);
+        assert.ok(files["dist/index.html"].includes("styles.css"));
+        assert.ok(files["dist/index.html"].includes("app.js"));
       } else if (testCase.id === "integration.web-assets") {
         assert.ok(files["dist/index.html"].length > 0);
         assert.ok(files["dist/styles.css"].length > 0);
