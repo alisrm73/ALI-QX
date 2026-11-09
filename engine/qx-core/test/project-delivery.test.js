@@ -97,6 +97,7 @@ test("blocks delivery when a required file is missing but permits missing option
   assert.equal(blocked.packageJson, null);
   assert.equal(blocked.report.summary.requiredMissing, 1);
   assert.ok(blocked.report.issues.some(issue => issue.code === "QX_DELIVERY_REQUIRED_FILE_MISSING"));
+  assert.equal(assertProjectDeliveryReport(project, plan, testReport, blocked.report), blocked.report);
 
   const optional = await createProjectDeliveryPackage(workspace, project, plan, testReport, {
     expectedProjectDigest: project.digest,
@@ -107,6 +108,7 @@ test("blocks delivery when a required file is missing but permits missing option
   });
   assert.equal(optional.report.status, "ready");
   assert.equal(optional.report.summary.missing, 1);
+  assert.equal(assertProjectDeliveryReport(project, plan, testReport, optional.report), optional.report);
 });
 
 test("blocks delivery if a file changed after the test report was produced", async t => {
@@ -120,6 +122,7 @@ test("blocks delivery if a file changed after the test report was produced", asy
   assert.equal(result.report.summary.unverified, 1);
   assert.ok(result.report.issues.some(issue => issue.code === "QX_DELIVERY_FILE_NOT_VERIFIED"));
   assert.equal(result.package, null);
+  assert.equal(assertProjectDeliveryReport(project, plan, testReport, result.report), result.report);
 });
 
 test("blocks delivery when required tests failed, were skipped, or were not run", async t => {
