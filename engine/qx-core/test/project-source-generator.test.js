@@ -35,6 +35,30 @@ test("generates deterministic QX source and exact UI lock from an approved manif
   assert.equal(first.projectRevision, project.revision);
 });
 
+test("reports project requirements that the static generator does not implement", () => {
+  const project = approvedProject({
+    requirements: ["Visitors can read the overview", "Visitors can submit a contact form"],
+    dataRequirements: ["Store contact requests"],
+    integrationRequirements: ["Connect to an email provider"]
+  });
+  const generated = generateQXSourceFromProject(project);
+  assert.deepEqual(generated.unmappedRequirements, [
+    { category: "requirement", value: "Visitors can read the overview" },
+    { category: "requirement", value: "Visitors can submit a contact form" },
+    { category: "data", value: "Store contact requests" },
+    { category: "integration", value: "Connect to an email provider" }
+  ]);
+  assert.equal(Object.isFrozen(generated.unmappedRequirements), true);
+  assert.ok(generated.unmappedRequirements.every(Object.isFrozen));
+});
+
+test("rejects additional unapproved manifest fields", () => {
+  const project = approvedProject();
+  assert.throws(() => generateQXSourceFromProject({ ...project, hiddenBehavior: "ignored" }), {
+    code: "QX_PROJECT_GENERATION_INVALID"
+  });
+});
+
 test("requires approval for the exact manifest digest", () => {
   const project = approvedProject();
   assert.throws(() => generateQXSourceFromProject({ ...project, status: "draft" }), {
