@@ -105,6 +105,20 @@ A missing registry snapshot, missing component release, or release not supported
 
 Lifecycle status and host support are separate: a deprecated record can be supported; an active record can be unavailable in a particular host distribution.
 
+### 6.5 Host-controlled revocation overlay
+
+Immutable historical registry snapshots MUST NOT be edited to record a later retirement. However, historical immutability MUST NOT allow a project to keep executing a release that the host has subsequently revoked.
+
+The host therefore maintains a separate, trusted revocation/support policy overlay, evaluated in addition to the exact historical snapshot:
+
+- The policy key identifies the exact `(registryRelease, type, contractVersion, schemaDigest)` tuple. A broader revocation may be supported only when its scope is explicit and deterministic.
+- The overlay is controlled by the host distribution or its authorized administrator. Project files, UI trees, component metadata supplied by a project, and migration proposals MUST NOT create, remove, or override revocations.
+- An applicable revocation takes precedence over the lifecycle metadata in the historical snapshot. Resolution MUST reject the exact pin with `QX_UI_RELEASE_RETIRED` when the host policy marks it retired, even if that old snapshot still says `active` or `deprecated`.
+- A host support denial without a retirement decision continues to fail with `QX_UI_RELEASE_UNAVAILABLE`.
+- The overlay is separate from the immutable registry snapshot and does not alter its digest, historical contents, or audit identity. A later policy change is recorded as a new host-policy revision, not by rewriting an old snapshot.
+- Policy evaluation MUST happen before rendering and MUST fail closed if the host cannot establish the applicable policy state. The implementation must define how policy revisions are loaded, authenticated, cached, and refreshed for the supported host deployment; remote distribution and signing details remain outside this design until separately reviewed.
+- Rollback and exact historical resolution MUST consult the current host overlay. A historical lock is evidence of what was previously selected, not authority to bypass a current host revocation.
+
 ## 7. Exact lock resolution
 
 For every component tree:
@@ -179,7 +193,7 @@ The operation MUST:
 4. verify the recorded schema digests;
 5. return a rollback proposal without mutating project files.
 
-If the candidate cannot be validated, fail with `QX_UI_ROLLBACK_INVALID` (or a more specific underlying diagnostic) and leave the current project unchanged. A rollback cannot make a retired or unsupported release executable; the host support policy still applies.
+If the candidate cannot be validated, fail with `QX_UI_ROLLBACK_INVALID` (or a more specific underlying diagnostic) and leave the current project unchanged. A rollback cannot make a retired or unsupported release executable; the current host-controlled revocation/support overlay still applies, even when the historical snapshot predates that policy decision.
 
 ## 11. Compatibility requirements
 
@@ -198,7 +212,7 @@ Registry records are trusted host data; project locks and UI trees are untrusted
 
 The registry MUST NOT evaluate project-supplied code, load project renderers, or perform network/file access during resolution. Component renderer identifiers are resolved only through a host-owned allowlist.
 
-Registry snapshots and lock data must be deterministic and immutable after publication. Error messages must not expose sensitive host details. No lifecycle metadata may grant a capability.
+Registry snapshots and lock data must be deterministic and immutable after publication. The host revocation/support overlay is a separate trusted policy input; project data cannot modify it. Policy state must be authenticated and its freshness/availability rules must be explicit for each host deployment. Error messages must not expose sensitive host details. No lifecycle metadata or policy entry may grant a capability.
 
 ## 13. Acceptance test plan
 
@@ -220,7 +234,7 @@ The implementation must add executable tests for:
 14. Invalid rollback fails and leaves current project unchanged.
 15. Runtime validation never mutates the lock or tree.
 16. Existing three static component contracts continue to pass all current tests.
-17. QIR 1.0–1.4, VM, browser, and integration tests remain green.
+17. QIR 1.0–1.4, VM, browser, and integration tests remain green.\n18. A historical snapshot that marks a release active is still rejected when the current host overlay revokes that exact release.\n19. Project-supplied lock/tree data cannot add, remove, or bypass a host revocation.\n20. Host policy unavailability or unverifiable policy state fails closed before rendering.
 
 Tests must use isolated in-memory host registry fixtures and must not require network access.
 
