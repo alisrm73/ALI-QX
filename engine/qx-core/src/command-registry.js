@@ -108,7 +108,7 @@ export const COMMAND_REGISTRY = Object.freeze(definitions.map(([domain, name, ar
       : "pending",
     enabled: (domain === "DATA" && ["ADD", "REMOVE", "COUNT"].includes(name)) ||
       (domain === "PROCESS" && (name === "ADD" || name === "CALCULATE" || name === "COMPARE")) ||
-      (domain === "UI" && (name === "SHOW" || name === "TEXT")) ||
+      (domain === "UI" && (name === "SHOW" || name === "TEXT" || name === "TREE")) ||
       (domain === "INTEGRATION" && name === "REQUEST")
   })
 ));
