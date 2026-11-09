@@ -248,7 +248,8 @@ test("QIR 1.2 retains DATA list extension operations", () => {
 });
 
 test("lowers UI.TREE into QIR 1.4 and rejects it in older QIR modules", () => {
-  const qir = compile('UI.TREE("{\\"schema\\":\\"QX.UI.TREE\\",\\"version\\":\\"1.0\\",\\"children\\":[]} ")');
+  const source = 'UI.TREE("{\\"schema\\":\\"QX.UI.TREE\\",\\"version\\":\\"1.0\\",\\"children\\":[]} ")';
+  const qir = compile(source);
   assert.equal(qir.version, "1.4");
   const call = qir.initializer.blocks.flatMap(block => block.instructions)
     .find(inst => inst.opcode === "COMMAND_CALL" && inst.operands.command === "UI.TREE");
