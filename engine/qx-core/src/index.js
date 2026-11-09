@@ -40,3 +40,10 @@ export {
   assertBuildPlanForProject,
   selectBuildTasks
 } from "./build-plan.js";
+
+export {
+  openProjectWorkspace,
+  writeProjectFile,
+  restoreProjectFile,
+  readProjectChangeLog
+} from "./project-workspace.js";
