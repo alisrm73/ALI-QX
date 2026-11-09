@@ -7,7 +7,7 @@ import {
   createProjectDraft, submitProjectForReview, approveProjectDraft
 } from "../src/project-model.js";
 import {
-  openProjectWorkspace, writeProjectFile, restoreProjectFile, readProjectChangeLog
+  openProjectWorkspace, readProjectFile, writeProjectFile, restoreProjectFile, readProjectChangeLog
 } from "../src/project-workspace.js";
 
 async function fixture(t) {
@@ -74,6 +74,24 @@ test("does not create missing parent directories or accept forged workspace hand
     project, expectedProjectDigest: project.digest, relativePath: "src/app.js", content: "blocked",
     permission: permission(project, "write", "src/app.js", { mode: "create" })
   }), { code: "QX_WORKSPACE_CONFIG_INVALID" });
+});
+
+
+test("reads only approved regular files and returns their content digest", async t => {
+  const { project, workspace, projectRoot } = await fixture(t);
+  await fs.writeFile(path.join(projectRoot, "src/readme.txt"), "delivery artifact");
+  const result = await readProjectFile(workspace, {
+    project, expectedProjectDigest: project.digest, relativePath: "src/readme.txt"
+  });
+  assert.equal(result.content.toString("utf8"), "delivery artifact");
+  assert.match(result.contentDigest, /^sha256:[a-f0-9]{64}$/);
+  await assert.rejects(readProjectFile(workspace, {
+    project, expectedProjectDigest: project.digest, relativePath: "src/missing.txt"
+  }), { code: "QX_WORKSPACE_FILE_MISSING" });
+  await assert.rejects(readProjectFile(workspace, {
+    project: { ...project, title: "tampered" }, expectedProjectDigest: project.digest,
+    relativePath: "src/readme.txt"
+  }), { code: "QX_PROJECT_INVALID" });
 });
 
 test("requires exact approval and explicit create permission for each write", async t => {
