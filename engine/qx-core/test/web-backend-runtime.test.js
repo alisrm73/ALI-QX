@@ -213,7 +213,7 @@ test("web backend produces byte-for-byte deterministic assets for identical inpu
     "DATA.CREATE(total, 4 + 5)",
     'UI.TEXT("Stable output")',
     "PROCESS.CALCULATE(total, total * 2)"
-  ].join("\\n");
+  ].join("\n");
   const first = buildWebProject(source, { title: "Deterministic QX Project" });
   const second = buildWebProject(source, { title: "Deterministic QX Project" });
   assert.deepEqual(Object.keys(first.files).sort(), ["app.js", "index.html", "styles.css"]);
