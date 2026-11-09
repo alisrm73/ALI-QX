@@ -260,6 +260,7 @@ export async function writeProjectFile(workspace, {
 export async function restoreProjectFile(workspace, {
   project, expectedProjectDigest, backupId, relativePath, permission
 } = {}) {
+  assertWorkspace(workspace);
   assertProjectApproved(project, { expectedDigest: expectedProjectDigest });
   const resolved = await resolveTarget(workspace, relativePath);
   assertPermission(permission, { operation: "restore", relativePath: resolved.relativePath, project });
