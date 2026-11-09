@@ -2,6 +2,7 @@ import { parse } from "./parser.js";
 import { analyze } from "./semantic-analyzer.js";
 import { lowerToQIR, serializeQIR, validateQIR } from "./qir.js";
 import { COMBINING_CLASS, UNICODE_VERSION } from "./unicode-data.js";
+import { getUIComponentRegistry, validateUIComponentTree } from "./ui-component-runtime.js";
 
 export class QXWebBuildError extends Error {
   constructor(code, message, diagnostics = []) {
@@ -12,7 +13,7 @@ const LIMITS = Object.freeze({ maxInstructions: 100000, maxCallDepth: 128, maxLi
 function escapeHTML(value) {
   return String(value).replace(/[&<>"']/g, ch => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" })[ch]);
 }
-function browserRun(module, combiningClassEntries) {
+function browserRun(module, combiningClassEntries, uiLock, uiRegistry) {
   const LIMITS = Object.freeze({ maxInstructions: 100000, maxCallDepth: 128, maxListLength: 10000, maxStringLength: 1000000 });
   const UNINITIALIZED = Symbol("QX_UNINITIALIZED");
   const clone = value => Array.isArray(value) ? value.map(clone) : value;
@@ -48,6 +49,73 @@ function browserRun(module, combiningClassEntries) {
   const functions=new Map([module.initializer,...module.functions].map(x=>[x.id,x]));
   let instructionCount=0;
   const outputs=[];
+  function validateUITree(treeJson, inst, ctx) {
+    let tree;
+    try { tree = JSON.parse(treeJson); }
+    catch { fail("QX_UI_TREE_INVALID", "UI component tree must be valid JSON", inst, ctx); }
+    const registry = new Map((uiRegistry || []).map(entry => [entry.type, entry]));
+    if (!uiLock || uiLock.schema !== "QX.UI.COMPONENT-LOCK" || uiLock.version !== "1.0" || !Array.isArray(uiLock.components))
+      fail("QX_UI_LOCK_INVALID", "Invalid UI component lock", inst, ctx);
+    const pins = new Map();
+    for (const entry of uiLock.components) {
+      if (!entry || Object.keys(entry).sort().join(",") !== "contractVersion,registryRelease,schemaDigest,type" ||
+          typeof entry.type !== "string" || typeof entry.contractVersion !== "string" ||
+          typeof entry.schemaDigest !== "string" || typeof entry.registryRelease !== "string")
+        fail("QX_UI_LOCK_INVALID", "Invalid UI component lock entry", inst, ctx);
+      const key = entry.type + "@" + entry.contractVersion;
+      if (pins.has(key)) fail("QX_UI_LOCK_DUPLICATE", "Duplicate UI lock entry", inst, ctx);
+      const registered = registry.get(entry.type);
+      if (!registered) fail("QX_UI_UNKNOWN_COMPONENT", "Unknown UI component in lock", inst, ctx);
+      if (entry.contractVersion !== registered.contractVersion || entry.registryRelease !== registered.registryRelease)
+        fail("QX_UI_RELEASE_UNAVAILABLE", "Exact UI component release is unavailable", inst, ctx);
+      if (entry.schemaDigest !== registered.schemaDigest)
+        fail("QX_UI_DIGEST_MISMATCH", "UI component schema digest mismatch", inst, ctx);
+      pins.set(key, entry);
+    }
+    if (!tree || Object.getPrototypeOf(tree) !== Object.prototype ||
+        Object.keys(tree).sort().join(",") !== "children,schema,version" ||
+        tree.schema !== "QX.UI.TREE" || tree.version !== "1.0" || !Array.isArray(tree.children))
+      fail("QX_UI_TREE_INVALID", "Invalid UI component tree envelope", inst, ctx);
+    const ids = new Set(); let count = 0, totalText = 0;
+    function visit(node, depth, policy) {
+      if (depth > 32) fail("QX_UI_TREE_DEPTH", "UI tree nesting limit exceeded", inst, ctx);
+      if (++count > 1000) fail("QX_UI_TREE_NODES", "UI tree node limit exceeded", inst, ctx);
+      if (!node || Object.getPrototypeOf(node) !== Object.prototype) fail("QX_UI_NODE_INVALID", "Invalid UI tree node", inst, ctx);
+      if (node.kind === "text") {
+        if (Object.keys(node).sort().join(",") !== "kind,value" || typeof node.value !== "string")
+          fail("QX_UI_TEXT_INVALID", "Invalid UI text node", inst, ctx);
+        if (policy && !policy.text) fail("QX_UI_CHILD_POLICY", "Text children are not permitted", inst, ctx);
+        if (node.value.length > 10000 || (totalText += node.value.length) > 50000)
+          fail("QX_UI_TEXT_LIMIT", "UI text limit exceeded", inst, ctx);
+        return { kind: "text", value: node.value };
+      }
+      if (node.kind !== "component" || Object.keys(node).sort().join(",") !== "children,id,kind,props,type,version")
+        fail("QX_UI_NODE_INVALID", "Invalid UI component node", inst, ctx);
+      if (typeof node.id !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/.test(node.id))
+        fail("QX_UI_ID_INVALID", "Invalid UI component ID", inst, ctx);
+      if (ids.has(node.id)) fail("QX_UI_ID_DUPLICATE", "Duplicate UI component ID", inst, ctx);
+      ids.add(node.id);
+      if (policy && !policy.components.includes(node.type)) fail("QX_UI_CHILD_POLICY", "Component child is not permitted", inst, ctx);
+      const definition = registry.get(node.type);
+      if (!definition) fail("QX_UI_UNKNOWN_COMPONENT", "Unknown UI component type", inst, ctx);
+      if (node.version !== definition.contractVersion) fail("QX_UI_VERSION_MISMATCH", "UI component version mismatch", inst, ctx);
+      if (!pins.has(node.type + "@" + node.version)) fail("QX_UI_LOCK_MISSING", "Missing exact UI component lock pin", inst, ctx);
+      if (!node.props || Object.getPrototypeOf(node.props) !== Object.prototype ||
+          Object.keys(node.props).some(key => !Object.hasOwn(definition.props, key)) || Object.keys(node.props).length > 16)
+        fail("QX_UI_PROPS_INVALID", "Invalid UI component properties", inst, ctx);
+      for (const [name, rule] of Object.entries(definition.props)) {
+        const value = node.props[name];
+        if (rule.required && value === undefined) fail("QX_UI_PROP_REQUIRED", "Missing UI component property", inst, ctx);
+        if (value !== undefined && (typeof value !== rule.type || (rule.integer && !Number.isSafeInteger(value)) ||
+            (rule.minimum !== undefined && value < rule.minimum) || (rule.maximum !== undefined && value > rule.maximum)))
+          fail("QX_UI_PROP_INVALID", "Invalid UI component property", inst, ctx);
+      }
+      if (!Array.isArray(node.children)) fail("QX_UI_CHILDREN_INVALID", "UI component children must be an array", inst, ctx);
+      return { kind: "component", id: node.id, type: node.type, version: node.version,
+        props: { ...node.props }, children: node.children.map(child => visit(child, depth + 1, definition.children)) };
+    }
+    return { schema: "QX.UI.TREE", version: "1.0", children: tree.children.map(node => visit(node, 1, null)) };
+  }
   function binary(op,a,b,inst,ctx) {
     const num=v=>{if(typeof v!=="number"||!Number.isFinite(v))fail("QX_VM_INVALID_NUMBER","Expected finite NUM",inst,ctx);return v;};
     const str=v=>{if(typeof v!=="string"||v.length>LIMITS.maxStringLength)fail("QX_VM_INVALID_TEXT","Expected bounded TXT",inst,ctx);return v;};
@@ -106,6 +174,11 @@ function browserRun(module, combiningClassEntries) {
             if(o.command==="DATA.COUNT"&&args.length===1){const list=read(args[0],i);if(!Array.isArray(list))fail("QX_VM_COMMAND_ARGUMENT","DATA.COUNT requires LIST",i,ctx);if(i.result)values.set(i.result,list.length);break;}
             if(o.command==="DATA.ADD"&&args.length===2){const list=read(args[0],i),value=read(args[1],i);if(!Array.isArray(list))fail("QX_VM_COMMAND_ARGUMENT","DATA.ADD requires LIST",i,ctx);if(list.length>=LIMITS.maxListLength)fail("QX_VM_LIST_LIMIT","Maximum list length exceeded",i,ctx);values.set(i.result,[...list.map(clone),clone(value)]);break;}
             if(o.command==="DATA.REMOVE"&&args.length===2){const list=read(args[0],i),index=read(args[1],i);if(!Array.isArray(list))fail("QX_VM_COMMAND_ARGUMENT","DATA.REMOVE requires LIST",i,ctx);if(!Number.isSafeInteger(index)||index<0||index>=list.length)fail("QX_VM_LIST_INDEX","DATA.REMOVE index must be a valid zero-based integer within the list",i,ctx);values.set(i.result,list.filter((_,n)=>n!==index).map(clone));break;}
+            if(o.command==="UI.TREE"&&args.length===1&&module.version==="1.4"){
+              const json=read(args[0],i);
+              if(typeof json!=="string"||json.length>LIMITS.maxStringLength)fail("QX_VM_INVALID_TEXT","UI.TREE requires bounded TXT JSON",i,ctx);
+              outputs.push({component:"TREE",tree:validateUITree(json,i,ctx),source:i.source});break;
+            }
             if(o.command==="UI.SHOW"&&args.length===1&&["1.2","1.3"].includes(module.version)){outputs.push({component:"SHOW",value:clone(read(args[0],i)),source:i.source});break;}
             if(o.command==="UI.TEXT"&&args.length===1&&["1.2","1.3"].includes(module.version)){const value=read(args[0],i);if(typeof value!=="string"||value.length>LIMITS.maxStringLength)fail("QX_VM_INVALID_TEXT","UI.TEXT requires bounded TXT",i,ctx);outputs.push({component:"TEXT",value,source:i.source});break;}
             fail("QX_VM_COMMAND_NOT_ALLOWED","Command is not available in this QIR version",i,ctx);break;
@@ -125,15 +198,29 @@ function browserRun(module, combiningClassEntries) {
   for(const item of module.globals){const v=globals.get(item.id);if(v!==UNINITIALIZED)result[item.name]=clone(v);}
   return {globals:result,outputs,instructionCount};
 }
-function browserEntry(module, runProgram, combiningClassEntries) {
+function browserEntry(module, runProgram, combiningClassEntries, uiLock, uiRegistry) {
 const root=document.getElementById("qx-output");
 const status=document.getElementById("qx-status");
 try {
-  const result=runProgram(module, combiningClassEntries);
+  const result=runProgram(module, combiningClassEntries, uiLock, uiRegistry);
   status.textContent="Execution completed";
   for(const item of result.outputs||[]){
     if(item.component==="TEXT"){
       const text=document.createElement("p");text.className="qx-ui-text";text.textContent=item.value;root.append(text);
+    }else if(item.component==="TREE"){
+      const registry=new Map((uiRegistry||[]).map(entry=>[entry.type,entry]));
+      const renderNode=node=>{
+        if(node.kind==="text")return document.createTextNode(node.value);
+        const definition=registry.get(node.type);
+        let element;
+        if(definition.renderer==="container"){element=document.createElement("div");element.className="qx-ui-container";}
+        else if(definition.renderer==="text-block"){element=document.createElement("p");element.className="qx-ui-text-block";}
+        else if(definition.renderer==="heading"){element=document.createElement("h"+node.props.level);element.className="qx-ui-heading";}
+        else throw new Error("Unsupported host UI renderer");
+        for(const child of node.children)element.append(renderNode(child));
+        return element;
+      };
+      for(const child of item.tree.children)root.append(renderNode(child));
     }else if(item.component==="SHOW"){
       const section=document.createElement("section");section.className="qx-ui-show";
       const pre=document.createElement("pre");pre.textContent=typeof item.value==="string"?item.value:JSON.stringify(item.value,null,2);
@@ -159,6 +246,19 @@ try {
 export function generateWebAssets(qir, options = {}) {
   const diagnostics=validateQIR(qir);
   if(diagnostics.length)throw new QXWebBuildError("QX_WEB_INVALID_QIR","Cannot build invalid QIR",diagnostics);
+  const hasUITree=[qir.initializer,...qir.functions].some(fn=>
+    fn.blocks.some(block=>block.instructions.some(inst=>inst.opcode==="COMMAND_CALL"&&inst.operands?.command==="UI.TREE")));
+  let uiLock=null, uiRegistry=[];
+  if(hasUITree){
+    if(!options.uiLock)throw new QXWebBuildError("QX_WEB_UI_LOCK_REQUIRED","UI.TREE requires the project's qx.ui-lock.json manifest");
+    try{
+      validateUIComponentTree({schema:"QX.UI.TREE",version:"1.0",children:[]},options.uiLock);
+      uiLock=typeof options.uiLock==="string"?JSON.parse(options.uiLock):options.uiLock;
+      uiRegistry=getUIComponentRegistry();
+    }catch(error){
+      throw new QXWebBuildError(error.code||"QX_WEB_UI_LOCK_INVALID","UI component lock validation failed");
+    }
+  }
   const hasIntegrationRequest=[qir.initializer,...qir.functions].some(fn=>
     fn.blocks.some(block=>block.instructions.some(inst=>inst.opcode==="COMMAND_CALL"&&inst.operands?.command==="INTEGRATION.REQUEST")));
   if(hasIntegrationRequest)throw new QXWebBuildError("QX_WEB_INTEGRATION_UNSUPPORTED","INTEGRATION.REQUEST requires a trusted host runtime and is not available in static browser builds");
@@ -184,7 +284,7 @@ export function generateWebAssets(qir, options = {}) {
     ".qx-header, .qx-value { background: #fff; border: 1px solid #e2e7ef; border-radius: 18px; padding: 24px; box-shadow: 0 8px 30px rgb(23 32 51 / 5%); }",
     ".qx-eyebrow, .qx-meta { color: #68758b; font-size: .78rem; letter-spacing: .08em; }",
     "h1 { margin: .25rem 0; font-size: clamp(1.8rem, 5vw, 2.6rem); } .qx-status { color: #176b46; font-weight: 650; }",
-    ".qx-output { display: grid; gap: 14px; margin-top: 18px; } .qx-value h2 { margin: 0 0 12px; font-size: 1rem; } .qx-ui-text, .qx-ui-show { margin: 0; padding: 16px 18px; border: 1px solid #e2e7ef; border-radius: 12px; background: #fff; line-height: 1.6; overflow-wrap: anywhere; } .qx-ui-show pre { background: transparent; padding: 0; }",
+    ".qx-output { display: grid; gap: 14px; margin-top: 18px; } .qx-ui-container { display: grid; gap: 12px; padding: 18px; border: 1px solid #e2e7ef; border-radius: 14px; background: #fff; } .qx-ui-text-block { margin: 0; line-height: 1.6; } .qx-ui-heading { margin: 0; } .qx-value h2 { margin: 0 0 12px; font-size: 1rem; } .qx-ui-text, .qx-ui-show { margin: 0; padding: 16px 18px; border: 1px solid #e2e7ef; border-radius: 12px; background: #fff; line-height: 1.6; overflow-wrap: anywhere; } .qx-ui-show pre { background: transparent; padding: 0; }",
     "pre { margin: 0; padding: 14px; border-radius: 10px; overflow: auto; background: #f5f7fa; white-space: pre-wrap; overflow-wrap: anywhere; }",
     ".qx-error { color: #9b2525; border: 1px solid #efcaca; background: #fff7f7; } footer { margin: 24px 4px; color: #758198; font-size: .8rem; }",
     "@media (max-width: 520px) { .qx-shell { margin: 18px auto; } .qx-header, .qx-value { padding: 18px; } }"
