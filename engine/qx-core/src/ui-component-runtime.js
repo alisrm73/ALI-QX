@@ -56,14 +56,16 @@ const definitions = [
 ];
 
 const registry = new Map(definitions.map(definition => {
-  const schema = {
+  freezeDeep(definition.props);
+  freezeDeep(definition.children);
+  const schema = freezeDeep({
     type: definition.type,
     contractVersion: definition.contractVersion,
     props: definition.props,
     children: definition.children,
     renderer: definition.renderer
-  };
-  return [definition.type, Object.freeze({ ...definition, schema: Object.freeze(schema), schemaDigest: digest(schema) })];
+  });
+  return [definition.type, freezeDeep({ ...definition, schema, schemaDigest: digest(schema) })];
 }));
 
 export class QXUIError extends Error {
@@ -82,6 +84,12 @@ const allowedKeys = (value, keys) => value && typeof value === "object" && !Arra
   Object.keys(value).every(key => keys.includes(key));
 const semver = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$/;
 const digestPattern = /^sha256:[0-9a-f]{64}$/;
+function isSemver(value) {
+  if (typeof value !== "string") return false;
+  const match = semver.exec(value);
+  if (!match) return false;
+  return !(match[4] && match[4].split(".").some(part => /^\\d+$/.test(part) && part.length > 1 && part.startsWith("0")));
+}
 
 export function getUIComponentRegistry() {
   return Object.freeze([...registry.values()].map(item => Object.freeze({
@@ -102,7 +110,7 @@ export function createDefaultUILock() {
     components: Object.freeze(getUIComponentRegistry()
       .map(({ type, contractVersion, schemaDigest, registryRelease }) =>
         Object.freeze({ type, contractVersion, schemaDigest, registryRelease }))
-      .sort((a, b) => a.type.localeCompare(b.type) || a.contractVersion.localeCompare(b.contractVersion)))
+      .sort((a, b) => a.type < b.type ? -1 : a.type > b.type ? 1 : a.contractVersion < b.contractVersion ? -1 : a.contractVersion > b.contractVersion ? 1 : 0))
   });
 }
 
@@ -130,7 +138,7 @@ function validateLock(input) {
   const entries = new Map();
   for (const entry of lock.components) {
     if (!exactKeys(entry, ["type", "contractVersion", "schemaDigest", "registryRelease"]) ||
-        typeof entry.type !== "string" || !semver.test(entry.contractVersion) ||
+        typeof entry.type !== "string" || !isSemver(entry.contractVersion) ||
         !digestPattern.test(entry.schemaDigest) || typeof entry.registryRelease !== "string" || !entry.registryRelease)
       fail("QX_UI_LOCK_INVALID", "Invalid UI component lock entry");
     const key = entry.type + "@" + entry.contractVersion;
@@ -157,6 +165,9 @@ function freezeDeep(value) {
 
 export function validateUIComponentTree(input, lockInput, limits = {}) {
   const activeLimits = { ...UI_TREE_LIMITS, ...limits };
+  for (const [name, value] of Object.entries(activeLimits)) {
+    if (!Number.isSafeInteger(value) || value < 1) throw new TypeError(name + " must be a positive safe integer");
+  }
   const raw = parseData(input, "QX_UI_TREE_INVALID", "UI component tree", activeLimits.maxSerializedBytes);
   const lock = validateLock(lockInput);
   if (!exactKeys(raw, ["schema", "version", "children"]) || raw.schema !== TREE_SCHEMA || raw.version !== "1.0" || !Array.isArray(raw.children))
