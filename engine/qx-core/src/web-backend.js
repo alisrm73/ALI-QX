@@ -209,7 +209,8 @@ const root=document.getElementById("qx-output");
 const status=document.getElementById("qx-status");
 const runButton=document.getElementById("qx-run-button");
 function run() {
-  root.replaceChildren();
+  if(typeof root.replaceChildren==="function")root.replaceChildren();
+  else if(Array.isArray(root.children))root.children.length=0;
   status.textContent="Running QX program…";
   try {
     const result=runProgram(module, combiningClassEntries, uiLock, uiRegistry);
@@ -291,7 +292,7 @@ export function generateWebAssets(qir, options = {}) {
     "<script defer src=\"./app.js\"></script>","</head><body><main class=\"qx-shell\">",
     "<header class=\"qx-header\"><p class=\"qx-eyebrow\">ALI-QX · WEB BACKEND</p><h1>"+escapeHTML(title)+"</h1>",
     "<p>Generated from a validated QIR module.</p><p id=\"qx-status\" class=\"qx-status\" role=\"status\" aria-live=\"polite\">Ready to run</p>",
-    "<button id=\\"qx-run-button\\" class=\\"qx-run-button\\" type=\\"button\\">Run QX program</button></header>",
+    "<button id=\"qx-run-button\" class=\"qx-run-button\" type=\"button\">Run QX program</button></header>",
     "<div id=\"qx-output\" class=\"qx-output\" aria-live=\"polite\"></div>",
     "<footer>QX V1 · Local execution · No network integrations</footer></main></body></html>"
   ].join("\n");
