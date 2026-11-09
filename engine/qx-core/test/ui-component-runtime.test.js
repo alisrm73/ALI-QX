@@ -21,6 +21,19 @@ test("publishes immutable built-in presentation component releases and exact loc
   assert.ok(lock.components.every(entry => /^sha256:[0-9a-f]{64}$/.test(entry.schemaDigest)));
 });
 
+test("keeps host registry schemas immutable and enforces strict SemVer", () => {
+  const registry = getUIComponentRegistry();
+  assert.equal(Object.isFrozen(registry[0].children), true);
+  assert.equal(Object.isFrozen(registry[0].children.components), true);
+  assert.throws(() => registry[0].children.components.push("UI.UNTRUSTED"), TypeError);
+  const invalid = {
+    ...lock,
+    components: lock.components.map(entry => entry.type === "UI.HEADING"
+      ? { ...entry, contractVersion: "1.0.0-01" } : entry)
+  };
+  assert.throws(() => validateUIComponentTree(tree([]), invalid), { code: "QX_UI_LOCK_INVALID" });
+});
+
 test("validates and preserves nested static component trees and literal text", () => {
   const input = tree([
     component("root", "UI.CONTAINER", [
