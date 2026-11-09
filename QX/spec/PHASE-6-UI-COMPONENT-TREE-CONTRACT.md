@@ -1,8 +1,8 @@
 # UI Component Tree Contract — Phase 6
 
-**Status:** Proposed normative contract for review; documentation only.  
-**Scope:** A declarative, data-only component tree for future UI extensions.  
-**Compatibility:** Does not change QIR 1.0–1.3 or the existing `UI.TEXT` / `UI.SHOW` behavior.
+**Status:** Runtime implementation candidate in PR #12; static component-tree validation and rendering are implemented on the feature branch, pending final CI and review.  
+**Scope:** A declarative, data-only component tree for static presentation components.  
+**Compatibility:** QIR 1.0–1.3 remain unchanged. QIR 1.4 adds the statement-only `UI.TREE(TXT)` bridge; existing `UI.TEXT` / `UI.SHOW` behavior is retained.
 
 ## 1. Design decisions
 
@@ -157,9 +157,9 @@ Event handlers are not serialized into the tree. A future event system must use 
 ## 10. Versioning and QIR compatibility
 
 - Tree-schema version, component contract version, and QIR version are independent version axes.
-- This document does not introduce a QIR opcode, command, or runtime feature.
-- Existing QIR 1.0–1.3 behavior remains unchanged.
-- A future QIR bridge for component trees requires a separate extension proposal specifying serialization, validation, VM behavior, browser behavior, compatibility, and tests.
+- This document defines the tree data contract; the QIR bridge is specified separately in `QIR-UI-COMPONENT-TREE-EXTENSION-1.4.md`.
+- Existing QIR 1.0–1.3 behavior remains unchanged; QIR 1.4 adds `UI.TREE(TXT)` as a statement-only effect.
+- QIR serialization, semantic checks, VM lock enforcement, and static-browser rendering are implemented as a candidate in PR #12; merge remains gated on CI and review.
 - A breaking tree grammar change requires a new tree-schema major version. Compatible additions require a documented minor version and explicit unknown-field policy.
 - Projects pin each component contract version in the project lock manifest described by `PHASE-6-UI-REGISTRY-VERSIONING-CONTRACT.md`; every component node's `version` MUST match its exact lock entry. No automatic upgrade or substitution is allowed.
 
@@ -192,4 +192,4 @@ This contract is not considered implemented until all of the following exist and
 8. Accessibility contract tests for every interactive component before that component is enabled.
 9. A real sample project using only registered components, followed by independent review.
 
-Until these criteria are met, this document is a design contract only. No new UI component is approved for execution by this document alone.
+The current candidate registers only `UI.CONTAINER`, `UI.TEXT_BLOCK`, and `UI.HEADING` at contract version `1.0.0`. These are static presentation components only. Interactive components, events, navigation, input, arbitrary styling, and host capabilities remain disabled. The acceptance criteria above remain the release gate; this document alone does not authorize any component outside the host registry.

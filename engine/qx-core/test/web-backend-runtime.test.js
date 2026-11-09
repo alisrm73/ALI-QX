@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import vm from "node:vm";
 import { buildWebProject, QXWebBuildError } from "../src/web-backend.js";
+import { createDefaultUILock } from "../src/ui-component-runtime.js";
 
 test("generated browser runtime executes QIR and renders global results", () => {
   const project = buildWebProject('DATA.CREATE(total, 4 + 5)\nPROCESS.CALCULATE(total, total * 2)');
@@ -119,6 +120,31 @@ test("browser runtime executes PROCESS.ADD increments", () => {
     .map(node => [node.children[0].textContent, node.children[1].textContent]));
   assert.equal(values.get("count"), "3");
   assert.equal(values.get("result"), "7");
+});
+
+test("browser runtime renders validated UI.TREE with safe DOM text nodes", () => {
+  const source = 'UI.TREE("{\\"schema\\":\\"QX.UI.TREE\\",\\"version\\":\\"1.0\\",\\"children\\":[{\\"kind\\":\\"component\\",\\"id\\":\\"heading\\",\\"type\\":\\"UI.HEADING\\",\\"version\\":\\"1.0.0\\",\\"props\\":{\\"level\\":1},\\"children\\":[{\\"kind\\":\\"text\\",\\"value\\":\\"<script>literal</script>\\"}]}]}")';
+  const project = buildWebProject(source, { uiLock: createDefaultUILock() });
+  const makeNode = tag => ({ tag, children: [], textContent: "", className: "", append(...items) { this.children.push(...items); } });
+  const nodes = new Map([["qx-output", makeNode("root")], ["qx-status", makeNode("status")]]);
+  const document = {
+    getElementById: id => nodes.get(id),
+    createElement: tag => makeNode(tag),
+    createTextNode: value => ({ nodeType: 3, textContent: value })
+  };
+  vm.runInNewContext(project.files["app.js"], { document, TextEncoder });
+  assert.equal(nodes.get("qx-status").textContent, "Execution completed");
+  const heading = nodes.get("qx-output").children[0];
+  assert.equal(heading.tag, "h1");
+  assert.equal(heading.children[0].textContent, "<script>literal</script>");
+});
+
+test("browser build requires and validates the exact UI component lock", () => {
+  assert.throws(() => buildWebProject('UI.TREE("{}")'), { code: "QX_WEB_UI_LOCK_REQUIRED" });
+  const validLock = createDefaultUILock();
+  const badLock = { ...validLock, components: validLock.components.map(entry => entry.type === "UI.HEADING"
+    ? { ...entry, schemaDigest: "sha256:" + "0".repeat(64) } : entry) };
+  assert.throws(() => buildWebProject('UI.TREE("{}")', { uiLock: badLock }), { code: "QX_WEB_UI_LOCK_INVALID" });
 });
 
 test("browser runtime renders UI.TEXT and UI.SHOW as safe accessible text", () => {

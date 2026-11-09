@@ -1,5 +1,6 @@
 import { validateQIR } from "./qir.js";
 import { normalizeNFC } from "./unicode.js";
+import { validateUIComponentTree } from "./ui-component-runtime.js";
 
 const UNINITIALIZED = Symbol("QX_UNINITIALIZED");
 const DEFAULT_LIMITS = Object.freeze({
@@ -281,11 +282,23 @@ function createQIRExecution(module, options = {}) {
               values.set(instruction.result, response);
               break;
             }
-            if (op.command === "UI.SHOW" && args.length === 1 && ["1.2", "1.3"].includes(module.version)) {
+            if (op.command === "UI.TREE" && args.length === 1 && module.version === "1.4") {
+              if (!options.uiLock)
+                throw runtimeError("QX_VM_UI_LOCK_REQUIRED", "UI.TREE requires the project's qx.ui-lock.json manifest", instruction, context);
+              const treeJson = ensureString(readValue(frame, args[0], instruction), instruction, frame);
+              let tree;
+              try { tree = validateUIComponentTree(treeJson, options.uiLock); }
+              catch (error) {
+                throw runtimeError(error?.code || "QX_VM_UI_TREE_INVALID", "UI component tree validation failed: " + (error?.message || "invalid tree"), instruction, context);
+              }
+              outputs.push(Object.freeze({ component: "TREE", tree, source: instruction.source }));
+              break;
+            }
+            if (op.command === "UI.SHOW" && args.length === 1 && ["1.2", "1.3", "1.4"].includes(module.version)) {
               outputs.push(Object.freeze({ component: "SHOW", value: cloneValue(readValue(frame, args[0], instruction)), source: instruction.source }));
               break;
             }
-            if (op.command === "UI.TEXT" && args.length === 1 && ["1.2", "1.3"].includes(module.version)) {
+            if (op.command === "UI.TEXT" && args.length === 1 && ["1.2", "1.3", "1.4"].includes(module.version)) {
               const value = readValue(frame, args[0], instruction);
               if (typeof value !== "string") throw runtimeError("QX_VM_INVALID_TEXT", "UI.TEXT requires TXT", instruction, context);
               ensureString(value, instruction, frame);
