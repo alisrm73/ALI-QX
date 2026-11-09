@@ -9,7 +9,7 @@
 
 This matrix turns the two proposed UI contracts into observable acceptance cases. It is a test-design artifact, not an executable test suite.
 
-Implementation MUST NOT begin until the owning contracts, serialization boundary, host registry interface, and project-manifest integration point have been reviewed. In particular, the lock-manifest filename and location remain intentionally undecided because the repository currently exposes the `engine/qx-core/package.json` package manifest but no QX project manifest or component-lock convention.
+Implementation MUST NOT begin until the owning contracts, serialization boundary, and host registry interface have been reviewed. The project lock-file convention is now fixed for future QX projects: `qx.ui-lock.json` at the project root, as a separate sidecar file. The repository currently exposes `engine/qx-core/package.json` as engine-package metadata but has no QX project manifest; this documentation change does not create a project file or treat the engine package manifest as one.
 
 Each case below becomes an automated test when its corresponding validator/resolver/renderer exists. A case is **not passed** merely because its expected behavior is documented or because unrelated existing tests pass.
 
@@ -20,6 +20,7 @@ Each case below becomes an automated test when its corresponding validator/resol
 - **Determinism:** identical inputs and the same pinned registry state produce identical outcomes.
 - **Isolation:** tests use an explicit in-memory host registry fixture; no external network, filesystem access, or project-supplied executable code is permitted.
 - **No implicit defaults:** a fixture must state every version and registry identity needed for resolution.
+- **Lock-file fixture:** use the exact `QX.UI.COMPONENT-LOCK` schema and `qx.ui-lock.json` project-root sidecar convention; each component node's `version` must equal the matched lock entry's `contractVersion`.
 - **Resource tests:** use small configurable limits in test fixtures; production defaults must be separately justified and documented before activation.
 
 Error identifiers below are semantic categories, not finalized public error-code strings. Stable identifiers and their exact payload shape must be fixed in the implementation contract before runtime activation.
@@ -101,6 +102,7 @@ Use controlled registry snapshots. A release fixture includes canonical type, ex
 | REG-014 | Immutable publication | Attempt to mutate an already published release | Reject mutation; require a new release |
 | REG-015 | No silent fallback | Remove the pinned release while a newer release exists | Reject unavailable pin; do not substitute |
 | REG-016 | Unused lock entry | Include a valid lock entry unused by the tree | Resolution unchanged; optional warning only |
+| REG-017 | Node/lock version mismatch | Tree node `version` differs from the matched lock entry `contractVersion` | Reject before rendering; no fallback to another version |
 
 ## 7. Upgrade, deprecation, and rollback cases
 
@@ -186,7 +188,7 @@ The UI tree and registry/versioning work may be considered ready for implementat
 1. Every applicable case has an executable test with a traceable requirement.
 2. Positive, negative, boundary, determinism, and whole-tree rejection cases pass.
 3. The host registry and exact lock-resolution behavior are implemented and tested.
-4. The lock-manifest integration point is explicitly selected after reviewing the project format.
+4. The `qx.ui-lock.json` sidecar convention is implemented at the QX project root; it is not conflated with `engine/qx-core/package.json`.
 5. Serialization and renderer security tests pass.
 6. Accessibility and event contracts exist for every interactive component proposed for registration.
 7. QIR 1.0–1.3 and UI.TEXT/UI.SHOW compatibility suites pass on the same final commit.
