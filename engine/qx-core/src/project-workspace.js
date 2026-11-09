@@ -49,7 +49,15 @@ function assertPermission(permission, { operation, relativePath, project }) {
 }
 
 async function assertDirectoryNoSymlink(targetPath, expectedRoot) {
-  const info = await fs.lstat(targetPath);
+  let info;
+  try {
+    info = await fs.lstat(targetPath);
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      fail("QX_WORKSPACE_PARENT_MISSING", "Parent directories must already exist inside the selected workspace");
+    }
+    throw error;
+  }
   if (info.isSymbolicLink() || !info.isDirectory()) {
     fail("QX_WORKSPACE_PATH_UNSAFE", "A workspace directory is missing, not a directory, or is a symbolic link");
   }
@@ -128,17 +136,17 @@ async function appendChangeLog(workspace, event) {
 
 async function writeAtomic(target, data) {
   const temporary = path.join(path.dirname(target), ".qx-tmp-" + randomUUID());
-  const handle = await fs.open(temporary, "wx", 0o600);
   try {
-    await handle.writeFile(data);
-    await handle.sync();
-  } finally {
-    await handle.close();
-  }
-  try {
+    const handle = await fs.open(temporary, "wx", 0o600);
+    try {
+      await handle.writeFile(data);
+      await handle.sync();
+    } finally {
+      await handle.close();
+    }
     await fs.rename(temporary, target);
   } catch (error) {
-    await fs.rm(temporary, { force: true });
+    await fs.rm(temporary, { force: true }).catch(() => {});
     throw error;
   }
 }
