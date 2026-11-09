@@ -1,6 +1,6 @@
 # 7.8 — Integrated Approved Project Build Workflow
 
-**Status:** Implementation and integration tests committed on `phase7/project-build-test-delivery`; fresh CI is pending on latest head `70ec5f32fdb15564b746d6e906401509ab746928`. The previous head `40879d47444a2935ad73a3d093fdf4b6c70e63e4` passed all five workflows.
+**Status:** Implemented and verified on head `6581963403750f916360990d676bc1a327e753e5`; all five compatibility workflows passed.
 **Parent:** Phase 7 / PR #27. Keep the PR Draft and open.
 
 ## 1. Goal
@@ -59,7 +59,9 @@ The current manifest stores natural-language requirement strings without structu
 - [x] Delivery package contains all three generated assets and validates against the same project, plan, and test report.
 - [x] Unmapped requirements force `requires_requirement_review`, never `ready`.
 - [x] Partial write failure semantics and non-transactional behavior are documented.
-- [ ] All phase 3–7 and browser compatibility workflows pass on the final head.
+- [x] All phase 3–7 and browser compatibility workflows pass on the final head.
+
+**CI evidence on verified head:** Phase 3 run `42589582059`, phase 4 run `42589582064`, phase 5 Chromium run `42589582087`, phase 6 run `42589582038`, and phase 7 project workflow run `42589582060` all completed successfully. The phase 7 suite reported 258 tests passed and 0 failed.
 
 ## 7. Limits
 
