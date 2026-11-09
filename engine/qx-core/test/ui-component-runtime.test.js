@@ -20,6 +20,11 @@ test("publishes immutable built-in presentation component releases and exact loc
   ]);
   assert.equal(lock.schema, "QX.UI.COMPONENT-LOCK");
   assert.equal(lock.components.length, 3);
+  assert.deepEqual(lock.components.map(entry => entry.schemaDigest), [
+    "sha256:6693f6a569739a270be14209ba18ae467a101823eb83e12028619ad4e86dadab",
+    "sha256:c793f48ad34d9d73ba62c96cc4b42c061ecf7f845c46dffd87c3ac35a5e7b239",
+    "sha256:1e385953ec61605090646609296cc53d7ed91db49d43f9e6497051963515ddcc"
+  ]);
   assert.ok(lock.components.every(entry => /^sha256:[0-9a-f]{64}$/.test(entry.schemaDigest)));
 });
 
