@@ -101,7 +101,10 @@ export function assertProjectDeliveryReport(project, plan, testReport, report) {
       report.items.some(item => !isPlainObject(item) ||
         typeof item.path !== "string" || typeof item.required !== "boolean" ||
         !["included", "missing", "unverified"].includes(item.status) ||
-        !Number.isSafeInteger(item.size) || item.size < 0) ||
+        !Number.isSafeInteger(item.size) || item.size < 0 ||
+        (item.status === "included" && (!/^sha256:[a-f0-9]{64}$/.test(item.contentDigest) || item.size < 0)) ||
+        (item.status !== "included" && item.contentDigest !== null)) ||
+      new Set(report.items.map(item => item.path)).size !== report.items.length ||
       report.issues.some(issue => !isPlainObject(issue) ||
         typeof issue.code !== "string" || typeof issue.message !== "string") ||
       report.summary.total !== report.items.length ||
@@ -109,7 +112,9 @@ export function assertProjectDeliveryReport(project, plan, testReport, report) {
       report.summary.missing !== report.items.filter(item => item.status === "missing").length ||
       report.summary.unverified !== report.items.filter(item => item.status === "unverified").length ||
       report.summary.requiredMissing !== report.items.filter(item => item.required && item.status === "missing").length ||
+      !Number.isSafeInteger(report.summary.totalBytes) || report.summary.totalBytes < 0 ||
       report.status !== (report.issues.length === 0 ? "ready" : "blocked") ||
+      (report.status === "ready" && testReport.status !== "passed") ||
       (report.status === "ready" && (typeof report.packageDigest !== "string" || report.issues.length !== 0)) ||
       (report.status === "blocked" && report.packageDigest !== null)) {
     fail("QX_DELIVERY_INVALID", "Delivery report is malformed, stale, or internally inconsistent");
@@ -145,6 +150,7 @@ export function assertProjectDeliveryPackage(project, plan, testReport, packageV
   const seen = new Set();
   for (const file of packageValue.files) {
     if (!isPlainObject(file) || typeof file.path !== "string" ||
+        requireRelativePath(file.path) !== file.path ||
         seen.has(file.path) || typeof file.contentBase64 !== "string" ||
         !/^sha256:[a-f0-9]{64}$/.test(file.contentDigest) ||
         !Number.isSafeInteger(file.size) || file.size < 0) {
@@ -152,7 +158,8 @@ export function assertProjectDeliveryPackage(project, plan, testReport, packageV
     }
     seen.add(file.path);
     const bytes = Buffer.from(file.contentBase64, "base64");
-    if (bytes.length !== file.size || hash(bytes) !== file.contentDigest) {
+    if (bytes.toString("base64") !== file.contentBase64 ||
+        bytes.length !== file.size || hash(bytes) !== file.contentDigest) {
       fail("QX_DELIVERY_PACKAGE_INVALID", "Packaged file content does not match its size or digest");
     }
     totalBytes += bytes.length;
