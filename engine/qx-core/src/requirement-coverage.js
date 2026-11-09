@@ -210,23 +210,44 @@ export function assertRequirementCoverageReport(project, plan, testReport, deliv
 }
 
 
-export function assertRequirementCoverageInput(project, entries) {
+export function assertRequirementCoverageInput(project, entries, testCases) {
   const required = requirementsOf(project);
   if (!Array.isArray(entries) || entries.length !== required.length) {
     fail("QX_REQUIREMENT_COVERAGE_INCOMPLETE", "Every project requirement, data requirement, and integration requirement must be mapped before build writes");
   }
+  if (!Array.isArray(testCases)) {
+    fail("QX_REQUIREMENT_COVERAGE_INVALID", "Test cases must be declared before requirement mappings are validated");
+  }
   const expected = new Set(required.map(item => item.category + ":" + item.index));
+  const knownTests = new Set(testCases.filter(item => isPlainObject(item) && typeof item.id === "string").map(item => item.id));
   const seen = new Set();
   for (const entry of entries) {
-    if (!isPlainObject(entry) || !CATEGORIES.includes(entry.category) ||
-        !Number.isSafeInteger(entry.requirementIndex) || entry.requirementIndex < 0) {
-      fail("QX_REQUIREMENT_COVERAGE_INVALID", "Each requirement mapping needs a valid category and requirement index");
+    if (!isPlainObject(entry) || CATEGORIES.includes(entry.category) === false ||
+        !Number.isSafeInteger(entry.requirementIndex) || entry.requirementIndex < 0 ||
+        Object.keys(entry).some(key => !["category", "requirementIndex", "acceptanceCriteria", "clarification"].includes(key)) ||
+        !Array.isArray(entry.acceptanceCriteria)) {
+      fail("QX_REQUIREMENT_COVERAGE_INVALID", "Each requirement mapping needs a valid identity and acceptance-criteria array");
     }
     const key = entry.category + ":" + entry.requirementIndex;
     if (!expected.has(key) || seen.has(key)) {
       fail("QX_REQUIREMENT_COVERAGE_INVALID", "Requirement mappings contain an unknown or duplicate requirement");
     }
     seen.add(key);
+    if (entry.clarification !== undefined) requireText(entry.clarification, "clarification", 1000);
+    for (const criterion of entry.acceptanceCriteria) {
+      if (!isPlainObject(criterion) ||
+          Object.keys(criterion).some(key => !["id", "description", "testIds", "evidencePaths"].includes(key)) ||
+          typeof criterion.id !== "string" || !ID_PATTERN.test(criterion.id) ||
+          typeof criterion.description !== "string" || criterion.description.trim().length === 0 ||
+          !Array.isArray(criterion.testIds) || criterion.testIds.length > 100 ||
+          criterion.testIds.some(id => typeof id !== "string" || !knownTests.has(id)) ||
+          new Set(criterion.testIds).size !== criterion.testIds.length ||
+          !Array.isArray(criterion.evidencePaths) || criterion.evidencePaths.length > 100 ||
+          criterion.evidencePaths.some(path => !safeEvidencePath(path)) ||
+          new Set(criterion.evidencePaths).size !== criterion.evidencePaths.length) {
+        fail("QX_REQUIREMENT_COVERAGE_INVALID", "Acceptance criteria must reference declared tests and safe evidence paths before build writes");
+      }
+    }
   }
   return true;
 }
