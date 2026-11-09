@@ -94,19 +94,21 @@ function fixture(targetComponents = [heading("2.0.0")], targetStates = {}) {
   return { sourceRegistry, targetRegistry, lock, tree, mapping };
 }
 
+const request = (input, mappings) => ({
+  tree: input.tree,
+  lock: input.lock,
+  sourceRegistry: input.sourceRegistry,
+  targetRegistry: input.targetRegistry,
+  mappings
+});
+
 test("returns an exact deterministic lock and tree proposal without mutating source inputs", () => {
   const input = fixture();
   const originalLock = JSON.stringify(input.lock);
   const originalTree = JSON.stringify(input.tree);
 
-  const first = proposeUIComponentUpgrade({
-    ...input,
-    mappings: [input.mapping]
-  });
-  const second = proposeUIComponentUpgrade({
-    ...input,
-    mappings: [input.mapping]
-  });
+  const first = proposeUIComponentUpgrade(request(input, [input.mapping]));
+  const second = proposeUIComponentUpgrade(request(input, [input.mapping]));
 
   assert.deepEqual(first, second);
   assert.equal(first.lock.components[0].contractVersion, "2.0.0");
@@ -121,26 +123,17 @@ test("returns an exact deterministic lock and tree proposal without mutating sou
 
 test("requires an explicit mapping for every source lock entry", () => {
   const input = fixture();
-  assert.throws(() => proposeUIComponentUpgrade({
-    ...input,
-    mappings: []
-  }), { code: "QX_UI_UPGRADE_INCOMPATIBLE" });
+  assert.throws(() => proposeUIComponentUpgrade(request(input, [])), { code: "QX_UI_UPGRADE_INCOMPATIBLE" });
 });
 
 test("rejects mappings that do not identify an exact source tuple", () => {
   const input = fixture();
-  assert.throws(() => proposeUIComponentUpgrade({
-    ...input,
-    mappings: [{ ...input.mapping, from: { ...input.mapping.from, schemaDigest: "sha256:" + "0".repeat(64) } }]
-  }), { code: "QX_UI_UPGRADE_INCOMPATIBLE" });
+  assert.throws(() => proposeUIComponentUpgrade(request(input, [{ ...input.mapping, from: { ...input.mapping.from, schemaDigest: "sha256:" + "0".repeat(64) } }])), { code: "QX_UI_UPGRADE_INCOMPATIBLE" });
 });
 
 test("rejects implicit component type changes", () => {
   const input = fixture();
-  assert.throws(() => proposeUIComponentUpgrade({
-    ...input,
-    mappings: [{ ...input.mapping, to: { ...input.mapping.to, type: "UI.TEXT_BLOCK" } }]
-  }), { code: "QX_UI_UPGRADE_INCOMPATIBLE" });
+  assert.throws(() => proposeUIComponentUpgrade(request(input, [{ ...input.mapping, to: { ...input.mapping.to, type: "UI.TEXT_BLOCK" } }])), { code: "QX_UI_UPGRADE_INCOMPATIBLE" });
 });
 
 test("rejects a target whose schema cannot validate the existing tree", () => {
@@ -163,19 +156,13 @@ test("does not propose a target release retired by current host policy", () => {
 
 test("rejects duplicate source mappings", () => {
   const input = fixture();
-  assert.throws(() => proposeUIComponentUpgrade({
-    ...input,
-    mappings: [input.mapping, input.mapping]
-  }), { code: "QX_UI_UPGRADE_INCOMPATIBLE" });
+  assert.throws(() => proposeUIComponentUpgrade(request(input, [input.mapping, input.mapping])), { code: "QX_UI_UPGRADE_INCOMPATIBLE" });
 });
 
 test("rejects a target tuple with a mismatched schema digest", () => {
   const input = fixture();
-  assert.throws(() => proposeUIComponentUpgrade({
-    ...input,
-    mappings: [{
-      ...input.mapping,
-      to: { ...input.mapping.to, schemaDigest: "sha256:" + "f".repeat(64) }
-    }]
-  }), { code: "QX_UI_UPGRADE_INCOMPATIBLE" });
+  assert.throws(() => proposeUIComponentUpgrade(request(input, [{
+    ...input.mapping,
+    to: { ...input.mapping.to, schemaDigest: "sha256:" + "f".repeat(64) }
+  }])), { code: "QX_UI_UPGRADE_INCOMPATIBLE" });
 });
