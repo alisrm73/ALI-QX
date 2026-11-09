@@ -81,8 +81,10 @@ test("rejects altered, duplicate, and malformed lock entries", () => {
       ? { ...entry, schemaDigest: "sha256:" + "0".repeat(64) } : entry)
   };
   assert.throws(() => validateUIComponentTree(tree([]), mismatch), { code: "QX_UI_DIGEST_MISMATCH" });
-  const duplicate = { ...lock, components: [...lock.components, lock.components[0]] };
+  const duplicate = { ...lock, components: [...lock.components, lock.components[0]].sort((a, b) => a.type < b.type ? -1 : a.type > b.type ? 1 : a.contractVersion < b.contractVersion ? -1 : 1) };
   assert.throws(() => validateUIComponentTree(tree([]), duplicate), { code: "QX_UI_LOCK_DUPLICATE" });
+  const unsorted = { ...lock, components: [...lock.components].reverse() };
+  assert.throws(() => validateUIComponentTree(tree([]), unsorted), { code: "QX_UI_LOCK_ORDER" });
   assert.throws(() => validateUIComponentTree(tree([]), { ...lock, version: "latest" }), { code: "QX_UI_LOCK_INVALID" });
 });
 
@@ -90,6 +92,9 @@ test("enforces node, depth, text, and serialized byte limits", () => {
   assert.throws(() => validateUIComponentTree(tree([{ kind: "text", value: "12345" }]), lock, { maxTextLength: 4 }), { code: "QX_UI_TEXT_LIMIT" });
   assert.throws(() => validateUIComponentTree(tree([{ kind: "text", value: "x" }, { kind: "text", value: "y" }]), lock, { maxNodes: 1 }), { code: "QX_UI_TREE_NODES" });
   assert.throws(() => validateUIComponentTree(JSON.stringify(tree([])).padEnd(100, " "), lock, { maxSerializedBytes: 50 }), { code: "QX_UI_TREE_INVALID" });
+  assert.throws(() => validateUIComponentTree(tree([component("c", "UI.CONTAINER", [{ kind: "text", value: "x" }])]), lock, { maxDepth: 1 }), { code: "QX_UI_TREE_DEPTH" });
+  assert.throws(() => validateUIComponentTree(tree([{ kind: "text", value: "a" }, { kind: "text", value: "b" }]), lock, { maxTotalTextLength: 1 }), { code: "QX_UI_TEXT_LIMIT" });
+  assert.throws(() => validateUIComponentTree(tree([component("h", "UI.HEADING", [{ kind: "text", value: "x" }], { level: 1 })]), lock, { maxPropertyBytes: 1 }), { code: "QX_UI_PROP_LIMIT" });
 });
 
 test("rejects non-JSON objects and invalid property values", () => {
