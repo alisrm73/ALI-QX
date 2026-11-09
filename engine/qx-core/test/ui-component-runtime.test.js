@@ -102,3 +102,60 @@ test("rejects non-JSON objects and invalid property values", () => {
   assert.throws(() => validateUIComponentTree(cyclic, lock), { code: "QX_UI_TREE_INVALID" });
   assert.throws(() => validateUIComponentTree(tree([component("h", "UI.HEADING", [{ kind: "text", value: "x" }], { level: 9 })]), lock), { code: "QX_UI_PROP_INVALID" });
 });
+
+
+test("accepts exact resource boundaries and rejects the first value beyond each boundary", () => {
+  const twoNodes = tree([
+    { kind: "text", value: "a" },
+    { kind: "text", value: "b" }
+  ]);
+  assert.doesNotThrow(() => validateUIComponentTree(twoNodes, lock, {
+    maxNodes: 2, maxTextLength: 1, maxTotalTextLength: 2
+  }));
+  assert.throws(() => validateUIComponentTree(twoNodes, lock, { maxNodes: 1 }), {
+    code: "QX_UI_TREE_NODES"
+  });
+  assert.throws(() => validateUIComponentTree(twoNodes, lock, { maxTextLength: 0 }), TypeError);
+  assert.throws(() => validateUIComponentTree(twoNodes, lock, { maxTextLength: 1, maxTotalTextLength: 1 }), {
+    code: "QX_UI_TEXT_LIMIT"
+  });
+
+  const nested = tree([component("root", "UI.CONTAINER", [
+    { kind: "text", value: "x" }
+  ])]);
+  assert.doesNotThrow(() => validateUIComponentTree(nested, lock, { maxDepth: 2 }));
+  assert.throws(() => validateUIComponentTree(nested, lock, { maxDepth: 1 }), {
+    code: "QX_UI_TREE_DEPTH"
+  });
+
+  const serialized = JSON.stringify(tree([{ kind: "text", value: "é" }]));
+  const serializedBytes = Buffer.byteLength(serialized, "utf8");
+  assert.doesNotThrow(() => validateUIComponentTree(serialized, lock, {
+    maxSerializedBytes: serializedBytes
+  }));
+  assert.throws(() => validateUIComponentTree(serialized, lock, {
+    maxSerializedBytes: serializedBytes - 1
+  }), { code: "QX_UI_TREE_INVALID" });
+
+  const heading = tree([component("h", "UI.HEADING", [
+    { kind: "text", value: "x" }
+  ], { level: 1 })]);
+  const propertyBytes = Buffer.byteLength(JSON.stringify({ level: 1 }), "utf8");
+  assert.doesNotThrow(() => validateUIComponentTree(heading, lock, {
+    maxPropertyBytes: propertyBytes
+  }));
+  assert.throws(() => validateUIComponentTree(heading, lock, {
+    maxPropertyBytes: propertyBytes - 1
+  }), { code: "QX_UI_PROP_LIMIT" });
+});
+
+test("enforces component ID length at its exact boundary", () => {
+  const validId = "a".repeat(64);
+  assert.doesNotThrow(() => validateUIComponentTree(tree([
+    component(validId, "UI.TEXT_BLOCK", [{ kind: "text", value: "x" }])
+  ]), lock));
+  const invalidId = "a".repeat(65);
+  assert.throws(() => validateUIComponentTree(tree([
+    component(invalidId, "UI.TEXT_BLOCK", [{ kind: "text", value: "x" }])
+  ]), lock), { code: "QX_UI_ID_INVALID" });
+});
