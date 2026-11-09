@@ -1,9 +1,9 @@
 # UI Registry Multi-Version Lifecycle — Technical Design
 
-**Status:** Approved design baseline; implementation not authorized by this document  
+**Status:** Implemented for host validation and static Web Backend builds; see the phase 6 acceptance record in ROADMAP-EXECUTION-DECISION.md.  
 **Scope:** Registry architecture, lifecycle policy, diagnostics, explicit upgrade and rollback contracts  
-**Baseline:** `main` at `3c79779688d5e3497a3d4165b2d1783854f5eb52`  
-**Runtime status:** The current runtime supports one registered release per component type. This document specifies the next design; it does not claim that multi-release lifecycle behavior exists.
+**Implementation baseline:** Phase 6 implementation branch based on main commit f824dd6873436649b0e5ba50e3475ce28ff9ce1b.  
+**Runtime status:** The host registry supports multiple immutable releases. Web Backend resolves each exact project pin by (type, contractVersion, registryRelease) and embeds only the validated host-owned records needed by the project.
 
 ## 1. Goals
 
@@ -258,3 +258,18 @@ Each phase must be reviewed against its acceptance criteria. No phase authorizes
 ## 15. Explicit implementation boundary
 
 This file is a design artifact only. It does not implement the registry, alter runtime behavior, add tests, change lock files, publish components, or authorize a merge. Implementation requires a subsequent explicit approval after review of this specification.
+
+
+## 13. Implementation status — phase 6
+
+The multi-release lifecycle design is implemented in the host runtime and integrated into static Web Backend builds:
+
+- validateUIComponentTreeWithLifecycle validates every exact lock entry against the lifecycle-aware registry and current host policy before assets are emitted.
+- buildWebProject accepts an optional host-owned uiLifecycleRegistry; it does not accept registry definitions, lifecycle state, or policy from project data.
+- Each pinned release is serialized as a separate host-resolved record keyed by exact component type, contract version, and registry release. Multiple contract versions of the same component type can coexist in one project lock and tree.
+- The generated browser runtime validates exact pins and digests, rejects retired or unsupported releases, and renders using the renderer belonging to the exact pinned release.
+- Deprecated-but-supported releases remain runnable; their structured warnings are exposed in build metadata as uiWarnings.
+- If lifecycle policy is unavailable, host validation fails closed. Static assets carry the validated immutable release records; they do not fetch or refresh policy at runtime. A newly issued host revocation therefore requires rebuilding/revalidating the project before distribution or execution under the updated host policy.
+- Legacy builds using the default built-in registry and uiLock remain supported. No project lock is rewritten.
+
+The integration boundary remains static-only: this work adds no component events, arbitrary DOM capabilities, remote registry fetch, or package installation. Upgrade and rollback remain explicit non-mutating proposal APIs; they do not modify project files.
