@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { analyze, lowerToQIR, parse, runQIR, runQIRAsync, createIntegrationBroker, QXVMError } from "../src/index.js";
+import { analyze, lowerToQIR, parse, runQIR, runQIRAsync, createIntegrationBroker, QXVMError, createDefaultUILock } from "../src/index.js";
 
 function compile(source) {
   const ast = parse(source);
