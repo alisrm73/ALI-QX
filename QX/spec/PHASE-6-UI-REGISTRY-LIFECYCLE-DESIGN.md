@@ -255,12 +255,12 @@ Tests must use isolated in-memory host registry fixtures and must not require ne
 
 Each phase must be reviewed against its acceptance criteria. No phase authorizes merging or deployment by itself.
 
-## 15. Explicit implementation boundary
+## 15. Implementation boundary and change control
 
-This file is a design artifact only. It does not implement the registry, alter runtime behavior, add tests, change lock files, publish components, or authorize a merge. Implementation requires a subsequent explicit approval after review of this specification.
+This document defines the approved design and compatibility constraints. The implementation status and tested integration are recorded in section 16 and in the phase acceptance record. This specification does not authorize remote registry publication, component package installation, arbitrary renderer code, project lock rewrites, or a merge by itself. Any future change to these boundaries requires a separately reviewed decision.
 
 
-## 13. Implementation status — phase 6
+## 16. Implementation status — phase 6
 
 The multi-release lifecycle design is implemented in the host runtime and integrated into static Web Backend builds:
 
