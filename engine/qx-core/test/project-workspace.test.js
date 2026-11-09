@@ -43,6 +43,24 @@ test("requires an existing absolute root and canonicalizes it", async t => {
 });
 
 
+
+test("binds workspace operations to the approved project identity", async t => {
+  const { workspace } = await fixture(t);
+  const otherDraft = createProjectDraft({
+    projectId: "different-project", title: "Other", description: "Another project",
+    requirements: ["A page"], pages: [{ id: "home", title: "Home" }]
+  });
+  const otherProject = approveProjectDraft(
+    submitProjectForReview(otherDraft).project,
+    { approvedDigest: submitProjectForReview(otherDraft).project.digest }
+  );
+  await assert.rejects(writeProjectFile(workspace, {
+    project: otherProject, expectedProjectDigest: otherProject.digest,
+    relativePath: "src/other.js", content: "blocked",
+    permission: permission(otherProject, "write", "src/other.js", { mode: "create" })
+  }), { code: "QX_WORKSPACE_PROJECT_MISMATCH" });
+});
+
 test("does not create missing parent directories or accept forged workspace handles", async t => {
   const { project, workspace } = await fixture(t);
   const relativePath = "new-folder/app.js";
