@@ -89,7 +89,6 @@ export function proposeUIComponentUpgrade(input = {}) {
   const sourceEntries = sourceLock.components;
   const mappedSourceEntries = new Set();
 
-  const mappingsBySource = new Map();
   const targetsByNode = new Map();
   const targetLockEntries = [];
   const targetLockKeys = new Set();
