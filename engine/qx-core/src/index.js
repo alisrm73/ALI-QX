@@ -21,3 +21,5 @@ export {
   createUIComponentLifecycleRegistry,
   validateUIComponentTreeWithLifecycle
 } from "./ui-component-lifecycle.js";
+
+export { proposeUIComponentUpgrade } from "./ui-component-upgrade.js";
