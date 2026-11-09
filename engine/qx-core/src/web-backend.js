@@ -265,7 +265,7 @@ export function generateWebAssets(qir, options = {}) {
   const title=typeof options.title==="string"&&options.title.trim()?options.title.trim():"QX Web Project";
   if(title.length>120)throw new QXWebBuildError("QX_WEB_INVALID_TITLE","Project title must be 120 characters or fewer");
   const json=serializeQIR(qir).replace(/</g,"\\u003c");
-  const appJS="const module = "+json+";\nconst combiningClasses = "+JSON.stringify([...COMBINING_CLASS.entries()])+";\n("+browserEntry.toString()+")(module, ("+browserRun.toString()+"), combiningClasses);\n";
+  const appJS="const module = "+json+";\\nconst combiningClasses = "+JSON.stringify([...COMBINING_CLASS.entries()])+";\\nconst uiLock = "+JSON.stringify(uiLock)+";\\nconst uiRegistry = "+JSON.stringify(uiRegistry)+";\\n("+browserEntry.toString()+")(module, ("+browserRun.toString()+"), combiningClasses, uiLock, uiRegistry);\\n";
   const html=[
     "<!doctype html>","<html lang=\"en\"><head>","<meta charset=\"utf-8\">",
     "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">",
