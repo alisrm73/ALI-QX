@@ -22,7 +22,7 @@ const tasks = [
 
 test("creates a deterministic topological plan tied to the approved project revision", () => {
   const project = approvedProject();
-  const first = createBuildPlan(project, { expectedProjectDigest: project.digest, tasks });
+  const first = createBuildPlan(project, { expectedProjectDigest: project.digest, tasks, externalInputs: ["source-tree", "asset-source"] });
   const second = createBuildPlan(project, { expectedProjectDigest: project.digest, tasks: [...tasks].reverse() });
   assert.deepEqual(first.order, ["assets", "lint", "compile", "bundle", "package"]);
   assert.equal(first.digest, second.digest);
@@ -59,6 +59,22 @@ test("rejects missing dependencies, duplicate tasks, and output collisions", () 
   ] }), { code: "QX_BUILD_PLAN_OUTPUT_CONFLICT" });
 });
 
+
+test("requires every task input to have a producer or an explicit external declaration", () => {
+  const project = approvedProject();
+  assert.throws(() => createBuildPlan(project, { tasks: [
+    { id: "compile", dependsOn: [], inputs: ["missing-source"], outputs: ["compiled"] }
+  ] }), { code: "QX_BUILD_PLAN_MISSING_INPUT" });
+  assert.throws(() => createBuildPlan(project, { tasks: [
+    { id: "produce", dependsOn: [], inputs: [], outputs: ["generated"] },
+    { id: "consume", dependsOn: [], inputs: ["generated"], outputs: ["result"] }
+  ] }), { code: "QX_BUILD_PLAN_UNDECLARED_DEPENDENCY" });
+  assert.throws(() => createBuildPlan(project, {
+    externalInputs: ["generated"],
+    tasks: [{ id: "produce", dependsOn: [], inputs: [], outputs: ["generated"] }]
+  }), { code: "QX_BUILD_PLAN_INPUT_CONFLICT" });
+});
+
 test("detects dependency cycles", () => {
   const project = approvedProject();
   assert.throws(() => createBuildPlan(project, { tasks: [
@@ -69,7 +85,7 @@ test("detects dependency cycles", () => {
 
 test("rejects tampered build plans", () => {
   const project = approvedProject();
-  const plan = createBuildPlan(project, { tasks });
+  const plan = createBuildPlan(project, { tasks, externalInputs: ["source-tree", "asset-source"] });
   assert.throws(() => assertBuildPlanForProject(project, { ...plan, order: ["package"] }), {
     code: "QX_BUILD_PLAN_INVALID"
   });
@@ -77,7 +93,7 @@ test("rejects tampered build plans", () => {
 
 test("partial selection includes changed tasks, downstream impact, and their prerequisites", () => {
   const project = approvedProject();
-  const plan = createBuildPlan(project, { tasks });
+  const plan = createBuildPlan(project, { tasks, externalInputs: ["source-tree", "asset-source"] });
   const selection = selectBuildTasks(plan, { changedTaskIds: ["compile"] });
   assert.deepEqual(selection.affectedTaskIds, ["compile", "bundle", "package"]);
   assert.deepEqual(selection.taskIds, ["assets", "lint", "compile", "bundle", "package"]);
@@ -89,7 +105,7 @@ test("partial selection includes changed tasks, downstream impact, and their pre
 test("rejects unknown changed tasks and malformed build plan inputs", () => {
   const project = approvedProject();
   assert.throws(() => createBuildPlan(project, { tasks: [] }), { code: "QX_BUILD_PLAN_INVALID" });
-  const plan = createBuildPlan(project, { tasks });
+  const plan = createBuildPlan(project, { tasks, externalInputs: ["source-tree", "asset-source"] });
   assert.throws(() => selectBuildTasks(plan, { changedTaskIds: ["not-a-task"] }), {
     code: "QX_BUILD_PLAN_UNKNOWN_TASK"
   });
