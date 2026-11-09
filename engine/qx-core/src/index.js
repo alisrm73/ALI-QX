@@ -25,6 +25,9 @@ export {
 export { proposeUIComponentUpgrade } from "./ui-component-upgrade.js";
 export { proposeUIComponentRollback } from "./ui-component-rollback.js";
 
+export { generateQXSourceFromProject } from "./project-source-generator.js";
+export { runProjectBuildWorkflow } from "./project-build-workflow.js";
+
 export {
   QXProjectError,
   createProjectDraft,
@@ -34,3 +37,28 @@ export {
   reviseProjectDraft,
   assertProjectApproved
 } from "./project-model.js";
+
+export {
+  createBuildPlan,
+  assertBuildPlanForProject,
+  selectBuildTasks
+} from "./build-plan.js";
+
+export {
+  openProjectWorkspace,
+  readProjectFile,
+  writeProjectFile,
+  restoreProjectFile,
+  readProjectChangeLog
+} from "./project-workspace.js";
+
+export {
+  runProjectTestSuite,
+  assertProjectTestReport
+} from "./project-test-suite.js";
+
+export {
+  createProjectDeliveryPackage,
+  assertProjectDeliveryReport,
+  assertProjectDeliveryPackage
+} from "./project-delivery.js";
