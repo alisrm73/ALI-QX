@@ -109,7 +109,7 @@ export function analyze(program) {
           if (cmd.id === "DATA.REMOVE") constrain(value, ["NUM"], node.args[1], "QX3043", "DATA.REMOVE index must be NUM");
           out = concrete("LIST"); break;
         }
-        if (cmd.id === "UI.SHOW" || cmd.id === "UI.TEXT") {
+        if (cmd.id === "UI.SHOW" || cmd.id === "UI.TEXT" || cmd.id === "UI.TREE") {
           report("QX3045", cmd.id + " is a UI statement and cannot be used as an expression", node);
           node.args.forEach(a => expression(a, scope)); out = concrete("ERROR"); break;
         }
@@ -193,6 +193,7 @@ export function analyze(program) {
       }
       const value = expression(node.args[0], scope);
       if (cmd.id === "UI.TEXT") constrain(value, ["TXT"], node.args[0], "QX3047", "UI.TEXT expects TXT");
+      if (cmd.id === "UI.TREE") constrain(value, ["TXT"], node.args[0], "QX3060", "UI.TREE expects a TXT JSON tree");
       return;
     }
     if (cmd.id === "INTEGRATION.REQUEST") {
