@@ -116,9 +116,9 @@ try {
         const page = await browser.newPage();
         await page.goto("http://127.0.0.1:" + server.address().port + "/", { waitUntil: "load" });
         await page.getByRole("button", { name: "Run QX program" }).click();
-        await page.getByRole("heading", { name: "Phase 7 Acceptance Site" }).waitFor();
-        await page.getByRole("heading", { name: "Project Overview" }).waitFor();
-        await page.getByText("The approved project content is visible.").waitFor();
+        await page.locator("#qx-output").getByRole("heading", { name: "Phase 7 Acceptance Site" }).waitFor();
+        await page.locator("#qx-output").getByRole("heading", { name: "Project Overview" }).waitFor();
+        await page.locator("#qx-output").getByText("The approved project content is visible.").waitFor();
       }
       return { status: "passed", summary: testCase.title + " passed against generated project assets" };
     }
