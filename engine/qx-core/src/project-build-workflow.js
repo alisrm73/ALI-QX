@@ -5,7 +5,7 @@ import { generateQXSourceFromProject } from "./project-source-generator.js";
 import { writeProjectFile } from "./project-workspace.js";
 import { runProjectTestSuite } from "./project-test-suite.js";
 import { createProjectDeliveryPackage } from "./project-delivery.js";
-import { createRequirementCoverageReport } from "./requirement-coverage.js";
+import { assertRequirementCoverageInput, createRequirementCoverageReport } from "./requirement-coverage.js";
 
 const OUTPUTS = Object.freeze([
   Object.freeze({ artifactId: "web-index", path: "dist/index.html", file: "index.html" }),
@@ -71,6 +71,9 @@ export async function runProjectBuildWorkflow({
   }
   if (!Array.isArray(changedArtifactIds)) {
     fail("QX_TEST_REPORT_INVALID", "changedArtifactIds must be an array");
+  }
+  if (requirementCoverage !== undefined) {
+    assertRequirementCoverageInput(project, requirementCoverage);
   }
   const producedArtifacts = new Set(buildPlan.tasks.flatMap(task => task.outputs));
   if (OUTPUTS.some(output => !producedArtifacts.has(output.artifactId))) {
