@@ -82,7 +82,7 @@ test("generated source passes parser, semantic analysis, QIR, VM, and static web
   assert.deepEqual(validateQIR(qir), []);
   const vmResult = runQIR(qir, { uiLock: generated.uiLock });
   assert.equal(vmResult.outputs.length, 1);
-  assert.equal(vmResult.outputs[0].component, "UI.TREE");
+  assert.equal(vmResult.outputs[0].component, "TREE");
   const webProject = buildWebProject(generated.qxSource, {
     title: "Generated Project",
     uiLock: generated.uiLock
