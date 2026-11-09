@@ -258,7 +258,7 @@ export function generateWebAssets(qir, options = {}) {
       uiLock=typeof options.uiLock==="string"?JSON.parse(options.uiLock):options.uiLock;
       uiRegistry=getUIComponentRegistry();
     }catch(error){
-      throw new QXWebBuildError(error.code||"QX_WEB_UI_LOCK_INVALID","UI component lock validation failed");
+      throw new QXWebBuildError("QX_WEB_UI_LOCK_INVALID","UI component lock validation failed", [{ code: error.code || "QX_UI_LOCK_INVALID", message: "The supplied UI lock does not match the host registry" }]);
     }
   }
   const hasIntegrationRequest=[qir.initializer,...qir.functions].some(fn=>
