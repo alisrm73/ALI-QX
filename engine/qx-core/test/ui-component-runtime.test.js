@@ -3,8 +3,10 @@ import assert from "node:assert/strict";
 import {
   createDefaultUILock,
   getUIComponentRegistry,
-  validateUIComponentTree
+  validateUIComponentTree,
+  validateUIComponentTreeWithRegistry
 } from "../src/ui-component-runtime.js";
+import { createUIComponentRegistry } from "../src/ui-component-registry.js";
 
 const lock = createDefaultUILock();
 const component = (id, type, children = [], props = {}) => ({
@@ -290,4 +292,73 @@ test("rejects a lock pin from a different registry release", () => {
   assert.throws(() => validateUIComponentTree(tree([]), foreignRegistry), {
     code: "QX_UI_RELEASE_UNAVAILABLE"
   });
+});
+
+
+test("validates a tree against the exact pinned version in a multi-version registry", () => {
+  const heading = (contractVersion, maximum) => ({
+    type: "UI.HEADING",
+    contractVersion,
+    renderer: "heading",
+    props: {
+      level: {
+        type: "number",
+        required: true,
+        integer: true,
+        minimum: 1,
+        maximum
+      }
+    },
+    children: { text: true, components: [] }
+  });
+  const hostRegistry = createUIComponentRegistry({
+    snapshots: [
+      {
+        registryRelease: "ui-registry-1.0.0",
+        components: [heading("1.0.0", 6)]
+      },
+      {
+        registryRelease: "ui-registry-2.0.0",
+        components: [heading("1.0.0", 6), heading("2.0.0", 4)]
+      }
+    ]
+  });
+  const pinned = hostRegistry.resolve("UI.HEADING", "1.0.0", "ui-registry-1.0.0");
+  const projectLock = {
+    schema: "QX.UI.COMPONENT-LOCK",
+    version: "1.0",
+    components: [{
+      type: pinned.type,
+      contractVersion: pinned.contractVersion,
+      schemaDigest: pinned.schemaDigest,
+      registryRelease: pinned.registryRelease
+    }]
+  };
+  const input = tree([
+    component("heading", "UI.HEADING", [
+      { kind: "text", value: "Pinned old release" }
+    ], { level: 6 })
+  ]);
+
+  const result = validateUIComponentTreeWithRegistry(input, projectLock, hostRegistry);
+  assert.equal(result.children[0].props.level, 6);
+  assert.equal(hostRegistry.listReleases("UI.HEADING").length, 3);
+  assert.throws(() => validateUIComponentTreeWithRegistry(
+    input,
+    {
+      ...projectLock,
+      components: [{
+        ...projectLock.components[0],
+        registryRelease: "ui-registry-2.0.0",
+        schemaDigest: hostRegistry.resolve("UI.HEADING", "2.0.0", "ui-registry-2.0.0").schemaDigest
+      }]
+    },
+    hostRegistry
+  ), { code: "QX_UI_RELEASE_UNAVAILABLE" });
+});
+
+test("preserves the existing validator third argument as resource limits", () => {
+  assert.throws(() => validateUIComponentTree(tree([
+    { kind: "text", value: "too long" }
+  ]), lock, { maxTextLength: 3 }), { code: "QX_UI_TEXT_LIMIT" });
 });
