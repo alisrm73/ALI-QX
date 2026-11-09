@@ -171,6 +171,18 @@ test("executes PROCESS.ADD in module and local function scopes", () => {
   assert.equal(globals.result, 7);
 });
 
+test("executes UI.TREE with an exact project lock and rejects missing or invalid locks", () => {
+  const source = 'UI.TREE("{\\"schema\\":\\"QX.UI.TREE\\",\\"version\\":\\"1.0\\",\\"children\\":[{\\"kind\\":\\"component\\",\\"id\\":\\"title\\",\\"type\\":\\"UI.HEADING\\",\\"version\\":\\"1.0.0\\",\\"props\\":{\\"level\\":1},\\"children\\":[{\\"kind\\":\\"text\\",\\"value\\":\\"Hello\\"}]}]}")';
+  const qir = compile(source);
+  assert.equal(qir.version, "1.4");
+  assert.throws(() => runQIR(qir), { code: "QX_VM_UI_LOCK_REQUIRED" });
+  const result = runQIR(qir, { uiLock: createDefaultUILock() });
+  assert.equal(result.outputs[0].component, "TREE");
+  assert.equal(result.outputs[0].tree.children[0].type, "UI.HEADING");
+  const badLock = { ...createDefaultUILock(), components: [] };
+  assert.throws(() => runQIR(qir, { uiLock: badLock }), { code: "QX_UI_LOCK_MISSING" });
+});
+
 test("executes UI.TEXT and UI.SHOW as ordered output effects", () => {
   const result = runQIR(compile([
     'UI.TEXT("Hello from QX")',
