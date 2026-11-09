@@ -1,0 +1,43 @@
+{
+  "schema": "QX.UI.TREE",
+  "version": "1.0",
+  "children": [
+    {
+      "kind": "component",
+      "id": "page",
+      "type": "UI.CONTAINER",
+      "version": "1.0.0",
+      "props": {},
+      "children": [
+        {
+          "kind": "component",
+          "id": "welcome-heading",
+          "type": "UI.HEADING",
+          "version": "1.0.0",
+          "props": {
+            "level": 1
+          },
+          "children": [
+            {
+              "kind": "text",
+              "value": "Welcome to QX"
+            }
+          ]
+        },
+        {
+          "kind": "component",
+          "id": "intro-text",
+          "type": "UI.TEXT_BLOCK",
+          "version": "1.0.0",
+          "props": {},
+          "children": [
+            {
+              "kind": "text",
+              "value": "This page is rendered from a validated, version-pinned UI component tree."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
