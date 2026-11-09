@@ -169,3 +169,42 @@ test("rejects unknown or duplicate requirement references before writes", async 
     relativePath: "dist/index.html"
   }), { code: "QX_WORKSPACE_FILE_MISSING" });
 });
+
+
+test("rejects invalid acceptance criteria before writing generated assets", async t => {
+  const duplicateIds = [
+    { id: "overview.visible", description: "First criterion", testIds: ["project.static-web-smoke"], evidencePaths: ["dist/index.html"] },
+    { id: "overview.visible", description: "Duplicate criterion ID", testIds: ["project.static-web-smoke"], evidencePaths: ["dist/index.html"] }
+  ];
+  const overlongDescription = [{
+    id: "overview.long-description",
+    description: "x".repeat(1001),
+    testIds: ["project.static-web-smoke"],
+    evidencePaths: ["dist/index.html"]
+  }];
+  const excessiveCriteria = Array.from({ length: 1001 }, (_, index) => ({
+    id: "criterion-" + index,
+    description: "Criterion " + index,
+    testIds: ["project.static-web-smoke"],
+    evidencePaths: ["dist/index.html"]
+  }));
+
+  for (const acceptanceCriteria of [duplicateIds, overlongDescription, excessiveCriteria]) {
+    const state = await fixture(t);
+    const requirementCoverage = [{
+      category: "requirement",
+      requirementIndex: 0,
+      acceptanceCriteria
+    }];
+    await assert.rejects(runProjectBuildWorkflow({
+      ...state,
+      expectedProjectDigest: state.project.digest,
+      requirementCoverage
+    }), { code: "QX_REQUIREMENT_COVERAGE_INVALID" });
+    await assert.rejects(readProjectFile(state.workspace, {
+      project: state.project,
+      expectedProjectDigest: state.project.digest,
+      relativePath: "dist/index.html"
+    }), { code: "QX_WORKSPACE_FILE_MISSING" });
+  }
+});
