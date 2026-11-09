@@ -43,6 +43,7 @@ export {
 
 export {
   openProjectWorkspace,
+  readProjectFile,
   writeProjectFile,
   restoreProjectFile,
   readProjectChangeLog
