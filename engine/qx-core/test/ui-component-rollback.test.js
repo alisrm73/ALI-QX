@@ -50,19 +50,12 @@ function fixture(targetStates = {}, targetComponents = [heading("1.0.0")]) {
   const currentSnapshots = [oldSnapshot, currentSnapshot];
   const currentRegistry = lifecycleRegistry(currentSnapshots);
   const targetSnapshots = [
-    oldSnapshot,
-    { registryRelease: "ui-registry-2.0.0", components: [heading("2.0.0")] }
+    { registryRelease: "ui-registry-1.0.0", components: targetComponents },
+    currentSnapshot
   ];
   const targetRegistry = lifecycleRegistry(targetSnapshots, targetStates);
   const currentRecord = currentRegistry.resolve("UI.HEADING", "2.0.0", "ui-registry-2.0.0");
-
-  const targetCatalog = createUIComponentRegistry({
-    snapshots: [
-      { registryRelease: "ui-registry-1.0.0", components: targetComponents },
-      currentSnapshot
-    ]
-  });
-  const targetRecord = targetCatalog.resolve(
+  const targetRecord = targetRegistry.resolve(
     targetComponents[0].type,
     targetComponents[0].contractVersion,
     "ui-registry-1.0.0"
