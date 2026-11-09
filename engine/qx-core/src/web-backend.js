@@ -182,7 +182,7 @@ function browserRun(module, combiningClassEntries, uiLock, uiRegistry) {
               outputs.push({component:"TREE",tree:validateUITree(json,i,ctx),source:i.source});break;
             }
             if(o.command==="UI.SHOW"&&args.length===1&&["1.2","1.3","1.4"].includes(module.version)){outputs.push({component:"SHOW",value:clone(read(args[0],i)),source:i.source});break;}
-            if(o.command==="UI.TEXT"&&args.length===1&&["1.2","1.3"].includes(module.version)){const value=read(args[0],i);if(typeof value!=="string"||value.length>LIMITS.maxStringLength)fail("QX_VM_INVALID_TEXT","UI.TEXT requires bounded TXT",i,ctx);outputs.push({component:"TEXT",value,source:i.source});break;}
+            if(o.command==="UI.TEXT"&&args.length===1&&["1.2","1.3","1.4"].includes(module.version)){const value=read(args[0],i);if(typeof value!=="string"||value.length>LIMITS.maxStringLength)fail("QX_VM_INVALID_TEXT","UI.TEXT requires bounded TXT",i,ctx);outputs.push({component:"TEXT",value,source:i.source});break;}
             fail("QX_VM_COMMAND_NOT_ALLOWED","Command is not available in this QIR version",i,ctx);break;
           }
           case "BRANCH": {const v=read(o.condition,i);if(typeof v!=="boolean")fail("QX_VM_BRANCH_TYPE","BRANCH requires BOOL",i,ctx);blockId=v?o.true_target:o.false_target;transferred=true;break;}
