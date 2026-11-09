@@ -1,6 +1,6 @@
 # UI Component Tree Contract — Phase 6
 
-**Status:** Runtime implementation candidate in PR #12; static component-tree validation and rendering are implemented on the feature branch, pending final CI and review.  
+**Status:** Static UI tree runtime implemented in `main` through PR #12. The broader acceptance checklist below remains active for expansion beyond the three built-in presentation components.  
 **Scope:** A declarative, data-only component tree for static presentation components.  
 **Compatibility:** QIR 1.0–1.3 remain unchanged. QIR 1.4 adds the statement-only `UI.TREE(TXT)` bridge; existing `UI.TEXT` / `UI.SHOW` behavior is retained.
 
@@ -159,7 +159,7 @@ Event handlers are not serialized into the tree. A future event system must use 
 - Tree-schema version, component contract version, and QIR version are independent version axes.
 - This document defines the tree data contract; the QIR bridge is specified separately in `QIR-UI-COMPONENT-TREE-EXTENSION-1.4.md`.
 - Existing QIR 1.0–1.3 behavior remains unchanged; QIR 1.4 adds `UI.TREE(TXT)` as a statement-only effect.
-- QIR serialization, semantic checks, VM lock enforcement, and static-browser rendering are implemented as a candidate in PR #12; merge remains gated on CI and review.
+- QIR serialization, semantic checks, VM lock enforcement, and static-browser rendering are implemented in `main` through PR #12. The PR-head `validate`, `qir`, and `browser` checks passed before merge.
 - A breaking tree grammar change requires a new tree-schema major version. Compatible additions require a documented minor version and explicit unknown-field policy.
 - Projects pin each component contract version in the project lock manifest described by `PHASE-6-UI-REGISTRY-VERSIONING-CONTRACT.md`; every component node's `version` MUST match its exact lock entry. No automatic upgrade or substitution is allowed.
 
@@ -178,7 +178,7 @@ The future implementation must expose stable, non-sensitive diagnostics for at l
 
 Diagnostics may include a safe node ID and source location when available. They MUST NOT expose secrets, host paths, internal credentials, or raw adapter exceptions.
 
-## 12. Acceptance criteria before implementation
+## 12. Acceptance criteria for broader UI acceptance
 
 This contract is not considered implemented until all of the following exist and pass:
 
@@ -192,4 +192,4 @@ This contract is not considered implemented until all of the following exist and
 8. Accessibility contract tests for every interactive component before that component is enabled.
 9. A real sample project using only registered components, followed by independent review.
 
-The current candidate registers only `UI.CONTAINER`, `UI.TEXT_BLOCK`, and `UI.HEADING` at contract version `1.0.0`. These are static presentation components only. Interactive components, events, navigation, input, arbitrary styling, and host capabilities remain disabled. The acceptance criteria above remain the release gate; this document alone does not authorize any component outside the host registry.
+The current host registry contains only `UI.CONTAINER`, `UI.TEXT_BLOCK`, and `UI.HEADING` at contract version `1.0.0`; these are static presentation components only. An end-to-end sample with an exact `qx.ui-lock.json` is added in the UI example branch and includes positive VM/browser execution plus invalid-tree and invalid-lock rejection checks. Interactive components, events, navigation, input, arbitrary styling, and host capabilities remain disabled. The remaining acceptance criteria above continue to gate broader UI expansion.
