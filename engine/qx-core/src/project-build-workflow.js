@@ -5,6 +5,7 @@ import { generateQXSourceFromProject } from "./project-source-generator.js";
 import { writeProjectFile } from "./project-workspace.js";
 import { runProjectTestSuite } from "./project-test-suite.js";
 import { createProjectDeliveryPackage } from "./project-delivery.js";
+import { assertRequirementCoverageInput, createRequirementCoverageReport } from "./requirement-coverage.js";
 
 const OUTPUTS = Object.freeze([
   Object.freeze({ artifactId: "web-index", path: "dist/index.html", file: "index.html" }),
@@ -53,7 +54,8 @@ export async function runProjectBuildWorkflow({
   testCases,
   executeTest,
   scope = "all",
-  changedArtifactIds = []
+  changedArtifactIds = [],
+  requirementCoverage
 } = {}) {
   assertProjectApproved(project, { expectedDigest: expectedProjectDigest });
   assertBuildPlanForProject(project, buildPlan);
@@ -69,6 +71,9 @@ export async function runProjectBuildWorkflow({
   }
   if (!Array.isArray(changedArtifactIds)) {
     fail("QX_TEST_REPORT_INVALID", "changedArtifactIds must be an array");
+  }
+  if (requirementCoverage !== undefined) {
+    assertRequirementCoverageInput(project, requirementCoverage, testCases);
   }
   const producedArtifacts = new Set(buildPlan.tasks.flatMap(task => task.outputs));
   if (OUTPUTS.some(output => !producedArtifacts.has(output.artifactId))) {
@@ -114,8 +119,14 @@ export async function runProjectBuildWorkflow({
     deliverables: OUTPUTS.map(output => ({ path: output.path, required: true }))
   });
 
+  const coverageReport = requirementCoverage === undefined ? null :
+    createRequirementCoverageReport(project, buildPlan, testReport, delivery.report, {
+      expectedProjectDigest,
+      entries: requirementCoverage
+    });
   const status = delivery.report.status !== "ready" ? "blocked" :
-    generated.unmappedRequirements.length > 0 ? "requires_requirement_review" : "ready";
+    coverageReport === null || coverageReport.status !== "covered" || project.openQuestions.length > 0
+      ? "requires_requirement_review" : "ready";
   return Object.freeze({
     status,
     generated,
@@ -123,6 +134,7 @@ export async function runProjectBuildWorkflow({
     writes: Object.freeze(writes),
     fileDigests: Object.freeze(fileDigests),
     testReport,
-    delivery
+    delivery,
+    requirementCoverage: coverageReport
   });
 }
