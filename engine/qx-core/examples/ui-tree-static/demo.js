@@ -6,7 +6,8 @@ import {
   lowerToQIR,
   parse,
   runQIR,
-  validateQIR
+  validateQIR,
+  validateUIComponentTree
 } from "../../src/index.js";
 
 const exampleDirectory = new URL("./", import.meta.url);
@@ -37,7 +38,32 @@ export async function runDemo() {
     uiLock
   });
 
-  return { source, uiLock, qir, vmResult, webProject };
+  const invalidTree = JSON.parse(treeJson);
+  invalidTree.unexpected = true;
+  let invalidTreeRejected = false;
+  try {
+    validateUIComponentTree(invalidTree, uiLock);
+  } catch (error) {
+    invalidTreeRejected = error.code === "QX_UI_TREE_INVALID";
+  }
+  if (!invalidTreeRejected) throw new Error("Invalid UI tree was not rejected");
+
+  let invalidLockRejected = false;
+  try {
+    runQIR(qir, { uiLock: { ...uiLock, components: [] } });
+  } catch (error) {
+    invalidLockRejected = error.code === "QX_UI_LOCK_MISSING";
+  }
+  if (!invalidLockRejected) throw new Error("Invalid UI lock was not rejected");
+
+  return {
+    source,
+    uiLock,
+    qir,
+    vmResult,
+    webProject,
+    negativeChecks: { invalidTreeRejected, invalidLockRejected }
+  };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
