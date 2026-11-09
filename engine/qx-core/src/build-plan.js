@@ -58,6 +58,7 @@ function planContent(plan) {
     projectId: plan.projectId,
     projectRevision: plan.projectRevision,
     projectDigest: plan.projectDigest,
+    externalInputs: plan.externalInputs,
     tasks: plan.tasks,
     order: plan.order
   };
@@ -104,7 +105,7 @@ function topologicalOrder(tasksById) {
   return { order, dependents };
 }
 
-export function createBuildPlan(project, { expectedProjectDigest, tasks } = {}) {
+export function createBuildPlan(project, { expectedProjectDigest, tasks, externalInputs = [] } = {}) {
   assertProjectApproved(project, { expectedDigest: expectedProjectDigest });
   if (!Array.isArray(tasks) || tasks.length === 0 || tasks.length > MAX_TASKS) {
     fail("QX_BUILD_PLAN_INVALID", "tasks must contain between 1 and " + MAX_TASKS + " entries");
@@ -142,12 +143,43 @@ export function createBuildPlan(project, { expectedProjectDigest, tasks } = {}) 
     }
   }
 
+  const normalizedExternalInputs = normalizeList(externalInputs, "externalInputs", ARTIFACT_ID_PATTERN);
+  const externalSet = new Set(normalizedExternalInputs);
+  for (const artifact of normalizedExternalInputs) {
+    if (outputOwners.has(artifact)) {
+      fail("QX_BUILD_PLAN_INPUT_CONFLICT", "Artifact " + artifact + " cannot be both external and produced by a task");
+    }
+  }
+
   const { order } = topologicalOrder(tasksById);
+  const ancestors = new Map();
+  for (const id of order) {
+    const task = tasksById.get(id);
+    const taskAncestors = new Set();
+    for (const dependency of task.dependsOn) {
+      taskAncestors.add(dependency);
+      for (const ancestor of ancestors.get(dependency)) taskAncestors.add(ancestor);
+    }
+    ancestors.set(id, taskAncestors);
+  }
+  for (const task of tasksById.values()) {
+    for (const input of task.inputs) {
+      const producer = outputOwners.get(input);
+      if (!producer && !externalSet.has(input)) {
+        fail("QX_BUILD_PLAN_MISSING_INPUT", "Task " + task.id + " consumes artifact with no producer or external declaration: " + input);
+      }
+      if (producer && !ancestors.get(task.id).has(producer)) {
+        fail("QX_BUILD_PLAN_UNDECLARED_DEPENDENCY", "Task " + task.id + " consumes " + input + " from " + producer + " without declaring its dependency chain");
+      }
+    }
+  }
+
   const content = {
     schemaVersion: "1.0.0",
     projectId: project.projectId,
     projectRevision: project.revision,
     projectDigest: project.digest,
+    externalInputs: normalizedExternalInputs,
     tasks: order.map(id => tasksById.get(id)),
     order
   };
