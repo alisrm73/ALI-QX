@@ -167,11 +167,10 @@ test("project lock and tree data cannot change the host revocation overlay", () 
     { ...key, decision: "retired" }
   ]);
   const projectLock = lockFor(registry);
-  projectLock.components[0].schemaDigest = key.schemaDigest;
-  projectLock.hostPolicy = { entries: [] };
   const projectTree = tree();
-  projectTree.hostPolicy = { entries: [] };
 
+  assert.equal(Object.isFrozen(lifecycleRegistry), true);
+  assert.equal("setPolicy" in lifecycleRegistry, false);
   assert.throws(() =>
     validateUIComponentTreeWithLifecycle(projectTree, projectLock, lifecycleRegistry),
   { code: "QX_UI_RELEASE_RETIRED" });
