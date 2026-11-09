@@ -175,7 +175,8 @@ export function assertRequirementCoverageReport(project, plan, testReport, deliv
       report.projectDigest !== project.digest ||
       report.testReportDigest !== testReport.digest ||
       report.deliveryReportDigest !== deliveryReport?.digest ||
-      !Array.isArray(report.entries) || !isPlainObject(report.summary) ||
+      !Array.isArray(report.entries) || report.entries.some(item => !isPlainObject(item) ||
+        !Array.isArray(item.acceptanceCriteria)) || !isPlainObject(report.summary) ||
       !["covered", "partially_covered", "uncovered", "needs_clarification"].includes(report.status) ||
       typeof report.digest !== "string" || report.digest !== digest(coverageContent(report))) {
     fail("QX_REQUIREMENT_COVERAGE_INVALID", "Requirement coverage report is malformed, stale, or has an invalid digest");
