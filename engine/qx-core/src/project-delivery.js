@@ -102,8 +102,10 @@ export function assertProjectDeliveryReport(project, plan, testReport, report) {
         typeof item.path !== "string" || typeof item.required !== "boolean" ||
         !["included", "missing", "unverified"].includes(item.status) ||
         !Number.isSafeInteger(item.size) || item.size < 0 ||
-        (item.status === "included" && (!/^sha256:[a-f0-9]{64}$/.test(item.contentDigest) || item.size < 0)) ||
-        (item.status !== "included" && item.contentDigest !== null)) ||
+        requireRelativePath(item.path) !== item.path ||
+        (item.status === "included" && !/^sha256:[a-f0-9]{64}$/.test(item.contentDigest)) ||
+        (item.status === "missing" && (item.contentDigest !== null || item.size !== 0)) ||
+        (item.status === "unverified" && !/^sha256:[a-f0-9]{64}$/.test(item.contentDigest))) ||
       new Set(report.items.map(item => item.path)).size !== report.items.length ||
       report.issues.some(issue => !isPlainObject(issue) ||
         typeof issue.code !== "string" || typeof issue.message !== "string") ||
@@ -113,8 +115,11 @@ export function assertProjectDeliveryReport(project, plan, testReport, report) {
       report.summary.unverified !== report.items.filter(item => item.status === "unverified").length ||
       report.summary.requiredMissing !== report.items.filter(item => item.required && item.status === "missing").length ||
       !Number.isSafeInteger(report.summary.totalBytes) || report.summary.totalBytes < 0 ||
+      report.summary.totalBytes !== report.items.reduce((total, item) => total + item.size, 0) ||
+      report.summary.totalBytes > MAX_PACKAGE_BYTES ||
       report.status !== (report.issues.length === 0 ? "ready" : "blocked") ||
       (report.status === "ready" && testReport.status !== "passed") ||
+      (report.status === "ready" && (report.summary.unverified !== 0 || report.summary.requiredMissing !== 0)) ||
       (report.status === "ready" && (typeof report.packageDigest !== "string" || report.issues.length !== 0)) ||
       (report.status === "blocked" && report.packageDigest !== null)) {
     fail("QX_DELIVERY_INVALID", "Delivery report is malformed, stale, or internally inconsistent");
@@ -133,7 +138,7 @@ export function assertProjectDeliveryPackage(project, plan, testReport, packageV
       packageValue.projectDigest !== project.digest ||
       packageValue.buildPlanDigest !== plan.digest ||
       packageValue.testReportDigest !== testReport.digest ||
-      !Array.isArray(packageValue.files) ||
+      !Array.isArray(packageValue.files) || packageValue.files.length === 0 ||
       typeof packageValue.digest !== "string" ||
       packageValue.digest !== digest({
         schemaVersion: packageValue.schemaVersion,
@@ -153,7 +158,7 @@ export function assertProjectDeliveryPackage(project, plan, testReport, packageV
         requireRelativePath(file.path) !== file.path ||
         seen.has(file.path) || typeof file.contentBase64 !== "string" ||
         !/^sha256:[a-f0-9]{64}$/.test(file.contentDigest) ||
-        !Number.isSafeInteger(file.size) || file.size < 0) {
+        !Number.isSafeInteger(file.size) || file.size < 0 || file.size > 10 * 1024 * 1024) {
       fail("QX_DELIVERY_PACKAGE_INVALID", "Delivery package contains an invalid file entry");
     }
     seen.add(file.path);
