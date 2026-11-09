@@ -58,11 +58,15 @@ function browserRun(module, combiningClassEntries, uiLock, uiRegistry) {
     if (!uiLock || Object.getPrototypeOf(uiLock) !== Object.prototype || Object.keys(uiLock).sort().join(",") !== "components,schema,version" || uiLock.schema !== "QX.UI.COMPONENT-LOCK" || uiLock.version !== "1.0" || !Array.isArray(uiLock.components))
       fail("QX_UI_LOCK_INVALID", "Invalid UI component lock", inst, ctx);
     const pins = new Map();
+    let previousType = null, previousVersion = null;
     for (const entry of uiLock.components) {
       if (!entry || Object.keys(entry).sort().join(",") !== "contractVersion,registryRelease,schemaDigest,type" ||
           typeof entry.type !== "string" || typeof entry.contractVersion !== "string" ||
           typeof entry.schemaDigest !== "string" || typeof entry.registryRelease !== "string")
         fail("QX_UI_LOCK_INVALID", "Invalid UI component lock entry", inst, ctx);
+      if (previousType !== null && (entry.type < previousType || (entry.type === previousType && entry.contractVersion < previousVersion)))
+        fail("QX_UI_LOCK_ORDER", "UI lock entries are not sorted", inst, ctx);
+      previousType = entry.type; previousVersion = entry.contractVersion;
       const key = entry.type + "@" + entry.contractVersion;
       if (pins.has(key)) fail("QX_UI_LOCK_DUPLICATE", "Duplicate UI lock entry", inst, ctx);
       const registered = registry.get(entry.type);
