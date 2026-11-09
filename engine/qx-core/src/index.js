@@ -7,4 +7,12 @@ export { runQIR, runQIRAsync, QXVMError } from "./vm.js";
 
 export { buildWebProject, generateWebAssets, QXWebBuildError } from "./web-backend.js";
 export { createIntegrationBroker, QXIntegrationError } from "./integration-broker.js";
-export { QXUIError, UI_TREE_LIMITS, createDefaultUILock, getUIComponentRegistry, validateUIComponentTree } from "./ui-component-runtime.js";
+export { QXUIRegistryError, createUIComponentRegistry } from "./ui-component-registry.js";
+export {
+  QXUIError,
+  UI_TREE_LIMITS,
+  createDefaultUILock,
+  getUIComponentRegistry,
+  validateUIComponentTree,
+  validateUIComponentTreeWithRegistry
+} from "./ui-component-runtime.js";
