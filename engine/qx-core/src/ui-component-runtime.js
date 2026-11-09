@@ -76,9 +76,9 @@ export class QXUIError extends Error {
 }
 
 const fail = (code, message, nodeId = null) => { throw new QXUIError(code, message, nodeId); };
-const exactKeys = (value, keys) => value && typeof value === "object" && !Array.isArray(value) &&
+const exactKeys = (value, keys) => value && typeof value === "object" && !Array.isArray(value) && Object.getPrototypeOf(value) === Object.prototype &&
   Object.keys(value).length === keys.length && keys.every(key => Object.hasOwn(value, key));
-const allowedKeys = (value, keys) => value && typeof value === "object" && !Array.isArray(value) &&
+const allowedKeys = (value, keys) => value && typeof value === "object" && !Array.isArray(value) && Object.getPrototypeOf(value) === Object.prototype &&
   Object.keys(value).every(key => keys.includes(key));
 const semver = /^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?(?:\\+([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?$/;
 const digestPattern = /^sha256:[0-9a-f]{64}$/;
