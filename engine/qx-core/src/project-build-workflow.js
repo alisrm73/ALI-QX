@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { assertProjectApproved, QXProjectError } from "./project-model.js";
 import { assertBuildPlanForProject } from "./build-plan.js";
 import { buildWebProject } from "./web-backend.js";
@@ -40,10 +39,6 @@ function validateWritePermissions(permissions, project) {
   return byPath;
 }
 
-function fileDigest(content) {
-  return "sha256:" + createHash("sha256").update(content, "utf8").digest("hex");
-}
-
 /**
  * Runs the first integrated approved-manifest -> static-web -> test -> delivery path.
  * Workspace writes require explicit per-file permissions and existing parent directories.
@@ -66,6 +61,15 @@ export async function runProjectBuildWorkflow({
     fail("QX_WORKSPACE_CONFIG_INVALID", "An opened project workspace is required");
   }
   const permissions = validateWritePermissions(writePermissions, project);
+  if (typeof executeTest !== "function" || !Array.isArray(testCases) || testCases.length === 0) {
+    fail("QX_TEST_EXECUTOR_REQUIRED", "A non-empty test case list and caller-provided test executor are required before project files are written");
+  }
+  if (scope !== "all" && scope !== "affected") {
+    fail("QX_TEST_REPORT_INVALID", "scope must be all or affected");
+  }
+  if (!Array.isArray(changedArtifactIds)) {
+    fail("QX_TEST_REPORT_INVALID", "changedArtifactIds must be an array");
+  }
   const producedArtifacts = new Set(buildPlan.tasks.flatMap(task => task.outputs));
   if (OUTPUTS.some(output => !producedArtifacts.has(output.artifactId))) {
     fail("QX_PROJECT_WORKFLOW_PLAN_INVALID", "Build plan must declare web-index, web-css, and web-app as produced artifacts");
