@@ -47,3 +47,8 @@ export {
   restoreProjectFile,
   readProjectChangeLog
 } from "./project-workspace.js";
+
+export {
+  runProjectTestSuite,
+  assertProjectTestReport
+} from "./project-test-suite.js";
