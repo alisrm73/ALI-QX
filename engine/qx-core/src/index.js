@@ -34,3 +34,9 @@ export {
   reviseProjectDraft,
   assertProjectApproved
 } from "./project-model.js";
+
+export {
+  createBuildPlan,
+  assertBuildPlanForProject,
+  selectBuildTasks
+} from "./build-plan.js";
