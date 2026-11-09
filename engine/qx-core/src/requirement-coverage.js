@@ -2,7 +2,6 @@ import { createHash } from "node:crypto";
 import { assertProjectApproved, QXProjectError } from "./project-model.js";
 import { assertProjectTestReport } from "./project-test-suite.js";
 import { assertProjectDeliveryReport } from "./project-delivery.js";
-import { assertProjectDeliveryReport } from "./project-delivery.js";
 
 const CATEGORIES = Object.freeze(["requirement", "data", "integration"]);
 const MAX_ENTRIES = 600;
