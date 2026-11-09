@@ -27,6 +27,14 @@ function componentNode(id, type, props, children) {
 
 export function generateQXSourceFromProject(project, { expectedProjectDigest } = {}) {
   assertProjectApproved(project, { expectedDigest: expectedProjectDigest });
+  const expectedKeys = [
+    "approval", "dataRequirements", "description", "digest", "integrationRequirements",
+    "openQuestions", "pages", "projectId", "requirements", "revision", "schemaVersion",
+    "status", "title"
+  ];
+  if (Object.keys(project).sort().join("\\0") !== expectedKeys.sort().join("\\0")) {
+    fail("QX_PROJECT_GENERATION_INVALID", "Approved project manifest contains unsupported fields");
+  }
   if (!Array.isArray(project.pages) || project.pages.length === 0 ||
       typeof project.title !== "string" || typeof project.description !== "string") {
     fail("QX_PROJECT_GENERATION_INVALID", "An approved project must contain a title, description, and at least one page");
@@ -52,7 +60,7 @@ export function generateQXSourceFromProject(project, { expectedProjectDigest } =
     const children = [
       componentNode(id + "-heading", "UI.HEADING", { level: 2 }, [textNode(page.title)])
     ];
-    if (page.description.length > 0) {
+    if ((page.description ?? "").length > 0) {
       children.push(componentNode(id + "-description", "UI.TEXT_BLOCK", {}, [textNode(page.description)]));
     }
     return componentNode(id, "UI.CONTAINER", {}, children);
@@ -73,10 +81,16 @@ export function generateQXSourceFromProject(project, { expectedProjectDigest } =
   const uiLock = createDefaultUILock();
   validateUIComponentTree(treeJson, uiLock);
   const qxSource = "UI.TREE(" + JSON.stringify(treeJson) + ")";
+  const unmappedRequirements = Object.freeze([
+    ...project.requirements.map(value => Object.freeze({ category: "requirement", value })),
+    ...project.dataRequirements.map(value => Object.freeze({ category: "data", value })),
+    ...project.integrationRequirements.map(value => Object.freeze({ category: "integration", value }))
+  ]);
   return Object.freeze({
     projectId: project.projectId,
     projectRevision: project.revision,
     projectDigest: project.digest,
+    unmappedRequirements,
     qxSource,
     treeJson,
     uiLock
