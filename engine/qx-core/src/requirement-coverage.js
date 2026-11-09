@@ -212,8 +212,8 @@ export function assertRequirementCoverageReport(project, plan, testReport, deliv
 
 export function assertRequirementCoverageInput(project, entries, testCases) {
   const required = requirementsOf(project);
-  if (!Array.isArray(entries) || entries.length !== required.length) {
-    fail("QX_REQUIREMENT_COVERAGE_INCOMPLETE", "Every project requirement, data requirement, and integration requirement must be mapped before build writes");
+  if (!Array.isArray(entries) || entries.length > MAX_ENTRIES) {
+    fail("QX_REQUIREMENT_COVERAGE_INVALID", "Requirement mappings must be an array within the supported limit");
   }
   if (!Array.isArray(testCases)) {
     fail("QX_REQUIREMENT_COVERAGE_INVALID", "Test cases must be declared before requirement mappings are validated");
@@ -248,6 +248,9 @@ export function assertRequirementCoverageInput(project, entries, testCases) {
         fail("QX_REQUIREMENT_COVERAGE_INVALID", "Acceptance criteria must reference declared tests and safe evidence paths before build writes");
       }
     }
+  }
+  if (seen.size !== required.length) {
+    fail("QX_REQUIREMENT_COVERAGE_INCOMPLETE", "Every project requirement, data requirement, and integration requirement must be mapped before build writes");
   }
   return true;
 }
