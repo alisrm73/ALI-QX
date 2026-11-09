@@ -1,6 +1,6 @@
 # 7.7 — Deterministic Project-to-QX Source Generator
 
-**Status:** Initial implementation committed; verification in progress.
+**Status:** Initial static generator implementation and its acceptance tests passed CI on head `fbc3cd0d76d7690fd67c917478b7290a267cdf05`.
 **Target branch:** `phase7/project-build-test-delivery`
 **Parent work:** PR #27 (keep Draft/open; do not merge without explicit approval).
 
@@ -57,17 +57,21 @@ No QX V1 grammar, command registry, UI component contract, lifecycle policy, exi
 
 ## 6. Acceptance criteria
 
-- [ ] Reject unapproved, stale, malformed, or modified project manifests.
-- [ ] Produce a valid static UI tree for a minimal approved project with one or more pages.
-- [ ] Preserve all source text as JSON data, including quotes, backslashes, newlines, Arabic, and Unicode.
-- [ ] Produce stable IDs and byte-identical outputs for repeated generation from the same manifest.
-- [ ] Validate the tree using the exact UI registry and lock.
-- [ ] Generated source passes parse, semantic analysis, QIR lowering/validation, and VM execution.
-- [ ] Generated source builds static `index.html`, `styles.css`, and `app.js` through the existing Web Backend.
-- [ ] Negative tests prove unsupported/invalid component trees, stale approval, and unexpected manifest fields are rejected.
-- [ ] Requirements not implemented by this static generator are returned explicitly in `unmappedRequirements` and never silently discarded.
-- [ ] No filesystem mutation occurs in the generator itself.
-- [ ] A subsequent orchestration slice proves the complete approved-manifest-to-delivery path before phase 7 can close.
+- [x] Reject unapproved, stale, malformed, or modified project manifests.
+- [x] Produce a valid static UI tree for a minimal approved project with one or more pages.
+- [x] Preserve all source text as JSON data, including quotes, backslashes, newlines, Arabic, and Unicode.
+- [x] Produce stable IDs and byte-identical outputs for repeated generation from the same manifest.
+- [x] Validate the tree using the exact UI registry and lock.
+- [x] Generated source passes parse, semantic analysis, QIR lowering/validation, and VM execution.
+- [x] Generated source builds static `index.html`, `styles.css`, and `app.js` through the existing Web Backend.
+- [x] Negative tests prove unsupported/invalid component trees, stale approval, and unexpected manifest fields are rejected.
+- [x] Requirements not implemented by this static generator are returned explicitly in `unmappedRequirements` and never silently discarded.
+- [x] No filesystem mutation occurs in the generator itself.
+- [x] A subsequent orchestration slice proves the complete approved-manifest-to-delivery path before phase 7 can close.
+
+**CI evidence on the verified generator head:** Phase 3 run `42588610378`, phase 4 run `42588610532`, phase 5 Chromium run `42588610230`, phase 6 run `42588610284`, and phase 7 project workflow run `42588610283` all completed successfully.
+
+The follow-on integrated workflow is specified separately in `QX/spec/PHASE-7.8-INTEGRATED-PROJECT-WORKFLOW.md` and is not yet verified.
 
 ## 7. Compatibility
 
