@@ -139,14 +139,17 @@ export function createUIComponentLifecycleRegistry(input = {}) {
     }
     const record = input.registry.resolve(type, contractVersion, registryRelease);
     const key = tupleKey(record);
-    const state = lifecycleRecords.get(key) ?? { lifecycle: "active", supported: true };
+    const state = lifecycleRecords.get(key);
     const decision = policy.entries.get(key);
 
-    if (decision === "retired" || state.lifecycle === "retired") {
+    if (decision === "retired" || state?.lifecycle === "retired") {
       throw new QXUIError("QX_UI_RELEASE_RETIRED", "The exact pinned UI component release is retired");
     }
-    if (decision === "unsupported" || !state.supported) {
-      throw new QXUIError("QX_UI_RELEASE_UNAVAILABLE", "The exact UI component release is not supported by this host");
+    if (decision === "unsupported" || state?.supported === false || !state) {
+      throw new QXUIError(
+        "QX_UI_RELEASE_UNAVAILABLE",
+        "The exact UI component release has no active host lifecycle/support record"
+      );
     }
     return freezeDeep({ ...record, ...state });
   }
