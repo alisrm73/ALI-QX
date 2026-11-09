@@ -2,7 +2,7 @@ import { QXUIError } from "./ui-component-runtime.js";
 import { proposeUIComponentUpgrade } from "./ui-component-upgrade.js";
 
 function rollbackFail(message) {
-  throw new QXUIError("QX_UI_ROLLBACK_INCOMPATIBLE", message);
+  throw new QXUIError("QX_UI_ROLLBACK_INVALID", message);
 }
 
 function allowedKeys(value, required, optional = []) {

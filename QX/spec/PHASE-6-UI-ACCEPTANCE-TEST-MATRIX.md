@@ -1,8 +1,8 @@
 # Phase 6 UI Tree and Registry — Acceptance Test Matrix
 
-**Status:** Acceptance matrix for the static UI runtime merged through PR #12; broader acceptance remains gated by the cases below.  
+**Status:** Phase 6 acceptance for the three static presentation components and exact multi-version lifecycle integration is implemented and CI-verified on PR #25. Broader component-library expansion remains gated by the applicable cases below.  
 **Applies to:** `PHASE-6-UI-COMPONENT-TREE-CONTRACT.md` and `PHASE-6-UI-REGISTRY-VERSIONING-CONTRACT.md`.  
-**Runtime status:** A host registry, lock validator, bounded tree validator, VM `UI.TREE` path, and safe static-browser renderer are merged into `main` through PR #12.  
+**Runtime status:** The host registry, exact lock validator, bounded tree validator, VM `UI.TREE` path, lifecycle policy, explicit upgrade/rollback proposals, and safe static-browser renderer are implemented. Web Backend now resolves and renders multiple exact releases of one component type.  
 **Compatibility invariant:** QIR 1.0–1.3 remain unchanged; QIR 1.4 retains existing `UI.TEXT` / `UI.SHOW` behavior while adding `UI.TREE`.
 
 ## 1. Purpose and execution gate
@@ -11,7 +11,7 @@ This matrix turns the two UI contracts into observable acceptance cases. It rema
 
 No additional component types may be activated until their contracts, serialization boundaries, and host registry interfaces are reviewed. The project lock-file convention is `qx.ui-lock.json` at the QX project root. The sample at `engine/qx-core/examples/ui-tree-static/` demonstrates this sidecar separately from `engine/qx-core/package.json`.
 
-Some cases are now automated for the three registered static components. A case is **not passed** merely because its expected behavior is documented or because unrelated existing tests pass; the remaining acceptance rows continue to gate broader component registration.
+Cases applicable to the three registered static components are automated. PR #25 adds Web Backend coverage for two exact releases of one component type, retired-release rejection, and deprecated-but-supported pins with warnings. A case is **not passed** merely because its expected behavior is documented or because unrelated existing tests pass; remaining rows continue to gate broader component registration and any interactive component.
 
 ## 2. Test conventions
 
@@ -198,3 +198,20 @@ The UI tree and registry/versioning work may be considered fully accepted for br
 10. A final security and compatibility review finds no unresolved release-blocking issue.
 
 The three static presentation components and `UI.TREE` are already implemented in `main`. These conditions remain the gate for declaring the broader UI work complete or registering additional components; they do not authorize interactive behavior, arbitrary styling, or host capabilities.
+
+
+## 13. Phase 6 implementation evidence
+
+The following lifecycle cases are now covered by executable tests on the phase 6 implementation branch:
+
+- Exact multi-release resolution and rendering for UI.HEADING 1.0.0 and 2.0.0 in the same project lock/tree.
+- Exact registry release and schema-digest matching for each pin.
+- Host-retired release rejection before asset generation.
+- Deprecated-but-supported release acceptance with QX_UI_RELEASE_DEPRECATED warning metadata.
+- Lifecycle policy fail-closed, missing/duplicate/malformed lifecycle records, revocation precedence, and immutable exact registry snapshots through ui-component-lifecycle and ui-component-registry tests.
+- Explicit non-mutating upgrade and rollback proposals; rollback malformed/incompatible proposal failures use the documented QX_UI_ROLLBACK_INVALID code.
+- Legacy built-in lock validation and static browser rendering remain covered.
+
+The phase 6 CI run for PR #25 at head 473635441116e5c57bca5b4d3865154af0e8a71f passed the core suite, QIR validation, VM validation, and Chromium browser smoke test. The full core suite reported 206 tests after the added lifecycle cases, with no failures or skips.
+
+**Scope boundary:** This acceptance record closes the phase 6 static component and lifecycle work. It does not declare the broader interactive-component gate passed, does not add a production integration connector, and does not enable network or host capabilities in static Web Backend builds.

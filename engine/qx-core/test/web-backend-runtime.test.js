@@ -6,6 +6,8 @@ import { parse } from "../src/parser.js";
 import { analyze } from "../src/semantic-analyzer.js";
 import { lowerToQIR } from "../src/qir.js";
 import { createDefaultUILock } from "../src/ui-component-runtime.js";
+import { createUIComponentRegistry } from "../src/ui-component-registry.js";
+import { createUIComponentLifecycleRegistry } from "../src/ui-component-lifecycle.js";
 
 test("generated browser runtime executes QIR and renders global results", () => {
   const project = buildWebProject('DATA.CREATE(total, 4 + 5)\nPROCESS.CALCULATE(total, total * 2)');
@@ -237,4 +239,113 @@ test("web asset generation rejects invalid QIR before producing files", () => {
       Array.isArray(error.diagnostics) &&
       error.diagnostics.length > 0
   );
+});
+
+
+test("browser runtime resolves multiple exact releases of one component through lifecycle registry", () => {
+  const component = version => ({
+    type: "UI.HEADING",
+    contractVersion: version,
+    renderer: "heading",
+    props: { level: { type: "number", required: true, integer: true, minimum: 1, maximum: 6 } },
+    children: { text: true, components: [] }
+  });
+  const registry = createUIComponentRegistry({ snapshots: [
+    { registryRelease: "ui-registry-v1", components: [component("1.0.0")] },
+    { registryRelease: "ui-registry-v2", components: [component("2.0.0")] }
+  ] });
+  const pins = [
+    registry.resolve("UI.HEADING", "1.0.0", "ui-registry-v1"),
+    registry.resolve("UI.HEADING", "2.0.0", "ui-registry-v2")
+  ];
+  const lifecycleRegistry = createUIComponentLifecycleRegistry({
+    registry,
+    lifecycle: pins.map(item => ({
+      registryRelease: item.registryRelease, type: item.type,
+      contractVersion: item.contractVersion, schemaDigest: item.schemaDigest,
+      lifecycle: "active", supported: true
+    })),
+    hostPolicy: { revision: "host-policy-1", status: "available", entries: [] }
+  });
+  const uiLock = {
+    schema: "QX.UI.COMPONENT-LOCK", version: "1.0",
+    components: pins.map(({ type, contractVersion, schemaDigest, registryRelease }) =>
+      ({ type, contractVersion, schemaDigest, registryRelease }))
+      .sort((a,b) => a.type.localeCompare(b.type) || a.contractVersion.localeCompare(b.contractVersion))
+  };
+  const source = 'UI.TREE("{\\"schema\\":\\"QX.UI.TREE\\",\\"version\\":\\"1.0\\",\\"children\\":[{\\"kind\\":\\"component\\",\\"id\\":\\"old\\",\\"type\\":\\"UI.HEADING\\",\\"version\\":\\"1.0.0\\",\\"props\\":{\\"level\\":1},\\"children\\":[{\\"kind\\":\\"text\\",\\"value\\":\\"old release\\"}]},{\\"kind\\":\\"component\\",\\"id\\":\\"new\\",\\"type\\":\\"UI.HEADING\\",\\"version\\":\\"2.0.0\\",\\"props\\":{\\"level\\":2},\\"children\\":[{\\"kind\\":\\"text\\",\\"value\\":\\"new release\\"}]}]}")';
+  const project = buildWebProject(source, { uiLock, uiLifecycleRegistry: lifecycleRegistry });
+  const makeNode = tag => ({ tag, children: [], textContent: "", className: "", append(...items) { this.children.push(...items); } });
+  const nodes = new Map([["qx-output", makeNode("root")], ["qx-status", makeNode("status")]]);
+  const document = {
+    getElementById: id => nodes.get(id),
+    createElement: tag => makeNode(tag),
+    createTextNode: value => ({ nodeType: 3, textContent: value })
+  };
+  vm.runInNewContext(project.files["app.js"], { document, TextEncoder });
+  assert.equal(nodes.get("qx-status").textContent, "Execution completed");
+  assert.deepEqual(nodes.get("qx-output").children.filter(node => /^h[1-6]$/.test(node.tag)).map(node => node.tag), ["h1", "h2"]);
+  assert.equal(project.metadata.uiRegistryReleases.length, 2);
+});
+
+test("browser build rejects host-retired exact component pins before rendering", () => {
+  const component = {
+    type: "UI.HEADING", contractVersion: "1.0.0", renderer: "heading",
+    props: { level: { type: "number", required: true, integer: true, minimum: 1, maximum: 6 } },
+    children: { text: true, components: [] }
+  };
+  const registry = createUIComponentRegistry({
+    snapshots: [{ registryRelease: "ui-registry-retired", components: [component] }]
+  });
+  const pin = registry.resolve("UI.HEADING", "1.0.0", "ui-registry-retired");
+  const lifecycleRegistry = createUIComponentLifecycleRegistry({
+    registry,
+    lifecycle: [{
+      registryRelease: pin.registryRelease, type: pin.type, contractVersion: pin.contractVersion,
+      schemaDigest: pin.schemaDigest, lifecycle: "retired", supported: true
+    }],
+    hostPolicy: { revision: "host-policy-2", status: "available", entries: [] }
+  });
+  const uiLock = {
+    schema: "QX.UI.COMPONENT-LOCK", version: "1.0",
+    components: [{ type: pin.type, contractVersion: pin.contractVersion,
+      schemaDigest: pin.schemaDigest, registryRelease: pin.registryRelease }]
+  };
+  assert.throws(
+    () => buildWebProject('UI.TREE("{}")', { uiLock, uiLifecycleRegistry: lifecycleRegistry }),
+    error => error instanceof QXWebBuildError &&
+      error.code === "QX_WEB_UI_LOCK_INVALID" &&
+      error.diagnostics[0].code === "QX_UI_RELEASE_RETIRED"
+  );
+});
+
+
+test("browser build preserves deprecated-but-supported exact pins with a warning", () => {
+  const component = {
+    type: "UI.HEADING", contractVersion: "1.0.0", renderer: "heading",
+    props: { level: { type: "number", required: true, integer: true, minimum: 1, maximum: 6 } },
+    children: { text: true, components: [] }
+  };
+  const registry = createUIComponentRegistry({
+    snapshots: [{ registryRelease: "ui-registry-deprecated", components: [component] }]
+  });
+  const pin = registry.resolve("UI.HEADING", "1.0.0", "ui-registry-deprecated");
+  const lifecycleRegistry = createUIComponentLifecycleRegistry({
+    registry,
+    lifecycle: [{
+      registryRelease: pin.registryRelease, type: pin.type, contractVersion: pin.contractVersion,
+      schemaDigest: pin.schemaDigest, lifecycle: "deprecated", supported: true,
+      deprecation: "Use the next reviewed heading release when ready"
+    }],
+    hostPolicy: { revision: "host-policy-deprecated-1", status: "available", entries: [] }
+  });
+  const uiLock = {
+    schema: "QX.UI.COMPONENT-LOCK", version: "1.0",
+    components: [{ type: pin.type, contractVersion: pin.contractVersion,
+      schemaDigest: pin.schemaDigest, registryRelease: pin.registryRelease }]
+  };
+  const project = buildWebProject('UI.TREE("{}")', { uiLock, uiLifecycleRegistry: lifecycleRegistry });
+  assert.equal(project.metadata.uiWarnings.length, 1);
+  assert.equal(project.metadata.uiWarnings[0].code, "QX_UI_RELEASE_DEPRECATED");
+  assert.equal(project.metadata.uiRegistryReleases[0].lifecycle, "deprecated");
 });
