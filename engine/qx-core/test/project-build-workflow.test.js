@@ -132,6 +132,26 @@ test("rejects a build plan for another project and invalid permissions before wr
     executeTest: async () => ({ status: "passed", summary: "not reached" })
   }), { code: "QX_PROJECT_BUILD_NOT_APPROVED" });
 
+  const duplicatePermissions = [
+    writePermissions[0],
+    writePermissions[0],
+    writePermissions[2]
+  ];
+  await assert.rejects(runProjectBuildWorkflow({
+    workspace, project, expectedProjectDigest: project.digest,
+    buildPlan, writePermissions: duplicatePermissions, testCases,
+    executeTest: async () => ({ status: "passed", summary: "not reached" })
+  }), { code: "QX_WORKSPACE_PERMISSION_REQUIRED" });
+
+  const unexpectedPermission = writePermissions.map((permission, index) =>
+    index === 0 ? { ...permission, unapprovedField: true } : permission
+  );
+  await assert.rejects(runProjectBuildWorkflow({
+    workspace, project, expectedProjectDigest: project.digest,
+    buildPlan, writePermissions: unexpectedPermission, testCases,
+    executeTest: async () => ({ status: "passed", summary: "not reached" })
+  }), { code: "QX_WORKSPACE_PERMISSION_REQUIRED" });
+
   const wrongDigestPermissions = writePermissions.map(permission => ({
     ...permission,
     approvedProjectDigest: "sha256:" + "0".repeat(64)
