@@ -22,6 +22,7 @@ const definitions = [
   ["DATA", "COUNT", "عدد"],
   ["UI", "SHOW", "عرض"],
   ["UI", "TEXT", "نص"],
+  ["UI", "TREE", "شجرة"],
   ["PROCESS", "ADD", "إضافة"],
   ["PROCESS", "CALCULATE", "احسب"],
   ["PROCESS", "COMPARE", "قارن"],
@@ -60,6 +61,11 @@ export const COMMAND_REGISTRY = Object.freeze(definitions.map(([domain, name, ar
               parameters: Object.freeze([{ name: "text", type: "TXT" }]),
               result: Object.freeze({ kind: "effect", component: "TEXT" })
             })
+      : domain === "UI" && name === "TREE"
+          ? Object.freeze({
+              parameters: Object.freeze([{ name: "treeJson", type: "TXT" }]),
+              result: Object.freeze({ kind: "effect", component: "TREE" })
+            })
       : domain === "PROCESS" && name === "ADD"
         ? Object.freeze({
             parameters: Object.freeze([
@@ -96,7 +102,7 @@ export const COMMAND_REGISTRY = Object.freeze(definitions.map(([domain, name, ar
           : null,
     signatureStatus: (domain === "DATA" && ["ADD", "REMOVE", "COUNT"].includes(name)) ||
       (domain === "PROCESS" && (name === "ADD" || name === "CALCULATE" || name === "COMPARE")) ||
-      (domain === "UI" && (name === "SHOW" || name === "TEXT")) ||
+      (domain === "UI" && (name === "SHOW" || name === "TEXT" || name === "TREE")) ||
       (domain === "INTEGRATION" && name === "REQUEST")
       ? "specified"
       : "pending",
