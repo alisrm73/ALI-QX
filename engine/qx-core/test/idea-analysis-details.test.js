@@ -69,6 +69,13 @@ test("rejects unsupported fields and malformed evidence", async () => {
       functions: [{ ...validDetails().functions[0], evidence: [] }]
     })
   }), { code: "QX_IDEA_DETAILS_INVALID_RESULT" });
+
+  await assert.rejects(analyzeProjectIdeaDetails({
+    idea: "A project idea",
+    analyze: async () => validDetails({
+      functions: [{ ...validDetails().functions[0], evidence: ["invented requirement"] }]
+    })
+  }), { code: "QX_IDEA_DETAILS_INVALID_RESULT" });
 });
 
 test("rejects duplicate identifiers and unknown certainty", async () => {
