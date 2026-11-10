@@ -292,7 +292,7 @@ test("rejects malformed INTEGRATION.REQUEST arguments and statement use", () => 
 
 
 test("validates UI statement arguments against their registered parameter types", () => {
-  const showList = check("DATA.CREATE(items, [1])\\nUI.SHOW(items)");
+  const showList = check("DATA.CREATE(items, [1])\nUI.SHOW(items)");
   assert.equal(showList.valid, true, JSON.stringify(showList.diagnostics));
 
   const wrongTextType = check("UI.TEXT(42)");
