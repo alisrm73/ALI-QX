@@ -60,7 +60,7 @@ export const COMMAND_REGISTRY = Object.freeze(definitions.map(([domain, name, ar
               kind: "stored",
               target: "target",
               type: "target",
-              ...(name === "SET_GLOBAL" ? { scope: "function", targetScope: "module" } : {})
+              ...(name === "SET_GLOBAL" ? { scope: "function", targetScope: "module", targetStorage: "global" } : {})
             })
           })
       : domain === "DATA" && name === "ADD"
