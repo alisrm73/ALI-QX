@@ -185,13 +185,14 @@ function validateResult(value, idea) {
   });
   uniqueIds(conflicts, "conflicts");
 
-  const referencedItems = new Set([
+  const sourceItemIds = [
     ...functions.map(item => item.id),
     ...userFlows.map(item => item.id),
     ...businessRules.map(item => item.id)
-  ]);
+  ];
+  const referencedItems = new Set(sourceItemIds);
   const allIds = [
-    ...referencedItems,
+    ...sourceItemIds,
     ...conflicts.map(item => item.id)
   ];
   if (new Set(allIds).size !== allIds.length) {
