@@ -231,7 +231,7 @@ class FunctionBuilder {
         const variable = this.variables.get(args[0].name) ?? this.owner.globalVariable(args[0].name, this);
         if (!variable) fail("QIR_E_UNKNOWN_VARIABLE", "Unknown target " + args[0].name, args[0]);
         if (signature.result.scope === "function" &&
-            (this.descriptor.kind !== "function" || variable.storage !== signature.result.targetScope))
+            (this.descriptor.kind !== "function" || variable.storage !== signature.result.targetStorage))
           fail("QIR_E_GLOBAL_REQUIRED", "DATA.SET_GLOBAL requires a module global and must be used inside a function", args[0]);
         if (command.id === "DATA.SET" && variable.storage === "global" && this.descriptor.kind !== "module_initializer")
           fail("QIR_E_GLOBAL_WRITE", "Use DATA.SET_GLOBAL inside functions", node);
