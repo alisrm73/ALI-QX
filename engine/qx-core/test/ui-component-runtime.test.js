@@ -340,8 +340,9 @@ test("keeps generated registry lock snapshots deterministic and immutable", () =
   const first = createDefaultUILock();
   const second = createDefaultUILock();
   assert.deepEqual(first, second);
-  assert.deepEqual(first.components.map(entry => entry.type), [
-    "UI.CONTAINER", "UI.HEADING", "UI.TEXT_BLOCK"
+  assert.deepEqual(first.components.map(entry => entry.type + "@" + entry.contractVersion), [
+    "UI.CONTAINER@1.0.0", "UI.CONTAINER@1.1.0", "UI.DIVIDER@1.0.0",
+    "UI.HEADING@1.0.0", "UI.TEXT_BLOCK@1.0.0"
   ]);
   assert.equal(Object.isFrozen(first), true);
   assert.equal(Object.isFrozen(first.components), true);
