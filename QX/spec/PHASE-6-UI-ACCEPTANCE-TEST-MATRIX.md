@@ -215,3 +215,20 @@ The following lifecycle cases are now covered by executable tests on the phase 6
 The phase 6 CI run for PR #25 at head 473635441116e5c57bca5b4d3865154af0e8a71f passed the core suite, QIR validation, VM validation, and Chromium browser smoke test. The full core suite reported 206 tests after the added lifecycle cases, with no failures or skips.
 
 **Scope boundary:** This acceptance record closes the phase 6 static component and lifecycle work. It does not declare the broader interactive-component gate passed, does not add a production integration connector, and does not enable network or host capabilities in static Web Backend builds.
+
+
+## 14. Phase 5 — first static component expansion: UI.DIVIDER
+
+This first library expansion adds a non-interactive thematic divider without changing the QIR tree envelope or introducing host capabilities.
+
+| Case | Contract / fixture | Expected result |
+|---|---|---|
+| P5-DIV-001 | Resolve `UI.DIVIDER@1.0.0` from an exact lock pin | Accept only the exact registered version, registry release, and schema digest |
+| P5-DIV-002 | Render a divider nested in `UI.CONTAINER@1.1.0` | Render a native `hr` element with the host-owned `qx-ui-divider` class |
+| P5-DIV-003 | Place a divider under legacy `UI.CONTAINER@1.0.0` | Reject with child-policy error; the old contract remains immutable |
+| P5-DIV-004 | Give the divider text or component children, or unsupported properties | Reject before rendering |
+| P5-DIV-005 | Supply markup-looking content around a divider | Preserve literal text nodes; never interpret content as markup |
+| P5-DIV-006 | Run the existing UI tree, QIR, VM, and browser compatibility suites | Preserve prior `UI.TEXT`, `UI.SHOW`, QIR 1.0–1.4, and exact lock behavior |
+| P5-DIV-007 | Build a project pinned to `ui-registry-1.0.0` after the new snapshot is published | Resolve and render the legacy project without digest substitution or fallback |
+
+The component has no properties, accepts no children, and has no event, navigation, network, filesystem, storage, or arbitrary styling capability. The checked-in UI example lock is refreshed to the new snapshot; a separate browser test retains coverage for a project using the original snapshot. The new `UI.CONTAINER@1.1.0` contract is published in registry snapshot `ui-registry-1.1.0`; the original immutable `ui-registry-1.0.0` snapshot, `UI.CONTAINER@1.0.0`, and all existing pins remain valid and unchanged. This is the first static slice only; it does not close Phase 5 or authorize interactive components.

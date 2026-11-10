@@ -235,6 +235,7 @@ function run() {
           if(definition.renderer==="container"){element=document.createElement("div");element.className="qx-ui-container";}
           else if(definition.renderer==="text-block"){element=document.createElement("p");element.className="qx-ui-text-block";}
           else if(definition.renderer==="heading"){element=document.createElement("h"+node.props.level);element.className="qx-ui-heading";}
+          else if(definition.renderer==="divider"){element=document.createElement("hr");element.className="qx-ui-divider";}
           else throw new Error("Unsupported host UI renderer");
           for(const child of node.children)element.append(renderNode(child));
           return element;
@@ -329,7 +330,7 @@ export function generateWebAssets(qir, options = {}) {
     ".qx-header, .qx-value { background: #fff; border: 1px solid #e2e7ef; border-radius: 18px; padding: 24px; box-shadow: 0 8px 30px rgb(23 32 51 / 5%); }",
     ".qx-eyebrow, .qx-meta { color: #68758b; font-size: .78rem; letter-spacing: .08em; }",
     "h1 { margin: .25rem 0; font-size: clamp(1.8rem, 5vw, 2.6rem); } .qx-status { color: #176b46; font-weight: 650; } .qx-run-button { margin-top: 8px; padding: 11px 18px; border: 0; border-radius: 10px; background: #2457c5; color: #fff; font: inherit; font-weight: 650; cursor: pointer; } .qx-run-button:focus-visible { outline: 3px solid #91b4ff; outline-offset: 3px; } .qx-run-button:hover { background: #1946a8; }",
-    ".qx-output { display: grid; gap: 14px; margin-top: 18px; } .qx-ui-container { display: grid; gap: 12px; padding: 18px; border: 1px solid #e2e7ef; border-radius: 14px; background: #fff; } .qx-ui-text-block { margin: 0; line-height: 1.6; } .qx-ui-heading { margin: 0; } .qx-value h2 { margin: 0 0 12px; font-size: 1rem; } .qx-ui-text, .qx-ui-show { margin: 0; padding: 16px 18px; border: 1px solid #e2e7ef; border-radius: 12px; background: #fff; line-height: 1.6; overflow-wrap: anywhere; } .qx-ui-show pre { background: transparent; padding: 0; }",
+    ".qx-output { display: grid; gap: 14px; margin-top: 18px; } .qx-ui-container { display: grid; gap: 12px; padding: 18px; border: 1px solid #e2e7ef; border-radius: 14px; background: #fff; } .qx-ui-text-block { margin: 0; line-height: 1.6; } .qx-ui-heading { margin: 0; } .qx-ui-divider { width: 100%; border: 0; border-top: 1px solid #e2e7ef; margin: 8px 0; } .qx-value h2 { margin: 0 0 12px; font-size: 1rem; } .qx-ui-text, .qx-ui-show { margin: 0; padding: 16px 18px; border: 1px solid #e2e7ef; border-radius: 12px; background: #fff; line-height: 1.6; overflow-wrap: anywhere; } .qx-ui-show pre { background: transparent; padding: 0; }",
     "pre { margin: 0; padding: 14px; border-radius: 10px; overflow: auto; background: #f5f7fa; white-space: pre-wrap; overflow-wrap: anywhere; }",
     ".qx-error { color: #9b2525; border: 1px solid #efcaca; background: #fff7f7; } footer { margin: 24px 4px; color: #758198; font-size: .8rem; }",
     "@media (max-width: 520px) { .qx-shell { margin: 18px auto; } .qx-header, .qx-value { padding: 18px; } }"

@@ -10,11 +10,50 @@ export const UI_TREE_LIMITS = Object.freeze({
   maxPropertyBytes: 4096
 });
 
-const REGISTRY_RELEASE = "ui-registry-1.0.0";
+const LEGACY_REGISTRY_RELEASE = "ui-registry-1.0.0";
+const REGISTRY_RELEASE = "ui-registry-1.1.0";
 const TREE_SCHEMA = "QX.UI.TREE";
 const LOCK_SCHEMA = "QX.UI.COMPONENT-LOCK";
 
 const definitions = [
+  {
+    type: "UI.CONTAINER",
+    contractVersion: "1.0.0",
+    renderer: "container",
+    props: {},
+    children: { text: true, components: ["UI.CONTAINER", "UI.TEXT_BLOCK", "UI.HEADING"] }
+  },
+  {
+    type: "UI.CONTAINER",
+    contractVersion: "1.1.0",
+    renderer: "container",
+    props: {},
+    children: { text: true, components: ["UI.CONTAINER", "UI.TEXT_BLOCK", "UI.HEADING", "UI.DIVIDER"] }
+  },
+  {
+    type: "UI.DIVIDER",
+    contractVersion: "1.0.0",
+    renderer: "divider",
+    props: {},
+    children: { text: false, components: [] }
+  },
+  {
+    type: "UI.HEADING",
+    contractVersion: "1.0.0",
+    renderer: "heading",
+    props: { level: { type: "number", required: true, integer: true, minimum: 1, maximum: 6 } },
+    children: { text: true, components: [] }
+  },
+  {
+    type: "UI.TEXT_BLOCK",
+    contractVersion: "1.0.0",
+    renderer: "text-block",
+    props: {},
+    children: { text: true, components: [] }
+  }
+];
+
+const legacyDefinitions = [
   {
     type: "UI.CONTAINER",
     contractVersion: "1.0.0",
@@ -39,7 +78,10 @@ const definitions = [
 ];
 
 const registry = createUIComponentRegistry({
-  snapshots: [{ registryRelease: REGISTRY_RELEASE, components: definitions }]
+  snapshots: [
+    { registryRelease: LEGACY_REGISTRY_RELEASE, components: legacyDefinitions },
+    { registryRelease: REGISTRY_RELEASE, components: definitions }
+  ]
 });
 
 export class QXUIError extends Error {
@@ -66,25 +108,29 @@ function isSemver(value) {
 }
 
 export function getUIComponentRegistry() {
-  return Object.freeze(definitions.map(definition => {
-    const item = registry.resolve(definition.type, definition.contractVersion, REGISTRY_RELEASE);
-    return Object.freeze({
-      type: item.type,
-      contractVersion: item.contractVersion,
-      schemaDigest: item.schemaDigest,
-      registryRelease: item.registryRelease,
-      renderer: item.renderer,
-      props: item.props,
-      children: item.children
-    });
-  }));
+  const records = [
+    ...legacyDefinitions.map(definition =>
+      registry.resolve(definition.type, definition.contractVersion, LEGACY_REGISTRY_RELEASE)),
+    ...definitions.map(definition =>
+      registry.resolve(definition.type, definition.contractVersion, REGISTRY_RELEASE))
+  ];
+  return Object.freeze(records.map(item => Object.freeze({
+    type: item.type,
+    contractVersion: item.contractVersion,
+    schemaDigest: item.schemaDigest,
+    registryRelease: item.registryRelease,
+    renderer: item.renderer,
+    props: item.props,
+    children: item.children
+  })));
 }
 
 export function createDefaultUILock() {
   return Object.freeze({
     schema: LOCK_SCHEMA,
     version: "1.0",
-    components: Object.freeze(getUIComponentRegistry()
+    components: Object.freeze(definitions
+      .map(definition => registry.resolve(definition.type, definition.contractVersion, REGISTRY_RELEASE))
       .map(({ type, contractVersion, schemaDigest, registryRelease }) =>
         Object.freeze({ type, contractVersion, schemaDigest, registryRelease }))
       .sort((a, b) => a.type < b.type ? -1 : a.type > b.type ? 1 : a.contractVersion < b.contractVersion ? -1 : a.contractVersion > b.contractVersion ? 1 : 0))
