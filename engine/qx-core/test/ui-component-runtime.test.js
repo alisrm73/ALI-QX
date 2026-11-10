@@ -9,19 +9,22 @@ import {
 import { createUIComponentRegistry } from "../src/ui-component-registry.js";
 
 const lock = createDefaultUILock();
-const component = (id, type, children = [], props = {}) => ({
-  kind: "component", id, type, version: "1.0.0", props, children
+const component = (id, type, children = [], props = {}, version = "1.0.0") => ({
+  kind: "component", id, type, version, props, children
 });
 const tree = children => ({ schema: "QX.UI.TREE", version: "1.0", children });
 
 test("publishes immutable built-in presentation component releases and exact lock pins", () => {
-  assert.deepEqual(getUIComponentRegistry().map(item => item.type), [
-    "UI.CONTAINER", "UI.TEXT_BLOCK", "UI.HEADING"
+  assert.deepEqual(getUIComponentRegistry().map(item => item.type + "@" + item.contractVersion), [
+    "UI.CONTAINER@1.0.0", "UI.CONTAINER@1.1.0", "UI.DIVIDER@1.0.0",
+    "UI.HEADING@1.0.0", "UI.TEXT_BLOCK@1.0.0"
   ]);
   assert.equal(lock.schema, "QX.UI.COMPONENT-LOCK");
-  assert.equal(lock.components.length, 3);
+  assert.equal(lock.components.length, 5);
   assert.deepEqual(lock.components.map(entry => entry.schemaDigest), [
     "sha256:6693f6a569739a270be14209ba18ae467a101823eb83e12028619ad4e86dadab",
+    "sha256:8f6facc7900cc140063923538b56b3ec127783ee3b0e5c25997f7bf1ae7f44ee",
+    "sha256:cfbdc6d89e14cebadf052ac5474150eea216e2d3ee6ef9f0ee597ce54fb4c0af",
     "sha256:c793f48ad34d9d73ba62c96cc4b42c061ecf7f845c46dffd87c3ac35a5e7b239",
     "sha256:1e385953ec61605090646609296cc53d7ed91db49d43f9e6497051963515ddcc"
   ]);
@@ -51,6 +54,35 @@ test("validates and preserves nested static component trees and literal text", (
   const result = validateUIComponentTree(JSON.stringify(input), lock);
   assert.equal(result.children[0].children[0].children[0].value, "<script>literal</script>");
   assert.equal(Object.isFrozen(result.children[0].children[0].props), true);
+});
+
+test("adds UI.DIVIDER through a new container contract without changing the old pin", () => {
+  const legacyTree = tree([
+    component("legacy", "UI.CONTAINER", [
+      component("rule", "UI.DIVIDER")
+    ])
+  ]);
+  assert.throws(() => validateUIComponentTree(legacyTree, lock), {
+    code: "QX_UI_CHILD_POLICY"
+  });
+
+  const currentTree = tree([
+    component("current", "UI.CONTAINER", [
+      component("rule", "UI.DIVIDER")
+    ], {}, "1.1.0")
+  ]);
+  const result = validateUIComponentTree(currentTree, lock);
+  assert.equal(result.children[0].version, "1.1.0");
+  assert.equal(result.children[0].children[0].type, "UI.DIVIDER");
+
+  const invalidDivider = tree([
+    component("current", "UI.CONTAINER", [
+      component("rule", "UI.DIVIDER", [{ kind: "text", value: "not allowed" }])
+    ], {}, "1.1.0")
+  ]);
+  assert.throws(() => validateUIComponentTree(invalidDivider, lock), {
+    code: "QX_UI_CHILD_POLICY"
+  });
 });
 
 test("rejects missing lock files and missing exact pins", () => {
