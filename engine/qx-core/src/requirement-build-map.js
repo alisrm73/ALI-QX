@@ -102,9 +102,10 @@ function normalizePaths(value, field) {
 
 function safeProjectPath(value) {
   return typeof value === "string" && value.length > 0 && value.length <= 1024 &&
-    !value.startsWith("/") && !value.includes("\\") &&
+    !value.startsWith("/") && !value.includes("\\") && !value.includes("\0") &&
     !/^[A-Za-z]:/.test(value) &&
-    value.split("/").every(part => part.length > 0 && part !== "." && part !== "..");
+    value.split("/").every(part => part.length > 0 && part !== "." && part !== "..") &&
+    value.split("/")[0] !== ".qx-workspace";
 }
 
 function requirementsOf(project) {
