@@ -21,6 +21,27 @@ test("generated browser runtime executes QIR and renders global results", () => 
   assert.equal(section.children[1].textContent, "18");
 });
 
+test("browser runtime uses DATA.SET_GLOBAL after local PROCESS calculations", () => {
+  const project = buildWebProject([
+    "DATA.CREATE(total, 1)",
+    "FUNCTION update(amount)",
+    "DATA.CREATE(nextTotal, total + amount)",
+    "PROCESS.ADD(nextTotal, 1)",
+    "PROCESS.CALCULATE(nextTotal, nextTotal * 2)",
+    "DATA.SET_GLOBAL(total, nextTotal)",
+    "END",
+    "update(3)"
+  ].join("\n"));
+  const makeNode = () => ({ children: [], textContent: "", className: "", append(...items) { this.children.push(...items); } });
+  const nodes = new Map([["qx-output", makeNode()], ["qx-status", makeNode()]]);
+  const document = { getElementById: id => nodes.get(id), createElement: () => makeNode() };
+  vm.runInNewContext(project.files["app.js"], { document });
+  assert.equal(nodes.get("qx-status").textContent, "Execution completed");
+  const section = nodes.get("qx-output").children.find(node => node.className === "qx-value");
+  assert.equal(section.children[0].textContent, "total");
+  assert.equal(section.children[1].textContent, "10");
+});
+
 test("browser runtime executes functions and DATA.COUNT", () => {
   const project = buildWebProject([
     "FUNCTION add(a, b)",
