@@ -252,11 +252,16 @@ class FunctionBuilder {
       case "UI.TEXT":
       case "UI.TREE": {
         if (args.length !== command.signature.parameters.length) fail("QIR_E_BAD_COMMAND_ARGUMENTS", command.id + " expects one argument", node);
-        const value = this.lowerExpression(args[0]);
-        const parameter = command.signature.parameters[0];
-        const expectedTypes = parameter.types ?? (parameter.type ? [parameter.type] : null);
-        if (expectedTypes && !expectedTypes.includes(value.type)) fail("QIR_E_COMMAND_ARGUMENT", command.id + " argument does not match its registered type", args[0]);
-        this.emit("COMMAND_CALL", { command: command.id, arguments: [value.value] }, null, null, node);
+        const values = args.map((arg, index) => {
+          const value = this.lowerExpression(arg);
+          const parameter = command.signature.parameters[index];
+          const expectedTypes = parameter.types ?? (parameter.type ? [parameter.type] : null);
+          if (expectedTypes && !expectedTypes.includes(value.type)) {
+            fail("QIR_E_COMMAND_ARGUMENT", command.id + " argument " + (index + 1) + " does not match its registered type", arg);
+          }
+          return value.value;
+        });
+        this.emit("COMMAND_CALL", { command: command.id, arguments: values }, null, null, node);
         return;
       }
       default: fail("QIR_E_COMMAND_NOT_ALLOWED", "Command has no approved QIR lowering: " + command.id, node);
