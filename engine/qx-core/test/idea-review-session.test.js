@@ -28,7 +28,7 @@ function packageFor(source = idea) {
       approval: null
     },
     diagnostics: [],
-    details: { functions: [], userFlows: [], businessRules: [], design: {}, conflicts: [] },
+    details: { functions: [], userFlows: [], businessRules: [], design: {}, conflicts: [], openQuestions: [] },
     consistency: {
       comparisonMethod: "normalized_text_overlap_only",
       unmatchedProjectRequirements: [
