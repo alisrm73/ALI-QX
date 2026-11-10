@@ -19,7 +19,7 @@ function approvedProject() {
       "Visitors can submit a contact request"
     ],
     dataRequirements: ["Store submitted contact requests"],
-    integrationRequirements: [],
+    integrationRequirements: ["Deliver contact requests through an email service"],
     pages: [{ id: "home", title: "Home" }, { id: "contact", title: "Contact" }]
   });
   const reviewed = submitProjectForReview(draft).project;
@@ -34,17 +34,19 @@ function fixture() {
     tasks: [
       { id: "ui", dependsOn: [], inputs: ["approved-manifest"], outputs: ["home-ui", "contact-ui"] },
       { id: "web", dependsOn: ["ui"], inputs: ["home-ui", "contact-ui"], outputs: ["index-html", "app-js"] },
-      { id: "package", dependsOn: ["web"], inputs: ["index-html", "app-js"], outputs: ["web-package"] }
+      { id: "package", dependsOn: ["web"], inputs: ["index-html", "app-js"], outputs: ["web-package", "integration-config"] }
     ]
   });
   const fileBindings = [
     { path: "dist/index.html", artifactId: "index-html", taskId: "web", componentIds: ["home-page"] },
-    { path: "dist/app.js", artifactId: "app-js", taskId: "web", componentIds: ["home-page", "contact-form"] }
+    { path: "dist/app.js", artifactId: "app-js", taskId: "web", componentIds: ["home-page", "contact-form"] },
+    { path: "config/integrations.json", artifactId: "integration-config", taskId: "package", componentIds: ["contact-form"] }
   ];
   const mappings = [
     { category: "requirement", requirementIndex: 0, componentIds: ["home-page"], filePaths: ["dist/index.html"] },
     { category: "requirement", requirementIndex: 1, componentIds: ["contact-form"], filePaths: ["dist/app.js"] },
-    { category: "data", requirementIndex: 0, componentIds: ["contact-form"], filePaths: ["dist/app.js"] }
+    { category: "data", requirementIndex: 0, componentIds: ["contact-form"], filePaths: ["dist/app.js"] },
+    { category: "integration", requirementIndex: 0, componentIds: ["contact-form"], filePaths: ["config/integrations.json"] }
   ];
   return { project, buildPlan, fileBindings, mappings };
 }
