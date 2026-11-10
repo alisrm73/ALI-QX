@@ -180,12 +180,14 @@ export function analyze(program) {
       return;
     }
     if (cmd.id === "DATA.COUNT") {
-      if (node.args.length !== 1) {
+      if (node.args.length !== cmd.signature.parameters.length) {
         report("QX3013", "DATA.COUNT expects exactly one argument", node);
         node.args.forEach(a => expression(a, scope));
         return;
       }
-      constrain(expression(node.args[0], scope), ["LIST"], node.args[0], "QX3014", "DATA.COUNT expects LIST");
+      const parameter = cmd.signature.parameters[0];
+      const expectedTypes = parameter.types ?? [parameter.type];
+      constrain(expression(node.args[0], scope), expectedTypes, node.args[0], "QX3014", "DATA.COUNT expects LIST");
       return;
     }
     if (cmd.id === "UI.SHOW" || cmd.id === "UI.TEXT" || cmd.id === "UI.TREE") {
