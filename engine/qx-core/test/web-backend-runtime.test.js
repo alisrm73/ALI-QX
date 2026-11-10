@@ -144,6 +144,50 @@ test("browser runtime renders validated UI.TREE with safe DOM text nodes", () =>
   assert.equal(heading.children[0].textContent, "<script>literal</script>");
 });
 
+test("browser runtime renders the versioned static UI.DIVIDER component", () => {
+  const uiTree = JSON.stringify({
+    schema: "QX.UI.TREE",
+    version: "1.0",
+    children: [{
+      kind: "component",
+      id: "section",
+      type: "UI.CONTAINER",
+      version: "1.1.0",
+      props: {},
+      children: [{
+        kind: "component",
+        id: "divider",
+        type: "UI.DIVIDER",
+        version: "1.0.0",
+        props: {},
+        children: []
+      }]
+    }]
+  });
+  const project = buildWebProject("UI.TREE(" + JSON.stringify(uiTree) + ")", {
+    uiLock: createDefaultUILock()
+  });
+  const makeNode = tag => ({
+    tag, children: [], textContent: "", className: "",
+    append(...items) { this.children.push(...items); }
+  });
+  const nodes = new Map([["qx-output", makeNode("root")], ["qx-status", makeNode("status")]]);
+  const document = {
+    getElementById: id => nodes.get(id),
+    createElement: tag => makeNode(tag),
+    createTextNode: value => ({ nodeType: 3, textContent: value })
+  };
+  vm.runInNewContext(project.files["app.js"], { document, TextEncoder });
+  assert.equal(nodes.get("qx-status").textContent, "Execution completed");
+  const container = nodes.get("qx-output").children[0];
+  assert.equal(container.tag, "div");
+  const divider = container.children[0];
+  assert.equal(divider.tag, "hr");
+  assert.equal(divider.className, "qx-ui-divider");
+  assert.equal(divider.children.length, 0);
+  assert.match(project.files["styles.css"], /qx-ui-divider/);
+});
+
 test("browser build requires and validates the exact UI component lock", () => {
   assert.throws(() => buildWebProject('UI.TREE("{}")'), { code: "QX_WEB_UI_LOCK_REQUIRED" });
   const validLock = createDefaultUILock();
