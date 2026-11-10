@@ -149,8 +149,10 @@ test("QIR lowering independently rejects every PROCESS global write inside funct
     ].join("\n"));
     const semantic = analyze(ast);
     assert.equal(semantic.valid, false, command);
+    const validFunctionShape = analyze(parse("FUNCTION update()\\nEND"));
+    assert.equal(validFunctionShape.valid, true);
     assert.throws(
-      () => lowerToQIR(ast, { ...semantic, valid: true, diagnostics: [] }),
+      () => lowerToQIR(ast, { ...validFunctionShape, valid: true, diagnostics: [] }),
       error => error.name === "QIRDiagnostic" && error.code === "QIR_E_GLOBAL_WRITE",
       command
     );
