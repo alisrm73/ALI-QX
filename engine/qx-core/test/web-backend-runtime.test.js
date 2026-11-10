@@ -188,6 +188,68 @@ test("browser runtime renders the versioned static UI.DIVIDER component", () => 
   assert.match(project.files["styles.css"], /qx-ui-divider/);
 });
 
+test("browser runtime continues rendering projects pinned to the legacy registry snapshot", () => {
+  const legacyLock = {
+    schema: "QX.UI.COMPONENT-LOCK",
+    version: "1.0",
+    components: [
+      {
+        type: "UI.CONTAINER",
+        contractVersion: "1.0.0",
+        schemaDigest: "sha256:6693f6a569739a270be14209ba18ae467a101823eb83e12028619ad4e86dadab",
+        registryRelease: "ui-registry-1.0.0"
+      },
+      {
+        type: "UI.HEADING",
+        contractVersion: "1.0.0",
+        schemaDigest: "sha256:c793f48ad34d9d73ba62c96cc4b42c061ecf7f845c46dffd87c3ac35a5e7b239",
+        registryRelease: "ui-registry-1.0.0"
+      },
+      {
+        type: "UI.TEXT_BLOCK",
+        contractVersion: "1.0.0",
+        schemaDigest: "sha256:1e385953ec61605090646609296cc53d7ed91db49d43f9e6497051963515ddcc",
+        registryRelease: "ui-registry-1.0.0"
+      }
+    ]
+  };
+  const uiTree = JSON.stringify({
+    schema: "QX.UI.TREE",
+    version: "1.0",
+    children: [{
+      kind: "component",
+      id: "legacy-root",
+      type: "UI.CONTAINER",
+      version: "1.0.0",
+      props: {},
+      children: [{
+        kind: "component",
+        id: "legacy-heading",
+        type: "UI.HEADING",
+        version: "1.0.0",
+        props: { level: 1 },
+        children: [{ kind: "text", value: "Legacy project" }]
+      }]
+    }]
+  });
+  const project = buildWebProject("UI.TREE(" + JSON.stringify(uiTree) + ")", {
+    uiLock: legacyLock
+  });
+  const makeNode = tag => ({
+    tag, children: [], textContent: "", className: "",
+    append(...items) { this.children.push(...items); }
+  });
+  const nodes = new Map([["qx-output", makeNode("root")], ["qx-status", makeNode("status")]]);
+  const document = {
+    getElementById: id => nodes.get(id),
+    createElement: tag => makeNode(tag),
+    createTextNode: value => ({ nodeType: 3, textContent: value })
+  };
+  vm.runInNewContext(project.files["app.js"], { document, TextEncoder });
+  assert.equal(nodes.get("qx-status").textContent, "Execution completed");
+  assert.equal(nodes.get("qx-output").children[0].children[0].tag, "h1");
+});
+
 test("browser build requires and validates the exact UI component lock", () => {
   assert.throws(() => buildWebProject('UI.TREE("{}")'), { code: "QX_WEB_UI_LOCK_REQUIRED" });
   const validLock = createDefaultUILock();
