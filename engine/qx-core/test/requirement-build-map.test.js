@@ -159,7 +159,7 @@ test("rejects stale approvals, mismatched plans, and tampered maps", () => {
   });
   const revised = approvedProject("Revised traceability demo");
   assert.throws(() => assertRequirementBuildMapForProject(revised, state.buildPlan, map), {
-    code: "QX_PROJECT_APPROVAL_STALE"
+    code: "QX_PROJECT_BUILD_NOT_APPROVED"
   });
   assert.throws(() => assertRequirementBuildMapForProject(state.project, state.buildPlan, {
     ...map,
