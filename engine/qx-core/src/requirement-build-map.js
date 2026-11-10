@@ -272,17 +272,25 @@ export function assertRequirementBuildMapForProject(project, buildPlan, map) {
       "map.entries[" + index + "]");
     assertDenseArray(entry.taskIds, "map.entries[" + index + "].taskIds", 500);
   }
-  const rebuilt = createRequirementBuildMap(project, {
-    expectedProjectDigest: project.digest,
-    buildPlan,
-    fileBindings: map.fileBindings,
-    mappings: map.entries.map(entry => ({
-      category: entry.category,
-      requirementIndex: entry.requirementIndex,
-      componentIds: entry.componentIds,
-      filePaths: entry.filePaths
-    }))
-  });
+  let rebuilt;
+  try {
+    rebuilt = createRequirementBuildMap(project, {
+      expectedProjectDigest: project.digest,
+      buildPlan,
+      fileBindings: map.fileBindings,
+      mappings: map.entries.map(entry => ({
+        category: entry.category,
+        requirementIndex: entry.requirementIndex,
+        componentIds: entry.componentIds,
+        filePaths: entry.filePaths
+      }))
+    });
+  } catch (error) {
+    if (error instanceof QXProjectError) {
+      fail("QX_REQUIREMENT_BUILD_MAP_INVALID", "Requirement build map does not match its verified project and build-plan references");
+    }
+    throw error;
+  }
   if (map.digest !== rebuilt.digest || canonicalJSON(rebuilt) !== canonicalJSON(map)) {
     fail("QX_REQUIREMENT_BUILD_MAP_INVALID", "Requirement build map does not match its verified project and build-plan references");
   }
