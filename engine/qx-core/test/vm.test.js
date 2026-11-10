@@ -20,6 +20,20 @@ test("executes arithmetic, globals, function parameters, and returns", () => {
   assert.equal(runQIR(module).globals.total, 18);
 });
 
+test("uses DATA.SET_GLOBAL after local PROCESS calculations to update module state", () => {
+  const module = compile([
+    "DATA.CREATE(total, 1)",
+    "FUNCTION update(amount)",
+    "DATA.CREATE(nextTotal, total + amount)",
+    "PROCESS.ADD(nextTotal, 1)",
+    "PROCESS.CALCULATE(nextTotal, nextTotal * 2)",
+    "DATA.SET_GLOBAL(total, nextTotal)",
+    "END",
+    "update(3)"
+  ].join("\n"));
+  assert.equal(runQIR(module).globals.total, 10);
+});
+
 test("executes branches, loops, and short-circuit logic", () => {
   const module = compile([
     "DATA.CREATE(counter, 0)",
