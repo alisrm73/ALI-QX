@@ -296,3 +296,35 @@ test("QIR 1.3 retains DATA and UI extensions while requiring the integration sig
   call.type = "NUM";
   assert.ok(validateQIR(invalid).some(item => item.code === "QIR_E_COMMAND_SIGNATURE"));
 });
+
+test("lowers statement command contracts from the registry and rejects invalid arguments", () => {
+  const qir = compile([
+    "DATA.CREATE(items, [1])",
+    "DATA.COUNT(items)",
+    'UI.SHOW("visible")',
+    'UI.TEXT("hello")',
+    'UI.TREE("{}")'
+  ].join("\\n"));
+  const commands = qir.initializer.blocks.flatMap(block => block.instructions)
+    .filter(item => item.opcode === "COMMAND_CALL")
+    .map(item => item.operands.command);
+  assert.deepEqual(commands, ["DATA.COUNT", "UI.SHOW", "UI.TEXT", "UI.TREE"]);
+
+  const badCount = parse("DATA.CREATE(items, [1])\\nDATA.COUNT(1)");
+  assert.throws(
+    () => lowerToQIR(badCount, { valid: true, functions: [] }),
+    error => error.code === "QIR_E_COMMAND_ARGUMENT"
+  );
+
+  const badUiArity = parse("UI.SHOW(1, 2)");
+  assert.throws(
+    () => lowerToQIR(badUiArity, { valid: true, functions: [] }),
+    error => error.code === "QIR_E_BAD_COMMAND_ARGUMENTS"
+  );
+
+  const badUiType = parse("UI.TEXT(42)");
+  assert.throws(
+    () => lowerToQIR(badUiType, { valid: true, functions: [] }),
+    error => error.code === "QIR_E_COMMAND_ARGUMENT"
+  );
+});

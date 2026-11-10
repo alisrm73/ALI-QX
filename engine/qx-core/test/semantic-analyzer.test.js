@@ -303,3 +303,14 @@ test("validates the UI.TREE TXT JSON statement contract", () => {
   const wrongArity = check('UI.TREE("{}", "{}")');
   assert.ok(wrongArity.diagnostics.some(item => item.code === "QX3046"));
 });
+
+test("validates DATA.COUNT statement arity and registered LIST parameter type", () => {
+  const valid = check("DATA.CREATE(items, [1])\\nDATA.COUNT(items)");
+  assert.equal(valid.valid, true, JSON.stringify(valid.diagnostics));
+
+  const wrongType = check("DATA.COUNT(1)");
+  assert.ok(wrongType.diagnostics.some(item => item.code === "QX3014"));
+
+  const wrongArity = check("DATA.COUNT()");
+  assert.ok(wrongArity.diagnostics.some(item => item.code === "QX3013"));
+});
