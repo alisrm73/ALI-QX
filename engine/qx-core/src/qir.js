@@ -237,7 +237,7 @@ class FunctionBuilder {
           fail("QIR_E_GLOBAL_WRITE", "Use DATA.SET_GLOBAL inside functions", node);
         const value = this.lowerExpression(args[1]);
         const valueParameter = signature.parameters[1];
-        const acceptedTypes = valueParameter.types ?? (valueParameter.type ? [valueParameter.type] : null);
+        const acceptedTypes = valueParameter.types ?? (valueParameter.sameTypeAsTarget ? null : valueParameter.type ? [valueParameter.type] : null);
         const expectedType = valueParameter.sameTypeAsTarget ? variable.type : valueParameter.resultType;
         if ((acceptedTypes && !acceptedTypes.includes(value.type)) || (expectedType && value.type !== expectedType))
           fail("QIR_E_TYPE_MISMATCH", "Stored value type mismatch", node);
