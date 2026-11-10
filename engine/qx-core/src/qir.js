@@ -615,7 +615,7 @@ export function validateQIR(module) {
               types !== null && types.includes(valueTypes.get(args[index]))
             );
           const resultMatches = signature?.result?.kind === "value"
-            ? (!inst.result && !inst.type) || (Boolean(inst.result) && inst.type === signature.result.type)
+            ? (op.command === "DATA.COUNT" && !inst.result && !inst.type) || (Boolean(inst.result) && inst.type === signature.result.type)
             : Boolean(signature) && !inst.result && !inst.type;
           if (op.command === "DATA.COUNT") {
             if (!argumentsMatch || !resultMatches) report("QIR_E_COMMAND_SIGNATURE", "DATA.COUNT requires its registered signature", inst.source);
