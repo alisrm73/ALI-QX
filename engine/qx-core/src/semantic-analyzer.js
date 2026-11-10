@@ -196,12 +196,18 @@ export function analyze(program) {
         node.args.forEach(a => expression(a, scope));
         return;
       }
-      const value = expression(node.args[0], scope);
-      const parameter = cmd.signature.parameters[0];
-      const expectedTypes = parameter.types ?? [parameter.type];
-      if (cmd.id === "UI.SHOW") constrain(value, expectedTypes, node.args[0], "QX3061", "UI.SHOW value does not match its registered signature");
-      if (cmd.id === "UI.TEXT") constrain(value, expectedTypes, node.args[0], "QX3047", "UI.TEXT expects TXT");
-      if (cmd.id === "UI.TREE") constrain(value, expectedTypes, node.args[0], "QX3060", "UI.TREE expects a TXT JSON tree");
+      const diagnostics = {
+        "UI.SHOW": ["QX3061", "UI.SHOW argument does not match its registered signature"],
+        "UI.TEXT": ["QX3047", "UI.TEXT argument does not match its registered signature"],
+        "UI.TREE": ["QX3060", "UI.TREE argument does not match its registered signature"]
+      };
+      node.args.forEach((arg, index) => {
+        const parameter = cmd.signature.parameters[index];
+        const value = expression(arg, scope);
+        const acceptedTypes = parameter.types ?? (parameter.type ? [parameter.type] : null);
+        const [code, message] = diagnostics[cmd.id];
+        if (acceptedTypes) constrain(value, acceptedTypes, arg, code, message);
+      });
       return;
     }
     if (cmd.id === "INTEGRATION.REQUEST") {
