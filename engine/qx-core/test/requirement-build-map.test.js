@@ -149,6 +149,34 @@ test("rejects file ownership conflicts and artifacts not produced by their decla
   }), { code: "QX_REQUIREMENT_BUILD_MAP_ARTIFACT_MISMATCH" });
 });
 
+test("rejects accessor-backed input and workspace-reserved or null-byte paths", () => {
+  const state = fixture();
+  const accessorBinding = {
+    path: "dist/index.html",
+    artifactId: "index-html",
+    componentIds: ["home-page"]
+  };
+  Object.defineProperty(accessorBinding, "taskId", {
+    enumerable: true,
+    get() { throw new Error("accessor must not execute"); }
+  });
+  assert.throws(() => createRequirementBuildMap(state.project, {
+    expectedProjectDigest: state.project.digest,
+    buildPlan: state.buildPlan,
+    fileBindings: [accessorBinding, ...state.fileBindings.slice(1)],
+    mappings: state.mappings
+  }), { code: "QX_REQUIREMENT_BUILD_MAP_INVALID" });
+
+  for (const path of [".qx-workspace/private.json", "dist/unsafe\\0name.js"]) {
+    assert.throws(() => createRequirementBuildMap(state.project, {
+      expectedProjectDigest: state.project.digest,
+      buildPlan: state.buildPlan,
+      fileBindings: [{ ...state.fileBindings[0], path }, ...state.fileBindings.slice(1)],
+      mappings: state.mappings
+    }), { code: "QX_REQUIREMENT_BUILD_MAP_INVALID" });
+  }
+});
+
 test("rejects stale approvals, mismatched plans, and tampered maps", () => {
   const state = fixture();
   const map = createRequirementBuildMap(state.project, {

@@ -17,6 +17,36 @@ function isPlainObject(value) {
     !Array.isArray(value) && Object.getPrototypeOf(value) === Object.prototype;
 }
 
+function assertDataObject(value, allowedKeys, requiredKeys, field) {
+  if (!isPlainObject(value)) {
+    fail("QX_REQUIREMENT_BUILD_MAP_INVALID", field + " must be a plain data object");
+  }
+  const descriptors = Object.getOwnPropertyDescriptors(value);
+  for (const key of Reflect.ownKeys(descriptors)) {
+    const descriptor = descriptors[key];
+    if (typeof key !== "string" || !allowedKeys.includes(key) ||
+        !descriptor.enumerable || !Object.hasOwn(descriptor, "value")) {
+      fail("QX_REQUIREMENT_BUILD_MAP_INVALID", field + " contains an unsupported field or accessor");
+    }
+  }
+  if (requiredKeys.some(key => !Object.hasOwn(descriptors, key))) {
+    fail("QX_REQUIREMENT_BUILD_MAP_INVALID", field + " is missing a required field");
+  }
+}
+
+function assertDenseArray(value, field, maximum) {
+  if (!Array.isArray(value) || value.length > maximum) {
+    fail("QX_REQUIREMENT_BUILD_MAP_INVALID", field + " must be an array within the supported limit");
+  }
+  const descriptors = Object.getOwnPropertyDescriptors(value);
+  const keys = Reflect.ownKeys(descriptors).filter(key => key !== "length");
+  if (keys.length !== value.length || keys.some((key, index) =>
+    key !== String(index) || !descriptors[key].enumerable ||
+    !Object.hasOwn(descriptors[key], "value"))) {
+    fail("QX_REQUIREMENT_BUILD_MAP_INVALID", field + " must be a dense data array");
+  }
+}
+
 function canonicalJSON(value) {
   if (value === null || typeof value !== "object") return JSON.stringify(value);
   if (Array.isArray(value)) return "[" + value.map(canonicalJSON).join(",") + "]";
@@ -37,7 +67,8 @@ function freezeDeep(value) {
 }
 
 function normalizeIds(value, field, maximum = MAX_COMPONENTS) {
-  if (!Array.isArray(value) || value.length === 0 || value.length > maximum) {
+  assertDenseArray(value, field, maximum);
+  if (value.length === 0) {
     fail("QX_REQUIREMENT_BUILD_MAP_INVALID", field + " must contain between 1 and " + maximum + " identifiers");
   }
   const result = value.map((item, index) => {
@@ -53,7 +84,8 @@ function normalizeIds(value, field, maximum = MAX_COMPONENTS) {
 }
 
 function normalizePaths(value, field) {
-  if (!Array.isArray(value) || value.length === 0 || value.length > 100) {
+  assertDenseArray(value, field, 100);
+  if (value.length === 0) {
     fail("QX_REQUIREMENT_BUILD_MAP_INVALID", field + " must contain between 1 and 100 paths");
   }
   const result = value.map(path => {
@@ -96,17 +128,14 @@ function contentOf(map) {
 }
 
 function normalizeFileBindings(buildPlan, value) {
-  if (!Array.isArray(value) || value.length > MAX_FILE_BINDINGS) {
-    fail("QX_REQUIREMENT_BUILD_MAP_INVALID", "fileBindings must be an array within the supported limit");
-  }
+  assertDenseArray(value, "fileBindings", MAX_FILE_BINDINGS);
   const tasks = new Map(buildPlan.tasks.map(task => [task.id, task]));
   const paths = new Set();
   const artifacts = new Set();
   return value.map((raw, index) => {
-    if (!isPlainObject(raw) ||
-        Object.keys(raw).some(key => !["path", "artifactId", "taskId", "componentIds"].includes(key)) ||
-        !["path", "artifactId", "taskId", "componentIds"].every(key => Object.hasOwn(raw, key)) ||
-        !safeProjectPath(raw.path) ||
+    assertDataObject(raw, ["path", "artifactId", "taskId", "componentIds"],
+      ["path", "artifactId", "taskId", "componentIds"], "fileBindings[" + index + "]");
+    if (!safeProjectPath(raw.path) ||
         typeof raw.artifactId !== "string" || !ID_PATTERN.test(raw.artifactId) ||
         typeof raw.taskId !== "string" || !ID_PATTERN.test(raw.taskId)) {
       fail("QX_REQUIREMENT_BUILD_MAP_INVALID", "fileBindings[" + index + "] must declare a safe path, artifact, producer task, and components");
@@ -147,19 +176,16 @@ function dependencyClosure(plan, producerTaskIds) {
 }
 
 function normalizeMappings(project, buildPlan, mappings, fileBindings) {
-  if (!Array.isArray(mappings) || mappings.length > MAX_MAPPINGS) {
-    fail("QX_REQUIREMENT_BUILD_MAP_INVALID", "mappings must be an array within the supported limit");
-  }
+  assertDenseArray(mappings, "mappings", MAX_MAPPINGS);
   const required = requirementsOf(project);
   const expected = new Map(required.map(item => [item.category + ":" + item.requirementIndex, item]));
   const bindings = new Map(fileBindings.map(item => [item.path, item]));
   const seen = new Set();
 
   const entries = mappings.map((raw, index) => {
-    if (!isPlainObject(raw) ||
-        Object.keys(raw).some(key => !["category", "requirementIndex", "componentIds", "filePaths"].includes(key)) ||
-        !["category", "requirementIndex", "componentIds", "filePaths"].every(key => Object.hasOwn(raw, key)) ||
-        !CATEGORIES.includes(raw.category) ||
+    assertDataObject(raw, ["category", "requirementIndex", "componentIds", "filePaths"],
+      ["category", "requirementIndex", "componentIds", "filePaths"], "mappings[" + index + "]");
+    if (!CATEGORIES.includes(raw.category) ||
         !Number.isSafeInteger(raw.requirementIndex) || raw.requirementIndex < 0) {
       fail("QX_REQUIREMENT_BUILD_MAP_INVALID", "mappings[" + index + "] must identify a valid project requirement");
     }
@@ -223,16 +249,27 @@ export function createRequirementBuildMap(project, {
 }
 
 export function assertRequirementBuildMapForProject(project, buildPlan, map) {
-  assertProjectApproved(project, { expectedDigest: map?.projectDigest });
+  assertDataObject(map,
+    ["schemaVersion", "projectId", "projectRevision", "projectDigest", "buildPlanDigest", "fileBindings", "entries", "digest"],
+    ["schemaVersion", "projectId", "projectRevision", "projectDigest", "buildPlanDigest", "fileBindings", "entries", "digest"],
+    "map");
+  assertProjectApproved(project, { expectedDigest: map.projectDigest });
   assertBuildPlanForProject(project, buildPlan);
-  if (!isPlainObject(map) || map.schemaVersion !== "1.0.0" ||
+  if (map.schemaVersion !== "1.0.0" ||
       map.projectId !== project.projectId ||
       map.projectRevision !== project.revision ||
       map.projectDigest !== project.digest ||
       map.buildPlanDigest !== buildPlan.digest ||
-      typeof map.digest !== "string" ||
-      map.digest !== digest(contentOf(map))) {
-    fail("QX_REQUIREMENT_BUILD_MAP_INVALID", "Requirement build map is malformed, stale, or has an invalid digest");
+      typeof map.digest !== "string") {
+    fail("QX_REQUIREMENT_BUILD_MAP_INVALID", "Requirement build map is malformed or stale");
+  }
+  assertDenseArray(map.entries, "map.entries", MAX_MAPPINGS);
+  for (const [index, entry] of map.entries.entries()) {
+    assertDataObject(entry,
+      ["category", "requirementIndex", "requirement", "componentIds", "filePaths", "taskIds"],
+      ["category", "requirementIndex", "requirement", "componentIds", "filePaths", "taskIds"],
+      "map.entries[" + index + "]");
+    assertDenseArray(entry.taskIds, "map.entries[" + index + "].taskIds", 500);
   }
   const rebuilt = createRequirementBuildMap(project, {
     expectedProjectDigest: project.digest,
@@ -245,7 +282,7 @@ export function assertRequirementBuildMapForProject(project, buildPlan, map) {
       filePaths: entry.filePaths
     }))
   });
-  if (canonicalJSON(rebuilt) !== canonicalJSON(map)) {
+  if (map.digest !== rebuilt.digest || canonicalJSON(rebuilt) !== canonicalJSON(map)) {
     fail("QX_REQUIREMENT_BUILD_MAP_INVALID", "Requirement build map does not match its verified project and build-plan references");
   }
   return map;
