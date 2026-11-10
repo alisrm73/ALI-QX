@@ -193,4 +193,19 @@ test("rejects stale approvals, mismatched plans, and tampered maps", () => {
     ...map,
     entries: map.entries.slice(1)
   }), { code: "QX_REQUIREMENT_BUILD_MAP_INVALID" });
+
+  const nestedAccessor = {};
+  Object.defineProperty(nestedAccessor, "value", {
+    enumerable: true,
+    get() { throw new Error("nested accessor must not execute"); }
+  });
+  const malformed = {
+    ...map,
+    entries: map.entries.map((entry, index) => index === 0
+      ? { ...entry, requirement: nestedAccessor }
+      : entry)
+  };
+  assert.throws(() => assertRequirementBuildMapForProject(state.project, state.buildPlan, malformed), {
+    code: "QX_REQUIREMENT_BUILD_MAP_INVALID"
+  });
 });

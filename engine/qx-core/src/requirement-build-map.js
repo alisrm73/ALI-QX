@@ -270,7 +270,12 @@ export function assertRequirementBuildMapForProject(project, buildPlan, map) {
       ["category", "requirementIndex", "requirement", "componentIds", "filePaths", "taskIds"],
       ["category", "requirementIndex", "requirement", "componentIds", "filePaths", "taskIds"],
       "map.entries[" + index + "]");
-    assertDenseArray(entry.taskIds, "map.entries[" + index + "].taskIds", 500);
+    if (!CATEGORIES.includes(entry.category) ||
+        !Number.isSafeInteger(entry.requirementIndex) || entry.requirementIndex < 0 ||
+        typeof entry.requirement !== "string") {
+      fail("QX_REQUIREMENT_BUILD_MAP_INVALID", "map.entries[" + index + "] contains invalid requirement identity data");
+    }
+    normalizeIds(entry.taskIds, "map.entries[" + index + "].taskIds", 500);
   }
   let rebuilt;
   try {
