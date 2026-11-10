@@ -240,14 +240,18 @@ class FunctionBuilder {
         return;
       }
       case "DATA.COUNT": {
-        if (args.length !== command.signature.parameters.length) fail("QIR_E_BAD_COMMAND_ARGUMENTS", "DATA.COUNT expects one argument", node);
+        const signature = command.signature;
+        if (args.length !== signature.parameters.length) fail("QIR_E_BAD_COMMAND_ARGUMENTS", "DATA.COUNT expects one argument", node);
         const value = this.lowerExpression(args[0]);
+        const parameter = signature.parameters[0];
+        const acceptedTypes = parameter.types ?? (parameter.type ? [parameter.type] : null);
+        if (acceptedTypes && !acceptedTypes.includes(value.type)) fail("QIR_E_COMMAND_ARGUMENT", "DATA.COUNT argument does not match its registered type", args[0]);
         this.emit("COMMAND_CALL", { command: "DATA.COUNT", arguments: [value.value] }, null, null, node); return;
       }
       case "UI.SHOW":
       case "UI.TEXT":
       case "UI.TREE": {
-        if (args.length !== 1) fail("QIR_E_BAD_COMMAND_ARGUMENTS", command.id + " expects one argument", node);
+        if (args.length !== command.signature.parameters.length) fail("QIR_E_BAD_COMMAND_ARGUMENTS", command.id + " expects one argument", node);
         const value = this.lowerExpression(args[0]);
         const parameter = command.signature.parameters[0];
         const expectedTypes = parameter.types ?? (parameter.type ? [parameter.type] : null);
