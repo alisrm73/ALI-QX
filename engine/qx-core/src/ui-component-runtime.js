@@ -10,7 +10,8 @@ export const UI_TREE_LIMITS = Object.freeze({
   maxPropertyBytes: 4096
 });
 
-const REGISTRY_RELEASE = "ui-registry-1.0.0";
+const LEGACY_REGISTRY_RELEASE = "ui-registry-1.0.0";
+const REGISTRY_RELEASE = "ui-registry-1.1.0";
 const TREE_SCHEMA = "QX.UI.TREE";
 const LOCK_SCHEMA = "QX.UI.COMPONENT-LOCK";
 
@@ -52,8 +53,35 @@ const definitions = [
   }
 ];
 
+const legacyDefinitions = [
+  {
+    type: "UI.CONTAINER",
+    contractVersion: "1.0.0",
+    renderer: "container",
+    props: {},
+    children: { text: true, components: ["UI.CONTAINER", "UI.TEXT_BLOCK", "UI.HEADING"] }
+  },
+  {
+    type: "UI.TEXT_BLOCK",
+    contractVersion: "1.0.0",
+    renderer: "text-block",
+    props: {},
+    children: { text: true, components: [] }
+  },
+  {
+    type: "UI.HEADING",
+    contractVersion: "1.0.0",
+    renderer: "heading",
+    props: { level: { type: "number", required: true, integer: true, minimum: 1, maximum: 6 } },
+    children: { text: true, components: [] }
+  }
+];
+
 const registry = createUIComponentRegistry({
-  snapshots: [{ registryRelease: REGISTRY_RELEASE, components: definitions }]
+  snapshots: [
+    { registryRelease: LEGACY_REGISTRY_RELEASE, components: legacyDefinitions },
+    { registryRelease: REGISTRY_RELEASE, components: definitions }
+  ]
 });
 
 export class QXUIError extends Error {
