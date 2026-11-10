@@ -244,3 +244,20 @@ test("enforces the aggregate serialized report size limit", async () => {
     })
   }), { code: "QX_IDEA_DETAILS_INVALID_RESULT" });
 });
+
+
+test("rejects duplicate references inside one conflict", async () => {
+  const idea = "Visitors can read community news.";
+  await assert.rejects(analyzeProjectIdeaDetails({
+    idea,
+    analyze: async () => validDetails({
+      conflicts: [{
+        id: "conflict-1",
+        description: "A conflicting interpretation needs review.",
+        relatedItemIds: ["read-news", "read-news"],
+        question: "Which interpretation is intended?",
+        evidence: ["Visitors can read community news"]
+      }]
+    })
+  }), { code: "QX_IDEA_DETAILS_INVALID_RESULT" });
+});
