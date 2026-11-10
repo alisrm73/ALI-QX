@@ -227,7 +227,7 @@ class FunctionBuilder {
         if ((command.id === "DATA.SET" || command.id === "PROCESS.ADD") && variable.storage === "global" && this.descriptor.kind !== "module_initializer")
           fail("QIR_E_GLOBAL_WRITE", "Use DATA.SET_GLOBAL inside functions", node);
         const value = this.lowerExpression(args[1]);
-        const expected = command.id === "PROCESS.COMPARE" ? "BOOL" : command.id === "DATA.SET" ? variable.type : "NUM";
+        const expected = command.id.startsWith("PROCESS.") ? command.signature.parameters[1].resultType : variable.type;
         if (value.type !== expected || variable.type !== expected) fail("QIR_E_TYPE_MISMATCH", "Stored value type mismatch", node);
         if (command.id === "PROCESS.ADD") {
           const current = this.value(); this.emit("LOAD", { variable: variable.id }, "NUM", current, args[0]);
@@ -237,7 +237,7 @@ class FunctionBuilder {
         return;
       }
       case "DATA.COUNT": {
-        if (args.length !== 1) fail("QIR_E_BAD_COMMAND_ARGUMENTS", "DATA.COUNT expects one argument", node);
+        if (args.length !== command.signature.parameters.length) fail("QIR_E_BAD_COMMAND_ARGUMENTS", "DATA.COUNT expects one argument", node);
         const value = this.lowerExpression(args[0]);
         this.emit("COMMAND_CALL", { command: "DATA.COUNT", arguments: [value.value] }, null, null, node); return;
       }
@@ -246,7 +246,9 @@ class FunctionBuilder {
       case "UI.TREE": {
         if (args.length !== 1) fail("QIR_E_BAD_COMMAND_ARGUMENTS", command.id + " expects one argument", node);
         const value = this.lowerExpression(args[0]);
-        const expected = command.id === "UI.TEXT" || command.id === "UI.TREE" ? "TXT" : null;
+        const parameter = command.signature.parameters[0];
+        const expectedTypes = parameter.types ?? (parameter.type ? [parameter.type] : null);
+        const expected = expectedTypes?.length === 1 ? expectedTypes[0] : null;
         if (expected && value.type !== expected) fail("QIR_E_COMMAND_ARGUMENT", command.id + " expects TXT", args[0]);
         this.emit("COMMAND_CALL", { command: command.id, arguments: [value.value] }, null, null, node);
         return;
@@ -599,22 +601,36 @@ export function validateQIR(module) {
         }
         if (inst.opcode === "COMMAND_CALL") {
           const args = op.arguments ?? [];
+          const [domain, name] = (op.command ?? "").split(".");
+          const command = resolveCommand(domain, name);
+          const signature = command?.signature;
+          const parameterTypes = signature?.parameters.map(parameter =>
+            parameter.types ?? (parameter.type ? [parameter.type] : null)
+          ) ?? [];
+          const argumentsMatch = Boolean(signature) &&
+            args.length === signature.parameters.length &&
+            parameterTypes.every((types, index) =>
+              types !== null && types.includes(valueTypes.get(args[index]))
+            );
+          const resultMatches = signature?.result?.kind === "value"
+            ? Boolean(inst.result) && inst.type === signature.result.type
+            : Boolean(signature) && !inst.result && !inst.type;
           if (op.command === "DATA.COUNT") {
-            if (args.length !== 1 || valueTypes.get(args[0]) !== "LIST" || (inst.result && inst.type !== "NUM") || (!inst.result && inst.type)) report("QIR_E_COMMAND_SIGNATURE", "DATA.COUNT requires one LIST and returns NUM", inst.source);
+            if (!argumentsMatch || !resultMatches) report("QIR_E_COMMAND_SIGNATURE", "DATA.COUNT requires its registered signature", inst.source);
           } else if (op.command === "DATA.ADD") {
-            if (!["1.1", "1.2", "1.3", "1.4"].includes(module.version) || args.length !== 2 || valueTypes.get(args[0]) !== "LIST" || !VALUE_TYPES.has(valueTypes.get(args[1])) || !inst.result || inst.type !== "LIST") report("QIR_E_COMMAND_SIGNATURE", "DATA.ADD requires LIST and a value, and returns LIST in QIR 1.1", inst.source);
+            if (!["1.1", "1.2", "1.3", "1.4"].includes(module.version) || !argumentsMatch || !resultMatches) report("QIR_E_COMMAND_SIGNATURE", "DATA.ADD requires its registered signature in QIR 1.1 or later", inst.source);
           } else if (op.command === "DATA.REMOVE") {
-            if (!["1.1", "1.2", "1.3", "1.4"].includes(module.version) || args.length !== 2 || valueTypes.get(args[0]) !== "LIST" || valueTypes.get(args[1]) !== "NUM" || !inst.result || inst.type !== "LIST") report("QIR_E_COMMAND_SIGNATURE", "DATA.REMOVE requires LIST and NUM index, and returns LIST in QIR 1.1 or later", inst.source);
+            if (!["1.1", "1.2", "1.3", "1.4"].includes(module.version) || !argumentsMatch || !resultMatches) report("QIR_E_COMMAND_SIGNATURE", "DATA.REMOVE requires its registered signature in QIR 1.1 or later", inst.source);
           } else if (op.command === "UI.SHOW") {
-            if (!["1.2", "1.3", "1.4"].includes(module.version) || args.length !== 1 || !VALUE_TYPES.has(valueTypes.get(args[0])) || inst.result || inst.type) report("QIR_E_COMMAND_SIGNATURE", "UI.SHOW requires one QX value and has no result in QIR 1.2", inst.source);
+            if (!["1.2", "1.3", "1.4"].includes(module.version) || !argumentsMatch || !resultMatches) report("QIR_E_COMMAND_SIGNATURE", "UI.SHOW requires its registered signature in QIR 1.2 or later", inst.source);
           } else if (op.command === "UI.TEXT") {
-            if (!["1.2", "1.3", "1.4"].includes(module.version) || args.length !== 1 || valueTypes.get(args[0]) !== "TXT" || inst.result || inst.type) report("QIR_E_COMMAND_SIGNATURE", "UI.TEXT requires one TXT and has no result in QIR 1.2", inst.source);
+            if (!["1.2", "1.3", "1.4"].includes(module.version) || !argumentsMatch || !resultMatches) report("QIR_E_COMMAND_SIGNATURE", "UI.TEXT requires its registered signature in QIR 1.2 or later", inst.source);
           } else if (op.command === "UI.TREE") {
-            if (module.version !== "1.4" || args.length !== 1 || valueTypes.get(args[0]) !== "TXT" || inst.result || inst.type)
-              report("QIR_E_COMMAND_SIGNATURE", "UI.TREE requires one TXT JSON tree and has no result in QIR 1.4", inst.source);
+            if (module.version !== "1.4" || !argumentsMatch || !resultMatches)
+              report("QIR_E_COMMAND_SIGNATURE", "UI.TREE requires its registered signature in QIR 1.4", inst.source);
           } else if (op.command === "INTEGRATION.REQUEST") {
-            if (!["1.3", "1.4"].includes(module.version) || args.length !== 3 || args.some(id => valueTypes.get(id) !== "TXT") || !inst.result || inst.type !== "TXT")
-              report("QIR_E_COMMAND_SIGNATURE", "INTEGRATION.REQUEST requires three TXT arguments and returns TXT in QIR 1.3", inst.source);
+            if (!["1.3", "1.4"].includes(module.version) || !argumentsMatch || !resultMatches)
+              report("QIR_E_COMMAND_SIGNATURE", "INTEGRATION.REQUEST requires its registered signature in QIR 1.3 or later", inst.source);
           } else {
             report("QIR_E_COMMAND_NOT_ALLOWED", "Command is not allowed in QIR", inst.source);
           }
