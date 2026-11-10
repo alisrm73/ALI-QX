@@ -77,3 +77,12 @@ export {
   analyzeProjectIdeaReviewPackage,
   QXIdeaReviewPackageError
 } from "./idea-review-package.js";
+
+export {
+  createProjectIdeaReviewSession,
+  answerProjectIdeaReviewQuestion,
+  decideProjectIdeaReviewItem,
+  completeProjectIdeaReviewSession,
+  reanalyzeProjectIdeaReviewSession,
+  QXIdeaReviewSessionError
+} from "./idea-review-session.js";
