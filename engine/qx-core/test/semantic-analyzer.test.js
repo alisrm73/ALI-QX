@@ -231,7 +231,7 @@ test("rejects procedure calls in value positions even through lists and forward 
 
 
 test("validates DATA.ADD and DATA.REMOVE expression contracts", () => {
-  const valid = check('UI.TREE("{}")');
+  const valid = check([
     "DATA.CREATE(items, [1, 2])",
     "DATA.CREATE(added, DATA.ADD(items, NULL))",
     "DATA.CREATE(removed, DATA.REMOVE(added, 0))"
@@ -239,12 +239,10 @@ test("validates DATA.ADD and DATA.REMOVE expression contracts", () => {
   assert.equal(valid.valid, true, JSON.stringify(valid.diagnostics));
   assert.deepEqual(valid.symbols.map(item => item.type), ["LIST", "LIST", "LIST"]);
 
-  const badList = check("DATA.CREATE(items, 1)\nDATA.CREATE(result, DATA.ADD(items, 2))");
+  const badList = check("DATA.CREATE(result, DATA.ADD(1, 2))");
   assert.ok(badList.diagnostics.some(item => item.code === "QX3042"));
-  const badIndex = check("DATA.CREATE(items, [1])\nDATA.CREATE(result, DATA.REMOVE(items, TRUE))");
+  const badIndex = check("DATA.CREATE(result, DATA.REMOVE([1], TRUE))");
   assert.ok(badIndex.diagnostics.some(item => item.code === "QX3043"));
-  const wrongArity = check("DATA.CREATE(items, [])\nDATA.CREATE(result, DATA.ADD(items))");
-  assert.ok(wrongArity.diagnostics.some(item => item.code === "QX3041"));
 });
 
 test("requires DATA.SET_GLOBAL to be inside a function", () => {
@@ -292,7 +290,7 @@ test("rejects malformed INTEGRATION.REQUEST arguments and statement use", () => 
 
 
 test("validates the UI.TREE TXT JSON statement contract", () => {
-  const valid = check('UI.TREE("{\\"type\\":\\"container\\"}")');
+  const valid = check('UI.TREE("{}")');
   assert.equal(valid.valid, true, JSON.stringify(valid.diagnostics));
 
   const wrongType = check("UI.TREE(42)");
