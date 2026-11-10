@@ -151,8 +151,7 @@ test("QIR lowering independently rejects every PROCESS global write inside funct
     assert.equal(semantic.valid, false, command);
     assert.throws(
       () => lowerToQIR(ast, { ...semantic, valid: true, diagnostics: [] }),
-      error => error.name === "QIRValidationError" &&
-        error.diagnostics.some(item => item.code === "QIR_E_GLOBAL_WRITE"),
+      error => error.name === "QIRDiagnostic" && error.code === "QIR_E_GLOBAL_WRITE",
       command
     );
   }
