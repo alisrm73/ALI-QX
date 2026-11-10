@@ -124,7 +124,7 @@ function validateResult(value, idea) {
       steps: textList(item.steps, field + ".steps", { minimum: 1, maximum: 30 }),
       outcome: text(item.outcome, field + ".outcome"),
       certainty: certainty(item.certainty, field + ".certainty"),
-      evidence: evidence(item.evidence, field + ".evidence")
+      evidence: evidence(item.evidence, field + ".evidence", idea)
     };
   });
   uniqueIds(userFlows, "userFlows");
@@ -136,7 +136,7 @@ function validateResult(value, idea) {
       id: itemId(item.id, field + ".id"),
       statement: text(item.statement, field + ".statement"),
       certainty: certainty(item.certainty, field + ".certainty"),
-      evidence: evidence(item.evidence, field + ".evidence")
+      evidence: evidence(item.evidence, field + ".evidence", idea)
     };
   });
   uniqueIds(businessRules, "businessRules");
@@ -164,7 +164,7 @@ function validateResult(value, idea) {
       relatedItemIds: textList(item.relatedItemIds, field + ".relatedItemIds", { minimum: 1, maximum: 20 })
         .map((id, i) => itemId(id, field + ".relatedItemIds[" + i + "]")),
       question: text(item.question, field + ".question"),
-      evidence: evidence(item.evidence, field + ".evidence")
+      evidence: evidence(item.evidence, field + ".evidence", idea)
     };
   });
   uniqueIds(conflicts, "conflicts");
