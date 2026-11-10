@@ -34,21 +34,48 @@ function digest(value) {
   return "sha256:" + createHash("sha256").update(value, "utf8").digest("hex");
 }
 
-function cloneJSON(value) {
-  let serialized;
-  try {
-    serialized = JSON.stringify(value);
-  } catch {
-    fail("QX_IDEA_REVIEW_SESSION_INVALID_PACKAGE", "Review package must be serializable JSON data");
+function cloneJSON(value, seen = new WeakSet()) {
+  if (value === null || typeof value === "string" || typeof value === "boolean") return value;
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) fail("QX_IDEA_REVIEW_SESSION_INVALID_PACKAGE", "Review package numbers must be finite");
+    return value;
   }
-  if (typeof serialized !== "string") {
-    fail("QX_IDEA_REVIEW_SESSION_INVALID_PACKAGE", "Review package must be serializable JSON data");
+  if (typeof value !== "object" || seen.has(value)) {
+    fail("QX_IDEA_REVIEW_SESSION_INVALID_PACKAGE", "Review package must be acyclic JSON data");
   }
-  try {
-    return JSON.parse(serialized);
-  } catch {
-    fail("QX_IDEA_REVIEW_SESSION_INVALID_PACKAGE", "Review package must be valid JSON data");
+  seen.add(value);
+  if (Array.isArray(value)) {
+    const descriptors = Object.getOwnPropertyDescriptors(value);
+    const keys = Reflect.ownKeys(descriptors).filter(key => key !== "length");
+    if (keys.length !== value.length || keys.some((key, index) =>
+      key !== String(index) || !descriptors[key].enumerable ||
+      !Object.hasOwn(descriptors[key], "value"))) {
+      fail("QX_IDEA_REVIEW_SESSION_INVALID_PACKAGE", "Review package arrays must be dense data arrays");
+    }
+    const result = value.map(item => cloneJSON(item, seen));
+    seen.delete(value);
+    return result;
   }
+  if (!isPlainObject(value)) {
+    fail("QX_IDEA_REVIEW_SESSION_INVALID_PACKAGE", "Review package objects must be plain objects");
+  }
+  const descriptors = Object.getOwnPropertyDescriptors(value);
+  const result = {};
+  for (const key of Reflect.ownKeys(descriptors)) {
+    const descriptor = descriptors[key];
+    if (typeof key !== "string" || !descriptor.enumerable ||
+        !Object.hasOwn(descriptor, "value")) {
+      fail("QX_IDEA_REVIEW_SESSION_INVALID_PACKAGE", "Review package objects must contain enumerable string data properties");
+    }
+    Object.defineProperty(result, key, {
+      value: cloneJSON(descriptor.value, seen),
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+  }
+  seen.delete(value);
+  return result;
 }
 
 function freezeDeep(value) {
@@ -63,11 +90,22 @@ function validateReviewPackage(value) {
   if (!isPlainObject(value) || value.schemaVersion !== "1.0.0" ||
       typeof value.ideaDigest !== "string" || !DIGEST_PATTERN.test(value.ideaDigest) ||
       !isPlainObject(value.project) || typeof value.project.projectId !== "string" ||
-      !isPlainObject(value.details) || !isPlainObject(value.consistency) ||
+      value.project.approval !== null ||
+      !isPlainObject(value.details) ||
+      !Array.isArray(value.details.functions) ||
+      !Array.isArray(value.details.userFlows) ||
+      !Array.isArray(value.details.businessRules) ||
+      !Array.isArray(value.details.conflicts) ||
+      !Array.isArray(value.details.openQuestions) ||
+      !isPlainObject(value.details.design) ||
+      !Array.isArray(value.diagnostics) ||
+      !isPlainObject(value.consistency) ||
+      value.consistency.comparisonMethod !== "normalized_text_overlap_only" ||
       !Array.isArray(value.consistency.openQuestions) ||
       !Array.isArray(value.consistency.unmatchedProjectRequirements) ||
       !Array.isArray(value.consistency.unmatchedDetailedItems) ||
-      !Array.isArray(value.consistency.conflicts)) {
+      !Array.isArray(value.consistency.conflicts) ||
+      value.status !== value.project.status) {
     fail("QX_IDEA_REVIEW_SESSION_INVALID_PACKAGE", "A valid unified idea review package is required");
   }
   return cloneJSON(value);
@@ -143,8 +181,36 @@ function validateSession(session) {
       !Array.isArray(session.questions) || !Array.isArray(session.items) ||
       !Array.isArray(session.history) || !isPlainObject(session.reviewPackage) ||
       session.reviewPackage.ideaDigest !== session.ideaDigest ||
+      session.reviewPackage.project?.approval !== null ||
       session.approval !== null || session.buildAuthorized !== false) {
     fail("QX_IDEA_REVIEW_SESSION_INVALID_SESSION", "Review session is malformed or violates its safety contract");
+  }
+  const questionIds = new Set();
+  for (const question of session.questions) {
+    if (!isPlainObject(question) || typeof question.id !== "string" ||
+        !["project", "details"].includes(question.source) ||
+        typeof question.question !== "string" ||
+        !(question.answer === null || typeof question.answer === "string") ||
+        questionIds.has(question.id)) {
+      fail("QX_IDEA_REVIEW_SESSION_INVALID_SESSION", "Review session questions are malformed");
+    }
+    questionIds.add(question.id);
+  }
+  const itemIds = new Set();
+  for (const item of session.items) {
+    if (!isPlainObject(item) || typeof item.id !== "string" ||
+        !["project_requirement", "detailed_item", "conflict"].includes(item.type) ||
+        typeof item.label !== "string" ||
+        !(item.decision === null || DECISIONS.includes(item.decision)) ||
+        typeof item.note !== "string" || itemIds.has(item.id)) {
+      fail("QX_IDEA_REVIEW_SESSION_INVALID_SESSION", "Review session items are malformed");
+    }
+    itemIds.add(item.id);
+  }
+  if (session.status === "review_completed" &&
+      (session.questions.some(question => question.answer === null) ||
+       session.items.some(item => item.decision === null))) {
+    fail("QX_IDEA_REVIEW_SESSION_INVALID_SESSION", "A completed review session cannot contain unanswered items");
   }
 }
 
