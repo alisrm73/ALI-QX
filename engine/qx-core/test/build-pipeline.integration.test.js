@@ -4,7 +4,6 @@ import {
   createProjectDraft,
   submitProjectForReview,
   approveProjectDraft,
-  reviseProjectDraft,
   createBuildPlan,
   assertBuildPlanForProject,
   createRequirementBuildMap,
@@ -168,15 +167,9 @@ test("blocks the pipeline when even one approved requirement is not mapped", () 
   }), { code: "QX_REQUIREMENT_BUILD_MAP_INCOMPLETE" });
 });
 
-test("rejects a plan and downstream artifacts after the approved project revision changes", () => {
+test("rejects a plan and downstream artifacts after approved project content changes", () => {
   const state = pipelineFixture();
-  const revisedDraft = reviseProjectDraft(state.project, {
-    title: "Revised integrated build pipeline"
-  });
-  const revisedReview = submitProjectForReview(revisedDraft).project;
-  const revisedProject = approveProjectDraft(revisedReview, {
-    approvedDigest: revisedReview.digest
-  });
+  const revisedProject = approvedProject("Revised integrated build pipeline");
 
   assert.notEqual(revisedProject.digest, state.project.digest);
   assert.throws(
