@@ -70,3 +70,5 @@ export {
 } from "./requirement-coverage.js";
 
 export { analyzeProjectIdea, QXIdeaAnalysisError } from "./idea-analyzer.js";
+
+export { analyzeProjectIdeaDetails, QXIdeaDetailsError } from "./idea-analysis-details.js";
