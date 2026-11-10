@@ -230,7 +230,8 @@ class FunctionBuilder {
           fail("QIR_E_GLOBAL_WRITE", "Use DATA.SET_GLOBAL inside functions", node);
         const value = this.lowerExpression(args[1]);
         const expected = command.id.startsWith("PROCESS.") ? command.signature.parameters[1].resultType : variable.type;
-        if (value.type !== expected || variable.type !== expected) fail("QIR_E_TYPE_MISMATCH", "Stored value type mismatch", node);
+        const expectedTarget = command.id.startsWith("PROCESS.") ? command.signature.parameters[0].variableType : variable.type;
+        if (value.type !== expected || variable.type !== expectedTarget) fail("QIR_E_TYPE_MISMATCH", "Stored value type mismatch", node);
         if (command.id === "PROCESS.ADD") {
           const current = this.value(); this.emit("LOAD", { variable: variable.id }, "NUM", current, args[0]);
           const sum = this.value(); this.emit("BINARY", { operator: "+", left: current, right: value.value }, "NUM", sum, node);
@@ -251,7 +252,7 @@ class FunctionBuilder {
         const parameter = command.signature.parameters[0];
         const expectedTypes = parameter.types ?? (parameter.type ? [parameter.type] : null);
         const expected = expectedTypes?.length === 1 ? expectedTypes[0] : null;
-        if (expected && value.type !== expected) fail("QIR_E_COMMAND_ARGUMENT", command.id + " expects TXT", args[0]);
+        if (expectedTypes && !expectedTypes.includes(value.type)) fail("QIR_E_COMMAND_ARGUMENT", command.id + " argument does not match its registered type", args[0]);
         this.emit("COMMAND_CALL", { command: command.id, arguments: [value.value] }, null, null, node);
         return;
       }
