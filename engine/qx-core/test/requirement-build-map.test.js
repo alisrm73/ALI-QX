@@ -167,7 +167,7 @@ test("rejects accessor-backed input and workspace-reserved or null-byte paths", 
     mappings: state.mappings
   }), { code: "QX_REQUIREMENT_BUILD_MAP_INVALID" });
 
-  for (const path of [".qx-workspace/private.json", "dist/unsafe\\0name.js"]) {
+  for (const path of [".qx-workspace/private.json", "dist/unsafe\0name.js"]) {
     assert.throws(() => createRequirementBuildMap(state.project, {
       expectedProjectDigest: state.project.digest,
       buildPlan: state.buildPlan,
