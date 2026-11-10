@@ -146,7 +146,7 @@ test("QIR lowering independently rejects every PROCESS global write inside funct
       "FUNCTION update()",
       command,
       "END"
-    ].join("\\n"));
+    ].join("\n"));
     const semantic = analyze(ast);
     assert.equal(semantic.valid, false, command);
     assert.throws(
