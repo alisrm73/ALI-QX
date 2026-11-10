@@ -201,8 +201,8 @@ export function analyze(program) {
         "UI.TEXT": ["QX3047", "UI.TEXT argument does not match its registered signature"],
         "UI.TREE": ["QX3060", "UI.TREE argument does not match its registered signature"]
       };
-      node.args.forEach(arg => {
-        const parameter = cmd.signature.parameters[node.args.indexOf(arg)];
+      node.args.forEach((arg, index) => {
+        const parameter = cmd.signature.parameters[index];
         const value = expression(arg, scope);
         const acceptedTypes = parameter.types ?? (parameter.type ? [parameter.type] : null);
         const [code, message] = diagnostics[cmd.id];
