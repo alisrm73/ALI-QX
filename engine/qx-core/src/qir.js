@@ -251,7 +251,6 @@ class FunctionBuilder {
         const value = this.lowerExpression(args[0]);
         const parameter = command.signature.parameters[0];
         const expectedTypes = parameter.types ?? (parameter.type ? [parameter.type] : null);
-        const expected = expectedTypes?.length === 1 ? expectedTypes[0] : null;
         if (expectedTypes && !expectedTypes.includes(value.type)) fail("QIR_E_COMMAND_ARGUMENT", command.id + " argument does not match its registered type", args[0]);
         this.emit("COMMAND_CALL", { command: command.id, arguments: [value.value] }, null, null, node);
         return;
