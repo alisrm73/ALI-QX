@@ -61,7 +61,7 @@ export function analyze(program) {
     let out;
     switch (node.type) {
       case "NumberLiteral": out = concrete("NUM"); break;
-      case "StringLiteral": out = concrete(cmd.signature.result.type); break;
+      case "StringLiteral": out = concrete("TXT"); break;
       case "BooleanLiteral": out = concrete("BOOL"); break;
       case "NullLiteral": out = concrete("NULL"); break;
       case "Identifier": {
@@ -123,7 +123,7 @@ export function analyze(program) {
           }
           node.args.forEach((arg, index) =>
             constrain(expression(arg, scope), [cmd.signature.parameters[index].type], arg, "QX3051", "INTEGRATION.REQUEST argument " + (index + 1) + " must be TXT"));
-          out = concrete("TXT"); break;
+          out = concrete(cmd.signature.result.type); break;
         }
         report("QX3012", "This command has no approved value-returning expression contract", node); node.args.forEach(a => expression(a, scope)); out = concrete("ERROR"); break;
       }
