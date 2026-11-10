@@ -239,10 +239,12 @@ test("validates DATA.ADD and DATA.REMOVE expression contracts", () => {
   assert.equal(valid.valid, true, JSON.stringify(valid.diagnostics));
   assert.deepEqual(valid.symbols.map(item => item.type), ["LIST", "LIST", "LIST"]);
 
-  const badList = check("DATA.CREATE(result, DATA.ADD(1, 2))");
+  const badList = check("DATA.CREATE(items, 1)\nDATA.CREATE(result, DATA.ADD(items, 2))");
   assert.ok(badList.diagnostics.some(item => item.code === "QX3042"));
-  const badIndex = check("DATA.CREATE(result, DATA.REMOVE([1], TRUE))");
+  const badIndex = check("DATA.CREATE(items, [1])\nDATA.CREATE(result, DATA.REMOVE(items, TRUE))");
   assert.ok(badIndex.diagnostics.some(item => item.code === "QX3043"));
+  const wrongArity = check("DATA.CREATE(items, [])\nDATA.CREATE(result, DATA.ADD(items))");
+  assert.ok(wrongArity.diagnostics.some(item => item.code === "QX3041"));
 });
 
 test("requires DATA.SET_GLOBAL to be inside a function", () => {
