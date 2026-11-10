@@ -49,6 +49,13 @@ function textList(value, field, { minimum = 0, maximum = 50 } = {}) {
   if (!Array.isArray(value) || value.length < minimum || value.length > maximum) {
     fail("QX_IDEA_DETAILS_INVALID_RESULT", field + " has an invalid item count");
   }
+  const descriptors = Object.getOwnPropertyDescriptors(value);
+  const keys = Reflect.ownKeys(descriptors).filter(key => key !== "length");
+  if (keys.length !== value.length || keys.some((key, index) =>
+    key !== String(index) || !descriptors[key].enumerable ||
+    !Object.hasOwn(descriptors[key], "value"))) {
+    fail("QX_IDEA_DETAILS_INVALID_RESULT", field + " must be a dense JSON array");
+  }
   return value.map((item, index) => text(item, field + "[" + index + "]"));
 }
 
@@ -58,8 +65,12 @@ function itemId(value, field) {
   return id;
 }
 
-function evidence(value, field) {
-  return textList(value, field, { minimum: 1, maximum: 10 });
+function evidence(value, field, idea, { optional = false } = {}) {
+  const fragments = textList(value, field, { minimum: optional ? 0 : 1, maximum: 10 });
+  if (fragments.some(fragment => !idea.includes(fragment))) {
+    fail("QX_IDEA_DETAILS_INVALID_RESULT", field + " must quote text from the supplied idea");
+  }
+  return fragments;
 }
 
 function certainty(value, field) {
@@ -77,7 +88,7 @@ function uniqueIds(items, field) {
   }
 }
 
-function validateResult(value) {
+function validateResult(value, idea) {
   exactKeys(value, OUTPUT_FIELDS, "result");
   for (const field of ["functions", "userFlows", "businessRules", "conflicts"]) {
     if (!Array.isArray(value[field]) || value[field].length > MAX_ITEMS) {
@@ -98,7 +109,7 @@ function validateResult(value) {
       inputs: textList(item.inputs, field + ".inputs"),
       outputs: textList(item.outputs, field + ".outputs"),
       certainty: certainty(item.certainty, field + ".certainty"),
-      evidence: evidence(item.evidence, field + ".evidence")
+      evidence: evidence(item.evidence, field + ".evidence", idea)
     };
   });
   uniqueIds(functions, "functions");
@@ -138,9 +149,10 @@ function validateResult(value) {
     layoutRequirements: textList(value.design.layoutRequirements, "design.layoutRequirements"),
     accessibilityRequirements: textList(value.design.accessibilityRequirements, "design.accessibilityRequirements"),
     certainty: certainty(value.design.certainty, "design.certainty"),
-    evidence: (value.design.visualDirection.length || value.design.layoutRequirements.length || value.design.accessibilityRequirements.length)
-      ? evidence(value.design.evidence, "design.evidence")
-      : textList(value.design.evidence, "design.evidence", { maximum: 10 })
+    evidence: evidence(value.design.evidence, "design.evidence", idea, {
+      optional: !(value.design.visualDirection.length || value.design.layoutRequirements.length ||
+        value.design.accessibilityRequirements.length)
+    })
   };
 
   const conflicts = value.conflicts.map((item, index) => {
@@ -222,7 +234,7 @@ export async function analyzeProjectIdeaDetails({
       }, timeoutMs);
     });
     const raw = await Promise.race([analysisPromise, timeoutPromise]);
-    const report = validateResult(raw);
+    const report = validateResult(raw, normalizedIdea);
     const ideaDigest = "sha256:" + createHash("sha256").update(normalizedIdea, "utf8").digest("hex");
     return freezeDeep({
       schemaVersion: "1.0.0",
