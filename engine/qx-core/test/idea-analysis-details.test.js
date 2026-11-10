@@ -32,7 +32,7 @@ function validDetails(overrides = {}) {
       visualDirection: [],
       layoutRequirements: [],
       accessibilityRequirements: [],
-      certainty: "explicit",
+      certainty: "unspecified",
       evidence: []
     },
     conflicts: [],
@@ -74,6 +74,13 @@ test("rejects unsupported fields and malformed evidence", async () => {
     idea: "A project idea",
     analyze: async () => validDetails({
       functions: [{ ...validDetails().functions[0], evidence: ["invented requirement"] }]
+    })
+  }), { code: "QX_IDEA_DETAILS_INVALID_RESULT" });
+
+  await assert.rejects(analyzeProjectIdeaDetails({
+    idea: "A project idea",
+    analyze: async () => validDetails({
+      functions: new Array(1)
     })
   }), { code: "QX_IDEA_DETAILS_INVALID_RESULT" });
 });
