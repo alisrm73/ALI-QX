@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  createProjectDraft, submitProjectForReview, approveProjectDraft, reviseProjectDraft
+  createProjectDraft, submitProjectForReview, approveProjectDraft
 } from "../src/project-model.js";
 import { createBuildPlan } from "../src/build-plan.js";
 import {
@@ -9,10 +9,10 @@ import {
   assertRequirementBuildMapForProject
 } from "../src/requirement-build-map.js";
 
-function approvedProject() {
+function approvedProject(title = "Traceability demo") {
   const draft = createProjectDraft({
     projectId: "traceability-demo",
-    title: "Traceability demo",
+    title,
     description: "A project used to verify requirement-to-build traceability",
     requirements: [
       "Visitors can read the home overview",
@@ -61,7 +61,7 @@ test("maps every approved project requirement to components, files, producer tas
   });
 
   const home = map.entries.find(entry => entry.category === "requirement" && entry.requirementIndex === 0);
-  assert.equal(map.entries.length, 3);
+  assert.equal(map.entries.length, 4);
   assert.deepEqual(home.taskIds, ["ui", "web"]);
   assert.deepEqual(home.componentIds, ["home-page"]);
   assert.deepEqual(home.filePaths, ["dist/index.html"]);
@@ -157,9 +157,9 @@ test("rejects stale approvals, mismatched plans, and tampered maps", () => {
     fileBindings: state.fileBindings,
     mappings: state.mappings
   });
-  const revised = reviseProjectDraft(state.project, { title: "Revised" });
+  const revised = approvedProject("Revised traceability demo");
   assert.throws(() => assertRequirementBuildMapForProject(revised, state.buildPlan, map), {
-    code: "QX_PROJECT_BUILD_NOT_APPROVED"
+    code: "QX_PROJECT_APPROVAL_STALE"
   });
   assert.throws(() => assertRequirementBuildMapForProject(state.project, state.buildPlan, {
     ...map,
