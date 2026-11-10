@@ -42,7 +42,28 @@ export const COMMAND_REGISTRY = Object.freeze(definitions.map(([domain, name, ar
       Object.freeze({ domain, command: name }),
       Object.freeze({ domain: COMMAND_DOMAINS.find(item => item.id === domain).aliases[1], command: arabicName })
     ]),
-    signature: domain === "DATA" && name === "ADD"
+    signature: domain === "DATA" && name === "CREATE"
+      ? Object.freeze({
+          parameters: Object.freeze([
+            Object.freeze({ name: "name", type: "Identifier" }),
+            Object.freeze({ name: "initialValue", type: "Expression", types: Object.freeze(["NUM", "TXT", "BOOL", "LIST"]), notNull: true })
+          ]),
+          result: Object.freeze({ kind: "declared" })
+        })
+      : domain === "DATA" && (name === "SET" || name === "SET_GLOBAL")
+        ? Object.freeze({
+            parameters: Object.freeze([
+              Object.freeze({ name: "target", type: "Identifier", mustBeDeclared: true }),
+              Object.freeze({ name: "value", type: "Expression", sameTypeAsTarget: true })
+            ]),
+            result: Object.freeze({
+              kind: "stored",
+              target: "target",
+              type: "target",
+              ...(name === "SET_GLOBAL" ? { scope: "function", targetScope: "module", targetStorage: "global" } : {})
+            })
+          })
+      : domain === "DATA" && name === "ADD"
       ? Object.freeze({ parameters: Object.freeze([{ name: "list", type: "LIST" }, { name: "value", types: Object.freeze(["NUM", "TXT", "BOOL", "LIST", "NULL"]) }]), result: Object.freeze({ kind: "value", type: "LIST" }) })
       : domain === "DATA" && name === "REMOVE"
         ? Object.freeze({ parameters: Object.freeze([{ name: "list", type: "LIST" }, { name: "index", type: "NUM", integer: true, minimum: 0 }]), result: Object.freeze({ kind: "value", type: "LIST" }) })
@@ -100,13 +121,13 @@ export const COMMAND_REGISTRY = Object.freeze(definitions.map(([domain, name, ar
                 result: Object.freeze({ kind: "value", type: "TXT", asynchronous: true })
               })
           : null,
-    signatureStatus: (domain === "DATA" && ["ADD", "REMOVE", "COUNT"].includes(name)) ||
+    signatureStatus: (domain === "DATA" && ["CREATE", "SET", "SET_GLOBAL", "ADD", "REMOVE", "COUNT"].includes(name)) ||
       (domain === "PROCESS" && (name === "ADD" || name === "CALCULATE" || name === "COMPARE")) ||
       (domain === "UI" && (name === "SHOW" || name === "TEXT" || name === "TREE")) ||
       (domain === "INTEGRATION" && name === "REQUEST")
       ? "specified"
       : "pending",
-    enabled: (domain === "DATA" && ["ADD", "REMOVE", "COUNT"].includes(name)) ||
+    enabled: (domain === "DATA" && ["CREATE", "SET", "SET_GLOBAL", "ADD", "REMOVE", "COUNT"].includes(name)) ||
       (domain === "PROCESS" && (name === "ADD" || name === "CALCULATE" || name === "COMPARE")) ||
       (domain === "UI" && (name === "SHOW" || name === "TEXT" || name === "TREE")) ||
       (domain === "INTEGRATION" && name === "REQUEST")

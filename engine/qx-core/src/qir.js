@@ -209,29 +209,54 @@ class FunctionBuilder {
     const args = node.args;
     switch (command.id) {
       case "DATA.CREATE": {
-        if (args.length !== 2 || args[0].type !== "Identifier") fail("QIR_E_BAD_COMMAND_ARGUMENTS", "DATA.CREATE expects identifier and value", node);
+        const signature = command.signature;
+        if (!signature || args.length !== signature.parameters.length || args[0]?.type !== signature.parameters[0].type)
+          fail("QIR_E_BAD_COMMAND_ARGUMENTS", "DATA.CREATE does not match its registered signature", node);
         const value = this.lowerExpression(args[1]);
-        if (value.type === "NULL") fail("QIR_E_NULL_VARIABLE", "Cannot infer variable type from NULL", args[1]);
+        const parameter = signature.parameters[1];
+        const acceptedTypes = parameter.types ?? (parameter.type ? [parameter.type] : null);
+        if (parameter.notNull && value.type === "NULL") fail("QIR_E_NULL_VARIABLE", "Cannot infer variable type from NULL", args[1]);
+        if (acceptedTypes && !acceptedTypes.includes(value.type))
+          fail("QIR_E_COMMAND_ARGUMENT", "DATA.CREATE initial value does not match its registered type", args[1]);
         const storage = this.descriptor.kind === "module_initializer" ? "global" : "local";
         const variable = this.addVariable(args[0].name, value.type, storage);
         this.emit("DECLARE", { variable: variable.id, name: variable.name, storage, declared_type: value.type }, null, null, node);
         this.store(variable, value.value, node); return;
       }
       case "DATA.SET":
-      case "DATA.SET_GLOBAL":
+      case "DATA.SET_GLOBAL": {
+        const signature = command.signature;
+        if (!signature || args.length !== signature.parameters.length || args[0]?.type !== signature.parameters[0].type)
+          fail("QIR_E_BAD_COMMAND_ARGUMENTS", command.id + " does not match its registered signature", node);
+        const variable = this.variables.get(args[0].name) ?? this.owner.globalVariable(args[0].name, this);
+        if (!variable) fail("QIR_E_UNKNOWN_VARIABLE", "Unknown target " + args[0].name, args[0]);
+        if (signature.result.scope === "function" &&
+            (this.descriptor.kind !== "function" || variable.storage !== signature.result.targetStorage))
+          fail("QIR_E_GLOBAL_REQUIRED", "DATA.SET_GLOBAL requires a module global and must be used inside a function", args[0]);
+        if (command.id === "DATA.SET" && variable.storage === "global" && this.descriptor.kind !== "module_initializer")
+          fail("QIR_E_GLOBAL_WRITE", "Use DATA.SET_GLOBAL inside functions", node);
+        const value = this.lowerExpression(args[1]);
+        const valueParameter = signature.parameters[1];
+        const acceptedTypes = valueParameter.types ?? (valueParameter.sameTypeAsTarget ? null : valueParameter.type ? [valueParameter.type] : null);
+        const expectedType = valueParameter.sameTypeAsTarget ? variable.type : valueParameter.resultType;
+        if ((acceptedTypes && !acceptedTypes.includes(value.type)) || (expectedType && value.type !== expectedType))
+          fail("QIR_E_TYPE_MISMATCH", "Stored value type mismatch", node);
+        this.store(variable, value.value, node);
+        return;
+      }
       case "PROCESS.ADD":
       case "PROCESS.CALCULATE":
       case "PROCESS.COMPARE": {
         if (args.length !== 2 || args[0].type !== "Identifier") fail("QIR_E_BAD_COMMAND_ARGUMENTS", command.id + " expects target and value", node);
         const variable = this.variables.get(args[0].name) ?? this.owner.globalVariable(args[0].name, this);
         if (!variable) fail("QIR_E_UNKNOWN_VARIABLE", "Unknown target " + args[0].name, args[0]);
-        if (command.id === "DATA.SET_GLOBAL" && (variable.storage !== "global" || this.descriptor.kind !== "function")) fail("QIR_E_GLOBAL_REQUIRED", "DATA.SET_GLOBAL requires a module global and must be used inside a function", args[0]);
-        if ((command.id === "DATA.SET" || command.id === "PROCESS.ADD") && variable.storage === "global" && this.descriptor.kind !== "module_initializer")
+        const expected = command.signature.parameters[1].resultType;
+        const expectedTarget = command.signature.parameters[0].variableType;
+        if (variable.type !== expectedTarget) fail("QIR_E_TYPE_MISMATCH", "Stored target type mismatch", args[0]);
+        if (command.id === "PROCESS.ADD" && variable.storage === "global" && this.descriptor.kind !== "module_initializer")
           fail("QIR_E_GLOBAL_WRITE", "Use DATA.SET_GLOBAL inside functions", node);
         const value = this.lowerExpression(args[1]);
-        const expected = command.id.startsWith("PROCESS.") ? command.signature.parameters[1].resultType : variable.type;
-        const expectedTarget = command.id.startsWith("PROCESS.") ? command.signature.parameters[0].variableType : variable.type;
-        if (value.type !== expected || variable.type !== expectedTarget) fail("QIR_E_TYPE_MISMATCH", "Stored value type mismatch", node);
+        if (value.type !== expected) fail("QIR_E_TYPE_MISMATCH", "Stored value type mismatch", node);
         if (command.id === "PROCESS.ADD") {
           const current = this.value(); this.emit("LOAD", { variable: variable.id }, "NUM", current, args[0]);
           const sum = this.value(); this.emit("BINARY", { operator: "+", left: current, right: value.value }, "NUM", sum, node);

@@ -148,19 +148,44 @@ export function analyze(program) {
     const cmd = resolveCommand(node.domain, node.command);
     if (!cmd) { report("QX3011", "Unknown command: " + node.domain + "." + node.command, node); node.args.forEach(a => expression(a, scope)); return; }
     if (cmd.id === "DATA.CREATE") {
-      if (node.args.length !== 2 || node.args[0]?.type !== "Identifier") { report("QX3017", "DATA.CREATE expects an identifier and an initial value", node); node.args.forEach(a => expression(a, scope)); return; }
+      const signature = cmd.signature;
+      if (node.args.length !== signature.parameters.length || node.args[0]?.type !== signature.parameters[0].type) {
+        report("QX3017", "DATA.CREATE expects an identifier and an initial value", node);
+        node.args.forEach(a => expression(a, scope));
+        return;
+      }
       const value = expression(node.args[1], scope), name = node.args[0].name;
-      if (typeOf(value) === "NULL") { report("QX3018", "DATA.CREATE cannot infer a variable type from NULL", node.args[1]); return; }
-      declare(scope, name, value, node.args[0]); return;
+      const parameter = signature.parameters[1];
+      const acceptedTypes = parameter.types ?? (parameter.type ? [parameter.type] : []);
+      if (parameter.notNull && typeOf(value) === "NULL") {
+        report("QX3018", "DATA.CREATE cannot infer a variable type from NULL", node.args[1]);
+        return;
+      }
+      if (acceptedTypes.length) constrain(value, acceptedTypes, node.args[1], "QX3018", "DATA.CREATE initial value must have an inferable type");
+      declare(scope, name, value, node.args[0]);
+      return;
     }
-    if (["DATA.SET", "DATA.SET_GLOBAL"].includes(cmd.id)) {
-      if (node.args.length !== 2 || node.args[0]?.type !== "Identifier") { report("QX3019", cmd.id + " expects an identifier and a value", node); node.args.forEach(a => expression(a, scope)); return; }
+    if (cmd.id === "DATA.SET" || cmd.id === "DATA.SET_GLOBAL") {
+      const signature = cmd.signature;
+      if (node.args.length !== signature.parameters.length || node.args[0]?.type !== signature.parameters[0].type) {
+        report("QX3019", cmd.id + " expects an identifier and a value", node);
+        node.args.forEach(a => expression(a, scope));
+        return;
+      }
       const found = scope.lookup(node.args[0].name);
-      if (!found) { report("QX3003", "Undeclared identifier: " + node.args[0].name, node.args[0]); expression(node.args[1], scope); return; }
-      if (cmd.id === "DATA.SET" && scope.kind === "function" && found.scope.kind !== "function") report("QX3020", "Use DATA.SET_GLOBAL to update a module variable inside a function", node);
-      if (cmd.id === "DATA.SET_GLOBAL" && scope.kind !== "function") report("QX3021", "DATA.SET_GLOBAL is only valid inside a function", node);
-      if (cmd.id === "DATA.SET_GLOBAL" && found.scope.kind !== "module") report("QX3021", "DATA.SET_GLOBAL requires an existing module variable", node.args[0]);
-      join(found.symbol.cell, expression(node.args[1], scope), node.args[1], "QX3022", "Assigned value has a different type from variable " + node.args[0].name); return;
+      if (!found) {
+        report("QX3003", "Undeclared identifier: " + node.args[0].name, node.args[0]);
+        expression(node.args[1], scope);
+        return;
+      }
+      if (cmd.id === "DATA.SET" && scope.kind === "function" && found.scope.kind !== "function")
+        report("QX3020", "Use DATA.SET_GLOBAL to update a module variable inside a function", node);
+      if (signature.result.scope === "function" && scope.kind !== "function")
+        report("QX3021", "DATA.SET_GLOBAL is only valid inside a function", node);
+      if (signature.result.targetScope === "module" && found.scope.kind !== "module")
+        report("QX3021", "DATA.SET_GLOBAL requires an existing module variable", node.args[0]);
+      join(found.symbol.cell, expression(node.args[1], scope), node.args[1], "QX3022", "Assigned value has a different type from variable " + node.args[0].name);
+      return;
     }
     if (["PROCESS.ADD", "PROCESS.CALCULATE", "PROCESS.COMPARE"].includes(cmd.id)) {
       const required = cmd.signature.parameters[0].variableType;
