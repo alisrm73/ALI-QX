@@ -68,3 +68,5 @@ export {
   createRequirementCoverageReport,
   assertRequirementCoverageReport
 } from "./requirement-coverage.js";
+
+export { analyzeProjectIdea, QXIdeaAnalysisError } from "./idea-analyzer.js";
