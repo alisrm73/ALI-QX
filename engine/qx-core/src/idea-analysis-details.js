@@ -185,6 +185,25 @@ function validateResult(value, idea) {
   });
   uniqueIds(conflicts, "conflicts");
 
+  const referencedItems = new Set([
+    ...functions.map(item => item.id),
+    ...userFlows.map(item => item.id),
+    ...businessRules.map(item => item.id)
+  ]);
+  const allIds = [
+    ...referencedItems,
+    ...conflicts.map(item => item.id)
+  ];
+  if (new Set(allIds).size !== allIds.length) {
+    fail("QX_IDEA_DETAILS_INVALID_RESULT", "Item IDs must be unique across the complete report");
+  }
+  for (const conflict of conflicts) {
+    if (new Set(conflict.relatedItemIds).size !== conflict.relatedItemIds.length ||
+        conflict.relatedItemIds.some(id => !referencedItems.has(id))) {
+      fail("QX_IDEA_DETAILS_INVALID_RESULT", "Conflict references must uniquely identify existing analysis items");
+    }
+  }
+
   const openQuestions = textList(value.openQuestions, "openQuestions", { maximum: 100 });
   const normalized = { functions, userFlows, businessRules, design, conflicts, openQuestions };
   let serialized;
