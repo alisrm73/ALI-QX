@@ -108,25 +108,29 @@ function isSemver(value) {
 }
 
 export function getUIComponentRegistry() {
-  return Object.freeze(definitions.map(definition => {
-    const item = registry.resolve(definition.type, definition.contractVersion, REGISTRY_RELEASE);
-    return Object.freeze({
-      type: item.type,
-      contractVersion: item.contractVersion,
-      schemaDigest: item.schemaDigest,
-      registryRelease: item.registryRelease,
-      renderer: item.renderer,
-      props: item.props,
-      children: item.children
-    });
-  }));
+  const records = [
+    ...legacyDefinitions.map(definition =>
+      registry.resolve(definition.type, definition.contractVersion, LEGACY_REGISTRY_RELEASE)),
+    ...definitions.map(definition =>
+      registry.resolve(definition.type, definition.contractVersion, REGISTRY_RELEASE))
+  ];
+  return Object.freeze(records.map(item => Object.freeze({
+    type: item.type,
+    contractVersion: item.contractVersion,
+    schemaDigest: item.schemaDigest,
+    registryRelease: item.registryRelease,
+    renderer: item.renderer,
+    props: item.props,
+    children: item.children
+  })));
 }
 
 export function createDefaultUILock() {
   return Object.freeze({
     schema: LOCK_SCHEMA,
     version: "1.0",
-    components: Object.freeze(getUIComponentRegistry()
+    components: Object.freeze(definitions
+      .map(definition => registry.resolve(definition.type, definition.contractVersion, REGISTRY_RELEASE))
       .map(({ type, contractVersion, schemaDigest, registryRelease }) =>
         Object.freeze({ type, contractVersion, schemaDigest, registryRelease }))
       .sort((a, b) => a.type < b.type ? -1 : a.type > b.type ? 1 : a.contractVersion < b.contractVersion ? -1 : a.contractVersion > b.contractVersion ? 1 : 0))
