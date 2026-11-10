@@ -289,3 +289,17 @@ test("rejects malformed INTEGRATION.REQUEST arguments and statement use", () => 
   const statement = check('INTEGRATION.REQUEST("demo", "lookup", "{}")');
   assert.ok(statement.diagnostics.some(item => item.code === "QX3052"));
 });
+
+
+test("validates the UI.TREE TXT JSON statement contract", () => {
+  const valid = check('UI.TREE("{\\"type\\":\\"container\\"}")');
+  assert.equal(valid.valid, true, JSON.stringify(valid.diagnostics));
+
+  const wrongType = check("UI.TREE(42)");
+  assert.equal(wrongType.valid, false);
+  assert.ok(wrongType.diagnostics.some(item =>
+    item.code === "QX3060" && item.message === "UI.TREE expects a TXT JSON tree"
+  ));
+  const wrongArity = check('UI.TREE("{}", "{}")');
+  assert.ok(wrongArity.diagnostics.some(item => item.code === "QX3046"));
+});

@@ -185,7 +185,7 @@ export function analyze(program) {
       constrain(expression(node.args[0], scope), ["LIST"], node.args[0], "QX3014", "DATA.COUNT expects LIST");
       return;
     }
-    if (cmd.id === "UI.SHOW" || cmd.id === "UI.TEXT") {
+    if (cmd.id === "UI.SHOW" || cmd.id === "UI.TEXT" || cmd.id === "UI.TREE") {
       if (node.args.length !== 1) {
         report("QX3046", cmd.id + " expects exactly one argument", node);
         node.args.forEach(a => expression(a, scope));
