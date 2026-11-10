@@ -33,7 +33,7 @@ function validDetails(overrides = {}) {
       layoutRequirements: [],
       accessibilityRequirements: [],
       certainty: "explicit",
-      evidence: ["No visual or accessibility direction was specified."]
+      evidence: []
     },
     conflicts: [],
     openQuestions: ["Which visual direction should the website use?"],
