@@ -315,3 +315,43 @@ test("validates DATA.COUNT statement arity and registered LIST parameter type", 
   const wrongArity = check("DATA.COUNT()");
   assert.ok(wrongArity.diagnostics.some(item => item.code === "QX3013"));
 });
+
+
+test("derives DATA.CREATE and DATA.SET arity and value constraints from registry signatures", () => {
+  const valid = check([
+    'DATA.CREATE(title, "QX")',
+    "DATA.SET(title, title + " Studio")",
+    "DATA.CREATE(items, [1, TRUE])",
+    "DATA.SET(items, [2, FALSE])"
+  ].join("\\n"));
+  assert.equal(valid.valid, true, JSON.stringify(valid.diagnostics));
+
+  const wrongCreateArity = check("DATA.CREATE(value)");
+  assert.ok(wrongCreateArity.diagnostics.some(item => item.code === "QX3017"));
+  const wrongCreateType = check("DATA.CREATE(value, NULL)");
+  assert.ok(wrongCreateType.diagnostics.some(item => item.code === "QX3018"));
+  const wrongSetArity = check("DATA.CREATE(value, 1)\\nDATA.SET(value)");
+  assert.ok(wrongSetArity.diagnostics.some(item => item.code === "QX3019"));
+  const wrongSetType = check('DATA.CREATE(value, 1)\\nDATA.SET(value, "text")');
+  assert.ok(wrongSetType.diagnostics.some(item => item.code === "QX3022"));
+});
+
+test("enforces DATA.SET_GLOBAL registry scope and target-storage constraints", () => {
+  const valid = check([
+    "DATA.CREATE(value, 1)",
+    "FUNCTION update()",
+    "DATA.SET_GLOBAL(value, 2)",
+    "END"
+  ].join("\\n"));
+  assert.equal(valid.valid, true, JSON.stringify(valid.diagnostics));
+
+  const outsideFunction = check("DATA.CREATE(value, 1)\\nDATA.SET_GLOBAL(value, 2)");
+  assert.ok(outsideFunction.diagnostics.some(item => item.code === "QX3021"));
+  const localTarget = check([
+    "FUNCTION update()",
+    "DATA.CREATE(value, 1)",
+    "DATA.SET_GLOBAL(value, 2)",
+    "END"
+  ].join("\\n"));
+  assert.ok(localTarget.diagnostics.some(item => item.code === "QX3021"));
+});
