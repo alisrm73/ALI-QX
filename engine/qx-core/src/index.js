@@ -86,3 +86,8 @@ export {
   reanalyzeProjectIdeaReviewSession,
   QXIdeaReviewSessionError
 } from "./idea-review-session.js";
+
+export {
+  createRequirementBuildMap,
+  assertRequirementBuildMapForProject
+} from "./requirement-build-map.js";
