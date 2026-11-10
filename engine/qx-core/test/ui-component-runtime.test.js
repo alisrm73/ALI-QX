@@ -15,9 +15,16 @@ const component = (id, type, children = [], props = {}, version = "1.0.0") => ({
 const tree = children => ({ schema: "QX.UI.TREE", version: "1.0", children });
 
 test("publishes immutable built-in presentation component releases and exact lock pins", () => {
-  assert.deepEqual(getUIComponentRegistry().map(item => item.type + "@" + item.contractVersion), [
-    "UI.CONTAINER@1.0.0", "UI.CONTAINER@1.1.0", "UI.DIVIDER@1.0.0",
-    "UI.HEADING@1.0.0", "UI.TEXT_BLOCK@1.0.0"
+  assert.deepEqual(getUIComponentRegistry().map(item =>
+    item.type + "@" + item.contractVersion + "@" + item.registryRelease), [
+    "UI.CONTAINER@1.0.0@ui-registry-1.0.0",
+    "UI.TEXT_BLOCK@1.0.0@ui-registry-1.0.0",
+    "UI.HEADING@1.0.0@ui-registry-1.0.0",
+    "UI.CONTAINER@1.0.0@ui-registry-1.1.0",
+    "UI.CONTAINER@1.1.0@ui-registry-1.1.0",
+    "UI.DIVIDER@1.0.0@ui-registry-1.1.0",
+    "UI.HEADING@1.0.0@ui-registry-1.1.0",
+    "UI.TEXT_BLOCK@1.0.0@ui-registry-1.1.0"
   ]);
   assert.equal(lock.schema, "QX.UI.COMPONENT-LOCK");
   assert.equal(lock.components.length, 5);
