@@ -57,7 +57,7 @@ test("records the approved V1 command contracts", () => {
     ],
     result: { kind: "stored", target: "target", type: "BOOL" }
   });
-  assert.equal(COMMAND_REGISTRY.filter(command => command.signatureStatus === "specified").length, 10);
+  assert.equal(COMMAND_REGISTRY.filter(command => command.signatureStatus === "specified").length, 13);
   assert.deepEqual(resolveCommand("INTEGRATION", "REQUEST").signature, {
     parameters: [
       { name: "connector", type: "TXT" },
@@ -95,8 +95,29 @@ test("records the approved V1 command contracts", () => {
   });
 });
 
+  assert.deepEqual(resolveCommand("DATA", "CREATE").signature, {
+    parameters: [
+      { name: "name", type: "Identifier" },
+      { name: "initialValue", type: "Expression", types: ["NUM", "TXT", "BOOL", "LIST"], notNull: true }
+    ],
+    result: { kind: "declared" }
+  });
+  assert.deepEqual(resolveCommand("DATA", "SET").signature, {
+    parameters: [
+      { name: "target", type: "Identifier", mustBeDeclared: true },
+      { name: "value", type: "Expression", sameTypeAsTarget: true }
+    ],
+    result: { kind: "stored", target: "target", type: "target" }
+  });
+  assert.deepEqual(resolveCommand("DATA", "SET_GLOBAL").signature, {
+    parameters: [
+      { name: "target", type: "Identifier", mustBeDeclared: true },
+      { name: "value", type: "Expression", sameTypeAsTarget: true }
+    ],
+    result: { kind: "stored", target: "target", type: "target", scope: "function", targetScope: "module", targetStorage: "global" }
+  });
 test("enables only commands with approved semantic contracts", () => {
-  const enabled = new Set(["DATA.COUNT", "DATA.ADD", "DATA.REMOVE", "UI.SHOW", "UI.TEXT", "UI.TREE", "PROCESS.ADD", "PROCESS.CALCULATE", "PROCESS.COMPARE", "INTEGRATION.REQUEST"]);
+  const enabled = new Set(["DATA.CREATE", "DATA.SET", "DATA.SET_GLOBAL", "DATA.COUNT", "DATA.ADD", "DATA.REMOVE", "UI.SHOW", "UI.TEXT", "UI.TREE", "PROCESS.ADD", "PROCESS.CALCULATE", "PROCESS.COMPARE", "INTEGRATION.REQUEST"]);
   for (const command of COMMAND_REGISTRY) {
     assert.equal(command.enabled, enabled.has(command.id));
     assert.equal(isCommandEnabled(command.domain, command.name), enabled.has(command.id));
