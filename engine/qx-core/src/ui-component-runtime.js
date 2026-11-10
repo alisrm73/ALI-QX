@@ -23,17 +23,31 @@ const definitions = [
     children: { text: true, components: ["UI.CONTAINER", "UI.TEXT_BLOCK", "UI.HEADING"] }
   },
   {
-    type: "UI.TEXT_BLOCK",
-    contractVersion: "1.0.0",
-    renderer: "text-block",
+    type: "UI.CONTAINER",
+    contractVersion: "1.1.0",
+    renderer: "container",
     props: {},
-    children: { text: true, components: [] }
+    children: { text: true, components: ["UI.CONTAINER", "UI.TEXT_BLOCK", "UI.HEADING", "UI.DIVIDER"] }
+  },
+  {
+    type: "UI.DIVIDER",
+    contractVersion: "1.0.0",
+    renderer: "divider",
+    props: {},
+    children: { text: false, components: [] }
   },
   {
     type: "UI.HEADING",
     contractVersion: "1.0.0",
     renderer: "heading",
     props: { level: { type: "number", required: true, integer: true, minimum: 1, maximum: 6 } },
+    children: { text: true, components: [] }
+  },
+  {
+    type: "UI.TEXT_BLOCK",
+    contractVersion: "1.0.0",
+    renderer: "text-block",
+    props: {},
     children: { text: true, components: [] }
   }
 ];
