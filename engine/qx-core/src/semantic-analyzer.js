@@ -99,28 +99,31 @@ export function analyze(program) {
         const cmd = resolveCommand(node.domain, node.command);
         if (!cmd) { report("QX3011", "Unknown command: " + node.domain + "." + node.command, node); node.args.forEach(a => expression(a, scope)); out = concrete("ERROR"); break; }
         if (cmd.id === "DATA.COUNT") {
-          if (node.args.length !== 1) { report("QX3013", "DATA.COUNT expects exactly one argument", node); node.args.forEach(a => expression(a, scope)); out = concrete("ERROR"); break; }
-          const arg = expression(node.args[0], scope); constrain(arg, ["LIST"], node.args[0], "QX3014", "DATA.COUNT expects LIST"); out = concrete("NUM"); break;
+          if (node.args.length !== cmd.signature.parameters.length) { report("QX3013", "DATA.COUNT expects exactly one argument", node); node.args.forEach(a => expression(a, scope)); out = concrete("ERROR"); break; }
+          const arg = expression(node.args[0], scope); constrain(arg, [cmd.signature.parameters[0].type], node.args[0], "QX3014", "DATA.COUNT expects LIST"); out = concrete(cmd.signature.result.type); break;
         }
         if (cmd.id === "DATA.ADD" || cmd.id === "DATA.REMOVE") {
-          if (node.args.length !== 2) { report("QX3041", cmd.id + " expects exactly two arguments", node); node.args.forEach(a => expression(a, scope)); out = concrete("ERROR"); break; }
-          const list = expression(node.args[0], scope); constrain(list, ["LIST"], node.args[0], "QX3042", cmd.id + " first argument must be LIST");
+          if (node.args.length !== cmd.signature.parameters.length) { report("QX3041", cmd.id + " expects exactly two arguments", node); node.args.forEach(a => expression(a, scope)); out = concrete("ERROR"); break; }
+          const list = expression(node.args[0], scope); constrain(list, [cmd.signature.parameters[0].type], node.args[0], "QX3042", cmd.id + " first argument must be LIST");
           const value = expression(node.args[1], scope);
-          if (cmd.id === "DATA.REMOVE") constrain(value, ["NUM"], node.args[1], "QX3043", "DATA.REMOVE index must be NUM");
-          out = concrete("LIST"); break;
+          const valueParameter = cmd.signature.parameters[1];
+          const acceptedValueTypes = valueParameter.types ?? [valueParameter.type];
+          if (cmd.id === "DATA.ADD") constrain(value, acceptedValueTypes, node.args[1], "QX3062", "DATA.ADD value does not match its registered signature");
+          if (cmd.id === "DATA.REMOVE") constrain(value, acceptedValueTypes, node.args[1], "QX3043", "DATA.REMOVE index must be NUM");
+          out = concrete(cmd.signature.result.type); break;
         }
         if (cmd.id === "UI.SHOW" || cmd.id === "UI.TEXT" || cmd.id === "UI.TREE") {
           report("QX3045", cmd.id + " is a UI statement and cannot be used as an expression", node);
           node.args.forEach(a => expression(a, scope)); out = concrete("ERROR"); break;
         }
         if (cmd.id === "INTEGRATION.REQUEST") {
-          if (node.args.length !== 3) {
+          if (node.args.length !== cmd.signature.parameters.length) {
             report("QX3050", "INTEGRATION.REQUEST expects connector, operation, and JSON payload text", node);
             node.args.forEach(a => expression(a, scope)); out = concrete("ERROR"); break;
           }
           node.args.forEach((arg, index) =>
-            constrain(expression(arg, scope), ["TXT"], arg, "QX3051", "INTEGRATION.REQUEST argument " + (index + 1) + " must be TXT"));
-          out = concrete("TXT"); break;
+            constrain(expression(arg, scope), [cmd.signature.parameters[index].type], arg, "QX3051", "INTEGRATION.REQUEST argument " + (index + 1) + " must be TXT"));
+          out = concrete(cmd.signature.result.type); break;
         }
         report("QX3012", "This command has no approved value-returning expression contract", node); node.args.forEach(a => expression(a, scope)); out = concrete("ERROR"); break;
       }
@@ -160,8 +163,8 @@ export function analyze(program) {
       join(found.symbol.cell, expression(node.args[1], scope), node.args[1], "QX3022", "Assigned value has a different type from variable " + node.args[0].name); return;
     }
     if (["PROCESS.ADD", "PROCESS.CALCULATE", "PROCESS.COMPARE"].includes(cmd.id)) {
-      const required = cmd.id === "PROCESS.COMPARE" ? "BOOL" : "NUM";
-      if (node.args.length !== 2 || node.args[0]?.type !== "Identifier") { report("QX3023", cmd.id + " expects a target identifier and an expression", node); node.args.forEach(a => expression(a, scope)); return; }
+      const required = cmd.signature.parameters[0].variableType;
+      if (node.args.length !== cmd.signature.parameters.length || node.args[0]?.type !== "Identifier") { report("QX3023", cmd.id + " expects a target identifier and an expression", node); node.args.forEach(a => expression(a, scope)); return; }
       const found = scope.lookup(node.args[0].name);
       if (!found) report("QX3003", "Undeclared target: " + node.args[0].name, node.args[0]);
       else {
@@ -169,7 +172,7 @@ export function analyze(program) {
         if (cmd.id === "PROCESS.ADD" && scope.kind === "function" && found.scope.kind !== "function")
           report("QX3020", "Use DATA.SET_GLOBAL inside a function to update a module variable", node);
       }
-      constrain(expression(node.args[1], scope), [required], node.args[1], "QX3025", cmd.id + " expression must produce " + required); return;
+      constrain(expression(node.args[1], scope), [cmd.signature.parameters[1].resultType], node.args[1], "QX3025", cmd.id + " expression must produce " + cmd.signature.parameters[1].resultType); return;
     }
     if (cmd.id === "DATA.ADD" || cmd.id === "DATA.REMOVE") {
       report("QX3044", cmd.id + " is an expression and cannot be used as a command statement", node);
@@ -185,15 +188,18 @@ export function analyze(program) {
       constrain(expression(node.args[0], scope), ["LIST"], node.args[0], "QX3014", "DATA.COUNT expects LIST");
       return;
     }
-    if (cmd.id === "UI.SHOW" || cmd.id === "UI.TEXT") {
-      if (node.args.length !== 1) {
+    if (cmd.id === "UI.SHOW" || cmd.id === "UI.TEXT" || cmd.id === "UI.TREE") {
+      if (node.args.length !== cmd.signature.parameters.length) {
         report("QX3046", cmd.id + " expects exactly one argument", node);
         node.args.forEach(a => expression(a, scope));
         return;
       }
       const value = expression(node.args[0], scope);
-      if (cmd.id === "UI.TEXT") constrain(value, ["TXT"], node.args[0], "QX3047", "UI.TEXT expects TXT");
-      if (cmd.id === "UI.TREE") constrain(value, ["TXT"], node.args[0], "QX3060", "UI.TREE expects a TXT JSON tree");
+      const parameter = cmd.signature.parameters[0];
+      const expectedTypes = parameter.types ?? [parameter.type];
+      if (cmd.id === "UI.SHOW") constrain(value, expectedTypes, node.args[0], "QX3061", "UI.SHOW value does not match its registered signature");
+      if (cmd.id === "UI.TEXT") constrain(value, expectedTypes, node.args[0], "QX3047", "UI.TEXT expects TXT");
+      if (cmd.id === "UI.TREE") constrain(value, expectedTypes, node.args[0], "QX3060", "UI.TREE expects a TXT JSON tree");
       return;
     }
     if (cmd.id === "INTEGRATION.REQUEST") {
