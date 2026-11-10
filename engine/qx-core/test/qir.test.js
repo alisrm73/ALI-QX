@@ -337,16 +337,16 @@ test("lowers DATA.CREATE and DATA.SET using their registered contracts", () => {
   const qir = compile([
     "DATA.CREATE(value, 1)",
     "DATA.SET(value, 2)"
-  ].join("\\n"));
+  ].join("\n"));
   assert.deepEqual(validateQIR(qir), []);
 
-  const wrongArity = parse("DATA.CREATE(value, 1)\\nDATA.SET(value)");
+  const wrongArity = parse("DATA.CREATE(value, 1)\nDATA.SET(value)");
   assert.throws(
     () => lowerToQIR(wrongArity, { valid: true, functions: [] }),
     error => error.code === "QIR_E_BAD_COMMAND_ARGUMENTS"
   );
 
-  const wrongType = parse('DATA.CREATE(value, 1)\\nDATA.SET(value, "text")');
+  const wrongType = parse('DATA.CREATE(value, 1)\nDATA.SET(value, "text")');
   assert.throws(
     () => lowerToQIR(wrongType, { valid: true, functions: [] }),
     error => error.code === "QIR_E_TYPE_MISMATCH"
@@ -360,10 +360,10 @@ test("enforces DATA.SET_GLOBAL registered function and global-target constraints
     "DATA.SET_GLOBAL(value, 2)",
     "END",
     "update()"
-  ].join("\\n"));
+  ].join("\n"));
   assert.deepEqual(validateQIR(valid), []);
 
-  const outsideFunction = parse("DATA.CREATE(value, 1)\\nDATA.SET_GLOBAL(value, 2)");
+  const outsideFunction = parse("DATA.CREATE(value, 1)\nDATA.SET_GLOBAL(value, 2)");
   assert.throws(
     () => lowerToQIR(outsideFunction, { valid: true, functions: [] }),
     error => error.code === "QIR_E_GLOBAL_REQUIRED"
