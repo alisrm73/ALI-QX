@@ -194,7 +194,7 @@ export function analyze(program) {
       if (!found) report("QX3003", "Undeclared target: " + node.args[0].name, node.args[0]);
       else {
         constrain(found.symbol.cell, [required], node.args[0], "QX3024", cmd.id + " target must be " + required);
-        if (cmd.id === "PROCESS.ADD" && scope.kind === "function" && found.scope.kind !== "function")
+        if (scope.kind === "function" && found.scope.kind !== "function")
           report("QX3020", "Use DATA.SET_GLOBAL inside a function to update a module variable", node);
       }
       constrain(expression(node.args[1], scope), [cmd.signature.parameters[1].resultType], node.args[1], "QX3025", cmd.id + " expression must produce " + cmd.signature.parameters[1].resultType); return;
