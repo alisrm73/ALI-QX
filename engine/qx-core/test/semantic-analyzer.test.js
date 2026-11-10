@@ -200,7 +200,7 @@ test("all PROCESS commands reject module-global writes from functions", () => {
       "FUNCTION update()",
       command,
       "END"
-    ].join("\\n");
+    ].join("\n");
     const result = check(source);
     assert.equal(result.valid, false, command);
     assert.ok(result.diagnostics.some(item => item.code === "QX3020"), command);
@@ -217,7 +217,7 @@ test("allows PROCESS commands on local variables inside functions", () => {
     "PROCESS.COMPARE(localFlag, localNumber > 0)",
     "RETURN localNumber",
     "END"
-  ].join("\\n"));
+  ].join("\n"));
   assert.equal(result.valid, true, JSON.stringify(result.diagnostics));
 });
 
