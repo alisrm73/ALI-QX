@@ -138,7 +138,9 @@ function validateResult(value) {
     layoutRequirements: textList(value.design.layoutRequirements, "design.layoutRequirements"),
     accessibilityRequirements: textList(value.design.accessibilityRequirements, "design.accessibilityRequirements"),
     certainty: certainty(value.design.certainty, "design.certainty"),
-    evidence: evidence(value.design.evidence, "design.evidence")
+    evidence: (value.design.visualDirection.length || value.design.layoutRequirements.length || value.design.accessibilityRequirements.length)
+      ? evidence(value.design.evidence, "design.evidence")
+      : textList(value.design.evidence, "design.evidence", { maximum: 10 })
   };
 
   const conflicts = value.conflicts.map((item, index) => {
