@@ -45,9 +45,9 @@ function text(value, field, maximum = 2000) {
   return value.trim();
 }
 
-function textList(value, field, { minimum = 0, maximum = 50 } = {}) {
-  if (!Array.isArray(value) || value.length < minimum || value.length > maximum) {
-    fail("QX_IDEA_DETAILS_INVALID_RESULT", field + " has an invalid item count");
+function assertDenseArray(value, field, maximum) {
+  if (!Array.isArray(value) || value.length > maximum) {
+    fail("QX_IDEA_DETAILS_INVALID_RESULT", field + " must be a bounded array");
   }
   const descriptors = Object.getOwnPropertyDescriptors(value);
   const keys = Reflect.ownKeys(descriptors).filter(key => key !== "length");
@@ -55,6 +55,13 @@ function textList(value, field, { minimum = 0, maximum = 50 } = {}) {
     key !== String(index) || !descriptors[key].enumerable ||
     !Object.hasOwn(descriptors[key], "value"))) {
     fail("QX_IDEA_DETAILS_INVALID_RESULT", field + " must be a dense JSON array");
+  }
+}
+
+function textList(value, field, { minimum = 0, maximum = 50 } = {}) {
+  assertDenseArray(value, field, maximum);
+  if (value.length < minimum) {
+    fail("QX_IDEA_DETAILS_INVALID_RESULT", field + " has an invalid item count");
   }
   return value.map((item, index) => text(item, field + "[" + index + "]"));
 }
@@ -91,9 +98,7 @@ function uniqueIds(items, field) {
 function validateResult(value, idea) {
   exactKeys(value, OUTPUT_FIELDS, "result");
   for (const field of ["functions", "userFlows", "businessRules", "conflicts"]) {
-    if (!Array.isArray(value[field]) || value[field].length > MAX_ITEMS) {
-      fail("QX_IDEA_DETAILS_INVALID_RESULT", field + " must be a bounded array");
-    }
+    assertDenseArray(value[field], field, MAX_ITEMS);
   }
 
   const functions = value.functions.map((item, index) => {
@@ -148,12 +153,23 @@ function validateResult(value, idea) {
     visualDirection: textList(value.design.visualDirection, "design.visualDirection"),
     layoutRequirements: textList(value.design.layoutRequirements, "design.layoutRequirements"),
     accessibilityRequirements: textList(value.design.accessibilityRequirements, "design.accessibilityRequirements"),
-    certainty: certainty(value.design.certainty, "design.certainty"),
-    evidence: evidence(value.design.evidence, "design.evidence", idea, {
-      optional: !(value.design.visualDirection.length || value.design.layoutRequirements.length ||
-        value.design.accessibilityRequirements.length)
-    })
+    certainty: value.design.certainty,
+    evidence: value.design.evidence
   };
+  const hasDesignRequirements = design.visualDirection.length || design.layoutRequirements.length ||
+    design.accessibilityRequirements.length;
+  if (hasDesignRequirements) {
+    design.certainty = certainty(design.certainty, "design.certainty");
+    design.evidence = evidence(design.evidence, "design.evidence", idea);
+  } else {
+    if (design.certainty !== "unspecified") {
+      fail("QX_IDEA_DETAILS_INVALID_RESULT", "design.certainty must be unspecified when no design requirements are present");
+    }
+    design.evidence = textList(design.evidence, "design.evidence", { maximum: 10 });
+    if (design.evidence.length) {
+      fail("QX_IDEA_DETAILS_INVALID_RESULT", "Unspecified design cannot include evidence");
+    }
+  }
 
   const conflicts = value.conflicts.map((item, index) => {
     const field = "conflicts[" + index + "]";
