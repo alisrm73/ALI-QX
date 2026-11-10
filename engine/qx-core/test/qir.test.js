@@ -304,13 +304,13 @@ test("lowers statement command contracts from the registry and rejects invalid a
     'UI.SHOW("visible")',
     'UI.TEXT("hello")',
     'UI.TREE("{}")'
-  ].join("\\n"));
+  ].join("\n"));
   const commands = qir.initializer.blocks.flatMap(block => block.instructions)
     .filter(item => item.opcode === "COMMAND_CALL")
     .map(item => item.operands.command);
   assert.deepEqual(commands, ["DATA.COUNT", "UI.SHOW", "UI.TEXT", "UI.TREE"]);
 
-  const badCount = parse("DATA.CREATE(items, [1])\\nDATA.COUNT(1)");
+  const badCount = parse("DATA.CREATE(items, [1])\nDATA.COUNT(1)");
   assert.throws(
     () => lowerToQIR(badCount, { valid: true, functions: [] }),
     error => error.code === "QIR_E_COMMAND_ARGUMENT"
