@@ -231,7 +231,7 @@ test("rejects procedure calls in value positions even through lists and forward 
 
 
 test("validates DATA.ADD and DATA.REMOVE expression contracts", () => {
-  const valid = check([
+  const valid = check('UI.TREE("{}")');
     "DATA.CREATE(items, [1, 2])",
     "DATA.CREATE(added, DATA.ADD(items, NULL))",
     "DATA.CREATE(removed, DATA.REMOVE(added, 0))"
