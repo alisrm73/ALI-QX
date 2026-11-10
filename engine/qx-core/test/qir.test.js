@@ -134,6 +134,31 @@ test("covers remaining expression nodes, command lowerings, locals, and procedur
   assert.equal(serializeQIR(qir), serializeQIR(qir));
 });
 
+test("QIR lowering independently rejects every PROCESS global write inside functions", () => {
+  for (const command of [
+    "PROCESS.ADD(total, 1)",
+    "PROCESS.CALCULATE(total, 2)",
+    "PROCESS.COMPARE(flag, TRUE)"
+  ]) {
+    const ast = parse([
+      "DATA.CREATE(total, 0)",
+      "DATA.CREATE(flag, FALSE)",
+      "FUNCTION update()",
+      command,
+      "END"
+    ].join("\n"));
+    const semantic = analyze(ast);
+    assert.equal(semantic.valid, false, command);
+    const validFunctionShape = analyze(parse("FUNCTION update()\nEND"));
+    assert.equal(validFunctionShape.valid, true);
+    assert.throws(
+      () => lowerToQIR(ast, { ...validFunctionShape, valid: true, diagnostics: [] }),
+      error => error.name === "QIRDiagnostic" && error.code === "QIR_E_GLOBAL_WRITE",
+      command
+    );
+  }
+});
+
 test("validator rejects broken control-flow targets and undefined value references", () => {
   const qir = compile([
     "DATA.CREATE(flag, TRUE)",

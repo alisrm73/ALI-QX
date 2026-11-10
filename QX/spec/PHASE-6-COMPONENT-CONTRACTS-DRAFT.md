@@ -85,6 +85,13 @@
 | `PROCESS.CALCULATE` | احسب | عقد دلالي محدد ومفعّل | يخزن نتيجة NUM في متغير NUM معلن |
 | `PROCESS.COMPARE` | قارن | عقد دلالي محدد ومفعّل | يخزن نتيجة BOOL في متغير BOOL معلن |
 
+قرار نطاق الكتابة المعتمد في البند السادس:
+- أوامر `PROCESS.ADD` و`PROCESS.CALCULATE` و`PROCESS.COMPARE` تعدّل متغيرات محلية فقط عند تنفيذها داخل دالة.
+- يمنع استخدام أي من هذه الأوامر لتعديل متغير وحدة عام من داخل دالة، ويصدر Semantic Analyzer التشخيص `QX3020`.
+- يفرض QIR lowering القيد نفسه دفاعياً ويرفض الشيفرة غير الصالحة بالخطأ `QIR_E_GLOBAL_WRITE`.
+- لتحديث متغير وحدة عام من داخل دالة، يجب استخدام `DATA.SET_GLOBAL` صراحةً. لا يتغير سلوك الاستخدام على مستوى الوحدة، ولا تتغير أنواع الأوامر أو نتائجها.
+- بوابة القبول لهذا التغيير: نجاح Core وQIR وVM وBrowser وProject Workflow على Head SHA نفسه، مع اختبار المسار الصحيح لـ`DATA.SET_GLOBAL` في VM وWeb Runtime.
+
 الأسماء التاريخية مثل MATH وWAIT وTIMER وDATE وRANDOM وFORMAT وVALIDATE وERROR ليست أوامر معتمدة.
 
 ### INTEGRATION

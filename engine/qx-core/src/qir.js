@@ -253,7 +253,7 @@ class FunctionBuilder {
         const expected = command.signature.parameters[1].resultType;
         const expectedTarget = command.signature.parameters[0].variableType;
         if (variable.type !== expectedTarget) fail("QIR_E_TYPE_MISMATCH", "Stored target type mismatch", args[0]);
-        if (command.id === "PROCESS.ADD" && variable.storage === "global" && this.descriptor.kind !== "module_initializer")
+        if (variable.storage === "global" && this.descriptor.kind !== "module_initializer")
           fail("QIR_E_GLOBAL_WRITE", "Use DATA.SET_GLOBAL inside functions", node);
         const value = this.lowerExpression(args[1]);
         if (value.type !== expected) fail("QIR_E_TYPE_MISMATCH", "Stored value type mismatch", node);

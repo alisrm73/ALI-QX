@@ -188,6 +188,39 @@ test("infers types through DATA.COUNT and PROCESS commands inside functions", ()
   assert.equal(result.functions[0].returnType, "NUM");
 });
 
+test("all PROCESS commands reject module-global writes from functions", () => {
+  for (const command of [
+    "PROCESS.ADD(total, 1)",
+    "PROCESS.CALCULATE(total, 2)",
+    "PROCESS.COMPARE(flag, TRUE)"
+  ]) {
+    const source = [
+      "DATA.CREATE(total, 0)",
+      "DATA.CREATE(flag, FALSE)",
+      "FUNCTION update()",
+      command,
+      "END"
+    ].join("\n");
+    const result = check(source);
+    assert.equal(result.valid, false, command);
+    assert.ok(result.diagnostics.some(item => item.code === "QX3020"), command);
+  }
+});
+
+test("allows PROCESS commands on local variables inside functions", () => {
+  const result = check([
+    "FUNCTION update(value)",
+    "DATA.CREATE(localNumber, value)",
+    "DATA.CREATE(localFlag, FALSE)",
+    "PROCESS.ADD(localNumber, 1)",
+    "PROCESS.CALCULATE(localNumber, localNumber + 1)",
+    "PROCESS.COMPARE(localFlag, localNumber > 0)",
+    "RETURN localNumber",
+    "END"
+  ].join("\n"));
+  assert.equal(result.valid, true, JSON.stringify(result.diagnostics));
+});
+
 test("rejects incompatible call arguments and return types", () => {
   const result = check("FUNCTION add(value)\n RETURN value + 1\nEND\nDATA.CREATE(answer, add(\"x\"))");
   assert.equal(result.valid, false);
