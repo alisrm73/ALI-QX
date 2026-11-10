@@ -95,6 +95,7 @@ test("records the approved V1 command contracts", () => {
   });
 });
 
+test("records approved DATA declaration and assignment contracts", () => {
   assert.deepEqual(resolveCommand("DATA", "CREATE").signature, {
     parameters: [
       { name: "name", type: "Identifier" },
@@ -116,6 +117,8 @@ test("records the approved V1 command contracts", () => {
     ],
     result: { kind: "stored", target: "target", type: "target", scope: "function", targetScope: "module", targetStorage: "global" }
   });
+});
+
 test("enables only commands with approved semantic contracts", () => {
   const enabled = new Set(["DATA.CREATE", "DATA.SET", "DATA.SET_GLOBAL", "DATA.COUNT", "DATA.ADD", "DATA.REMOVE", "UI.SHOW", "UI.TEXT", "UI.TREE", "PROCESS.ADD", "PROCESS.CALCULATE", "PROCESS.COMPARE", "INTEGRATION.REQUEST"]);
   for (const command of COMMAND_REGISTRY) {
