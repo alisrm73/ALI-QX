@@ -309,6 +309,9 @@ test("lowers statement command contracts from the registry and rejects invalid a
     .filter(item => item.opcode === "COMMAND_CALL")
     .map(item => item.operands.command);
   assert.deepEqual(commands, ["DATA.COUNT", "UI.SHOW", "UI.TEXT", "UI.TREE"]);
+  const uiCalls = qir.initializer.blocks.flatMap(block => block.instructions)
+    .filter(item => item.opcode === "COMMAND_CALL" && item.operands.command.startsWith("UI."));
+  assert.ok(uiCalls.every(item => Array.isArray(item.operands.arguments) && item.operands.arguments.length === 1));
 
   const badCount = parse("DATA.CREATE(items, [1])\nDATA.COUNT(1)");
   assert.throws(
