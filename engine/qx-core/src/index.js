@@ -72,3 +72,8 @@ export {
 export { analyzeProjectIdea, QXIdeaAnalysisError } from "./idea-analyzer.js";
 
 export { analyzeProjectIdeaDetails, QXIdeaDetailsError } from "./idea-analysis-details.js";
+
+export {
+  analyzeProjectIdeaReviewPackage,
+  QXIdeaReviewPackageError
+} from "./idea-review-package.js";
