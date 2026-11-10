@@ -323,16 +323,16 @@ test("derives DATA.CREATE and DATA.SET arity and value constraints from registry
     'DATA.SET(title, title + " Studio")',
     "DATA.CREATE(items, [1, TRUE])",
     "DATA.SET(items, [2, FALSE])"
-  ].join("\\n"));
+  ].join("\n"));
   assert.equal(valid.valid, true, JSON.stringify(valid.diagnostics));
 
   const wrongCreateArity = check("DATA.CREATE(value)");
   assert.ok(wrongCreateArity.diagnostics.some(item => item.code === "QX3017"));
   const wrongCreateType = check("DATA.CREATE(value, NULL)");
   assert.ok(wrongCreateType.diagnostics.some(item => item.code === "QX3018"));
-  const wrongSetArity = check("DATA.CREATE(value, 1)\\nDATA.SET(value)");
+  const wrongSetArity = check("DATA.CREATE(value, 1)\nDATA.SET(value)");
   assert.ok(wrongSetArity.diagnostics.some(item => item.code === "QX3019"));
-  const wrongSetType = check('DATA.CREATE(value, 1)\\nDATA.SET(value, "text")');
+  const wrongSetType = check('DATA.CREATE(value, 1)\nDATA.SET(value, "text")');
   assert.ok(wrongSetType.diagnostics.some(item => item.code === "QX3022"));
 });
 
@@ -342,16 +342,16 @@ test("enforces DATA.SET_GLOBAL registry scope and target-storage constraints", (
     "FUNCTION update()",
     "DATA.SET_GLOBAL(value, 2)",
     "END"
-  ].join("\\n"));
+  ].join("\n"));
   assert.equal(valid.valid, true, JSON.stringify(valid.diagnostics));
 
-  const outsideFunction = check("DATA.CREATE(value, 1)\\nDATA.SET_GLOBAL(value, 2)");
+  const outsideFunction = check("DATA.CREATE(value, 1)\nDATA.SET_GLOBAL(value, 2)");
   assert.ok(outsideFunction.diagnostics.some(item => item.code === "QX3021"));
   const localTarget = check([
     "FUNCTION update()",
     "DATA.CREATE(value, 1)",
     "DATA.SET_GLOBAL(value, 2)",
     "END"
-  ].join("\\n"));
+  ].join("\n"));
   assert.ok(localTarget.diagnostics.some(item => item.code === "QX3021"));
 });
