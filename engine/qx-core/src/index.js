@@ -91,3 +91,8 @@ export {
   createRequirementBuildMap,
   assertRequirementBuildMapForProject
 } from "./requirement-build-map.js";
+
+export {
+  createBuildBlueprint,
+  assertBuildBlueprintForProject
+} from "./build-blueprint.js";
