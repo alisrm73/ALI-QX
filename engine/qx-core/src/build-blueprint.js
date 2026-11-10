@@ -91,7 +91,6 @@ export function createBuildBlueprint(project, {
   assertRequirementBuildMapForProject(project, buildPlan, requirementBuildMap);
 
   const requirementKeysByTask = new Map(buildPlan.tasks.map(task => [task.id, []]));
-  const filePathsByTask = new Map(buildPlan.tasks.map(task => [task.id, []]));
   const requirementKeysByFile = new Map(requirementBuildMap.fileBindings.map(file => [file.path, []]));
 
   for (const entry of requirementBuildMap.entries) {
