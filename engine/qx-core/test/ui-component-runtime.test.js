@@ -29,6 +29,7 @@ test("publishes immutable built-in presentation component releases and exact loc
     "sha256:1e385953ec61605090646609296cc53d7ed91db49d43f9e6497051963515ddcc"
   ]);
   assert.ok(lock.components.every(entry => /^sha256:[0-9a-f]{64}$/.test(entry.schemaDigest)));
+  assert.ok(lock.components.every(entry => entry.registryRelease === "ui-registry-1.1.0"));
 });
 
 test("keeps host registry schemas immutable and enforces strict SemVer", () => {
@@ -83,6 +84,41 @@ test("adds UI.DIVIDER through a new container contract without changing the old 
   assert.throws(() => validateUIComponentTree(invalidDivider, lock), {
     code: "QX_UI_CHILD_POLICY"
   });
+});
+
+test("preserves exact pins from the immutable legacy registry snapshot", () => {
+  const legacyLock = {
+    schema: "QX.UI.COMPONENT-LOCK",
+    version: "1.0",
+    components: [
+      {
+        type: "UI.CONTAINER",
+        contractVersion: "1.0.0",
+        schemaDigest: "sha256:6693f6a569739a270be14209ba18ae467a101823eb83e12028619ad4e86dadab",
+        registryRelease: "ui-registry-1.0.0"
+      },
+      {
+        type: "UI.HEADING",
+        contractVersion: "1.0.0",
+        schemaDigest: "sha256:c793f48ad34d9d73ba62c96cc4b42c061ecf7f845c46dffd87c3ac35a5e7b239",
+        registryRelease: "ui-registry-1.0.0"
+      },
+      {
+        type: "UI.TEXT_BLOCK",
+        contractVersion: "1.0.0",
+        schemaDigest: "sha256:1e385953ec61605090646609296cc53d7ed91db49d43f9e6497051963515ddcc",
+        registryRelease: "ui-registry-1.0.0"
+      }
+    ]
+  };
+  const legacyTree = tree([
+    component("root", "UI.CONTAINER", [
+      component("heading", "UI.HEADING", [{ kind: "text", value: "Legacy title" }], { level: 1 }),
+      component("body", "UI.TEXT_BLOCK", [{ kind: "text", value: "Legacy content" }])
+    ])
+  ]);
+  const result = validateUIComponentTree(legacyTree, legacyLock);
+  assert.equal(result.children[0].children[0].children[0].value, "Legacy title");
 });
 
 test("rejects missing lock files and missing exact pins", () => {
