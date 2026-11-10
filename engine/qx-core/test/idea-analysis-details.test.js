@@ -57,28 +57,47 @@ test("returns a frozen, evidence-backed details report without a project manifes
   assert.equal(Object.hasOwn(result.report, "approval"), false);
 });
 
+test("accepts explicit design constraints only with quoted evidence", async () => {
+  const result = await analyzeProjectIdeaDetails({
+    idea: "Use a minimal design with clear navigation.",
+    analyze: async () => validDetails({
+      functions: [],
+      userFlows: [],
+      design: {
+        visualDirection: ["Minimal design"],
+        layoutRequirements: ["Clear navigation"],
+        accessibilityRequirements: [],
+        certainty: "explicit",
+        evidence: ["minimal design", "clear navigation"]
+      }
+    })
+  });
+  assert.equal(result.report.design.certainty, "explicit");
+  assert.equal(result.report.design.evidence.length, 2);
+});
+
 test("rejects unsupported fields and malformed evidence", async () => {
   await assert.rejects(analyzeProjectIdeaDetails({
-    idea: "A project idea",
+    idea: "Visitors can read community news. A project idea",
     analyze: async () => ({ ...validDetails(), approved: true })
   }), { code: "QX_IDEA_DETAILS_INVALID_RESULT" });
 
   await assert.rejects(analyzeProjectIdeaDetails({
-    idea: "A project idea",
+    idea: "Visitors can read community news. A project idea",
     analyze: async () => validDetails({
       functions: [{ ...validDetails().functions[0], evidence: [] }]
     })
   }), { code: "QX_IDEA_DETAILS_INVALID_RESULT" });
 
   await assert.rejects(analyzeProjectIdeaDetails({
-    idea: "A project idea",
+    idea: "Visitors can read community news. A project idea",
     analyze: async () => validDetails({
       functions: [{ ...validDetails().functions[0], evidence: ["invented requirement"] }]
     })
   }), { code: "QX_IDEA_DETAILS_INVALID_RESULT" });
 
   await assert.rejects(analyzeProjectIdeaDetails({
-    idea: "A project idea",
+    idea: "Visitors can read community news. A project idea",
     analyze: async () => validDetails({
       functions: new Array(1)
     })
@@ -88,14 +107,14 @@ test("rejects unsupported fields and malformed evidence", async () => {
 test("rejects duplicate identifiers and unknown certainty", async () => {
   const first = validDetails().functions[0];
   await assert.rejects(analyzeProjectIdeaDetails({
-    idea: "A project idea",
+    idea: "Visitors can read community news. A project idea",
     analyze: async () => validDetails({ functions: [first, { ...first, name: "Duplicate" }] })
   }), { code: "QX_IDEA_DETAILS_INVALID_RESULT" });
 
   await assert.rejects(analyzeProjectIdeaDetails({
-    idea: "A project idea",
+    idea: "Users can cancel. Visitors can read community news.",
     analyze: async () => validDetails({
-      businessRules: [{ id: "rule-1", statement: "Users can cancel", certainty: "guaranteed", evidence: ["cancel"] }]
+      businessRules: [{ id: "rule-1", statement: "Users can cancel", certainty: "guaranteed", evidence: ["Users can cancel"] }]
     })
   }), { code: "QX_IDEA_DETAILS_INVALID_RESULT" });
 });
@@ -107,7 +126,7 @@ test("validates input, bounds output, and aborts on timeout", async () => {
 
   let signal;
   await assert.rejects(analyzeProjectIdeaDetails({
-    idea: "A project idea",
+    idea: "Visitors can read community news. A project idea",
     timeoutMs: 5,
     analyze: (_request, context) => {
       signal = context.signal;
@@ -119,7 +138,7 @@ test("validates input, bounds output, and aborts on timeout", async () => {
 
 test("does not disclose host analyzer errors", async () => {
   await assert.rejects(analyzeProjectIdeaDetails({
-    idea: "A project idea",
+    idea: "Visitors can read community news. A project idea",
     analyze: async () => { throw new Error("private provider detail"); }
   }), error => {
     assert.ok(error instanceof QXIdeaDetailsError);
