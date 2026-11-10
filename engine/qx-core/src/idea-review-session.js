@@ -154,7 +154,7 @@ function buildItems(reviewPackage) {
   if (new Set(items.map(item => item.id)).size !== items.length) {
     fail("QX_IDEA_REVIEW_SESSION_INVALID_PACKAGE", "Review item identifiers must be unique");
   }
-  return items.map(item => ({ ...item, decision: null, note: null }));
+  return items.map(item => ({ ...item, decision: null, note: "" }));
 }
 
 function createSession(reviewPackage, { revision = 1, history = [] } = {}) {
