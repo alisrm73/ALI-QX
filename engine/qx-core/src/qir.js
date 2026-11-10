@@ -150,19 +150,21 @@ class FunctionBuilder {
       case "CommandCallExpression": {
         const cmd = resolveCommand(node.domain, node.command);
         if (!cmd || !["DATA.COUNT", "DATA.ADD", "DATA.REMOVE", "INTEGRATION.REQUEST"].includes(cmd.id)) fail("QIR_E_COMMAND_NOT_ALLOWED", "Command has no approved QIR expression contract", node);
-        const expected = cmd.id === "DATA.COUNT" ? 1 : cmd.id === "INTEGRATION.REQUEST" ? 3 : 2;
-        if (node.args.length !== expected) fail("QIR_E_BAD_COMMAND_ARGUMENTS", cmd.id + " expects " + expected + " arguments", node);
-        const args = node.args.map(arg => this.lowerExpression(arg));
-        if (cmd.id === "INTEGRATION.REQUEST") {
-          if (args.some(arg => arg.type !== "TXT")) fail("QIR_E_COMMAND_ARGUMENT", "INTEGRATION.REQUEST requires three TXT arguments", node);
-          const result = this.value();
-          this.emit("COMMAND_CALL", { command: cmd.id, arguments: args.map(arg => arg.value) }, "TXT", result, node);
-          return { value: result, type: "TXT" };
+        const signature = cmd.signature;
+        if (!signature || node.args.length !== signature.parameters.length) {
+          fail("QIR_E_BAD_COMMAND_ARGUMENTS", cmd.id + " does not match its registered parameter count", node);
         }
-        if (args[0].type !== "LIST") fail("QIR_E_COMMAND_ARGUMENT", cmd.id + " first argument must be LIST", node.args[0]);
-        if (cmd.id === "DATA.REMOVE" && args[1].type !== "NUM") fail("QIR_E_COMMAND_ARGUMENT", "DATA.REMOVE index must be NUM", node.args[1]);
-        const resultType = cmd.id === "DATA.COUNT" ? "NUM" : "LIST";
-        const result = this.value(); this.emit("COMMAND_CALL", { command: cmd.id, arguments: args.map(arg => arg.value) }, resultType, result, node);
+        const args = node.args.map(arg => this.lowerExpression(arg));
+        for (let index = 0; index < signature.parameters.length; index++) {
+          const parameter = signature.parameters[index];
+          const acceptedTypes = parameter.types ?? (parameter.type ? [parameter.type] : null);
+          if (acceptedTypes && !acceptedTypes.includes(args[index].type)) {
+            fail("QIR_E_COMMAND_ARGUMENT", cmd.id + " argument " + (index + 1) + " does not match its registered type", node.args[index]);
+          }
+        }
+        const resultType = signature.result.type;
+        const result = this.value();
+        this.emit("COMMAND_CALL", { command: cmd.id, arguments: args.map(arg => arg.value) }, resultType, result, node);
         return { value: result, type: resultType };
       }
       default: fail("QIR_E_UNSUPPORTED_AST", "Unsupported expression " + node.type, node);
@@ -613,7 +615,7 @@ export function validateQIR(module) {
               types !== null && types.includes(valueTypes.get(args[index]))
             );
           const resultMatches = signature?.result?.kind === "value"
-            ? Boolean(inst.result) && inst.type === signature.result.type
+            ? (!inst.result && !inst.type) || (Boolean(inst.result) && inst.type === signature.result.type)
             : Boolean(signature) && !inst.result && !inst.type;
           if (op.command === "DATA.COUNT") {
             if (!argumentsMatch || !resultMatches) report("QIR_E_COMMAND_SIGNATURE", "DATA.COUNT requires its registered signature", inst.source);
