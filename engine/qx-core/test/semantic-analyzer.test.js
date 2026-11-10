@@ -320,7 +320,7 @@ test("validates DATA.COUNT statement arity and registered LIST parameter type", 
 test("derives DATA.CREATE and DATA.SET arity and value constraints from registry signatures", () => {
   const valid = check([
     'DATA.CREATE(title, "QX")',
-    "DATA.SET(title, title + " Studio")",
+    'DATA.SET(title, title + " Studio")',
     "DATA.CREATE(items, [1, TRUE])",
     "DATA.SET(items, [2, FALSE])"
   ].join("\\n"));
