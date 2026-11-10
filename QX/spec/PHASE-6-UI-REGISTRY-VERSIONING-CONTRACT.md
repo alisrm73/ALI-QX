@@ -1,6 +1,6 @@
 # UI Component Registry and Project Version Pinning — Phase 6
 
-**Status:** Host registry and exact lock validation for the original three static components are implemented in `main` through PR #12. Phase 5 adds a versioned `UI.CONTAINER@1.1.0` release and `UI.DIVIDER@1.0.0` as a non-interactive static extension; broader registry lifecycle requirements remain separately gated.  
+**Status:** Host registry and exact lock validation for the original three static components are implemented in `main` through PR #12. Phase 5 publishes a separate immutable `ui-registry-1.1.0` snapshot containing `UI.CONTAINER@1.1.0` and `UI.DIVIDER@1.0.0`; the original `ui-registry-1.0.0` snapshot remains available for existing pins. Broader registry lifecycle requirements remain separately gated.  
 **Scope:** Host registry identity, immutable component contract releases, deterministic resolution, and project-level version locks.  
 **Compatibility:** QIR 1.0–1.3 remain unchanged. QIR 1.4 introduces `UI.TREE`; existing `UI.TEXT` / `UI.SHOW` behavior is retained.
 
@@ -15,7 +15,7 @@ It defines:
 - deterministic validation and failure behavior;
 - an explicit upgrade workflow.
 
-The merged runtime provides the statement-only `UI.TREE(TXT)` command and a host-controlled renderer for exact static component releases listed in the registry. The Phase 5 divider addition preserves `UI.CONTAINER@1.0.0`, adds `UI.CONTAINER@1.1.0` with divider child support, and registers `UI.DIVIDER@1.0.0`. It does not enable events, fetch packages, or grant host capabilities. The UI tree contract remains a separate structural contract.
+The merged runtime provides the statement-only `UI.TREE(TXT)` command and a host-controlled renderer for exact static component releases listed in the registry. The Phase 5 divider addition preserves the immutable `ui-registry-1.0.0` snapshot and `UI.CONTAINER@1.0.0`, then publishes `ui-registry-1.1.0` with `UI.CONTAINER@1.1.0` divider-child support and `UI.DIVIDER@1.0.0`. It does not enable events, fetch packages, or grant host capabilities. The UI tree contract remains a separate structural contract.
 
 ## 2. Identity model
 
@@ -163,4 +163,4 @@ This policy is not implemented until tests demonstrate:
 8. no project-controlled renderer or capability escalation;
 9. compatibility with the UI tree contract and existing QIR 1.0–1.3 behavior.
 
-Exact lock validation and pin resolution for the original built-in releases are implemented and covered by tests. Phase 5 extends the catalog with an immutable new container release and a static divider release; old pins remain unchanged. Multi-release lifecycle behavior, deprecation/retirement, and explicit upgrade/rollback workflows remain outside the current runtime. This document does not authorize components or capabilities beyond the host registry.
+Exact lock validation and pin resolution for the original built-in releases are implemented and covered by tests. Phase 5 extends the catalog in a new immutable registry snapshot with a new container release and a static divider release; the original snapshot and old pins remain unchanged. Multi-release lifecycle behavior, deprecation/retirement, and explicit upgrade/rollback workflows remain outside the current runtime. This document does not authorize components or capabilities beyond the host registry.
