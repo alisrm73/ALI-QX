@@ -66,7 +66,9 @@ function componentNode(id, type, props, children) {
 
 export function generateQXSourceFromProject(project, options = {}) {
   assertPlainJSONData(options, "options");
-  assertExactKeys(options, ["expectedProjectDigest"], "options");
+  if (Object.keys(options).some(key => key !== "expectedProjectDigest")) {
+    fail("QX_PROJECT_GENERATION_INVALID", "options contains unsupported fields");
+  }
   assertPlainJSONData(project, "project");
 
   const expectedKeys = [
