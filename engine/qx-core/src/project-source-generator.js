@@ -18,6 +18,9 @@ function assertPlainJSONData(value, field, seen = new Set()) {
 
   seen.add(value);
   if (Array.isArray(value)) {
+    if (Object.getPrototypeOf(value) !== Array.prototype) {
+      fail("QX_PROJECT_GENERATION_INVALID", field + " arrays must use the standard array prototype");
+    }
     const descriptors = Object.getOwnPropertyDescriptors(value);
     const keys = Reflect.ownKeys(descriptors).filter(key => key !== "length");
     if (keys.length !== value.length || keys.some((key, index) =>
