@@ -68,6 +68,10 @@ function componentNode(id, type, props, children) {
 }
 
 export function generateQXSourceFromProject(project, options = {}) {
+  if (options === null || typeof options !== "object" || Array.isArray(options) ||
+      Object.getPrototypeOf(options) !== Object.prototype) {
+    fail("QX_PROJECT_GENERATION_INVALID", "options must be a plain data object");
+  }
   assertPlainJSONData(options, "options");
   if (Object.keys(options).some(key => key !== "expectedProjectDigest")) {
     fail("QX_PROJECT_GENERATION_INVALID", "options contains unsupported fields");
