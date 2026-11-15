@@ -6,11 +6,50 @@ function fail(code, message) {
   throw new QXProjectError(code, message);
 }
 
-function requireText(value, field, allowEmpty = false) {
-  if (typeof value !== "string" || (!allowEmpty && value.trim().length === 0)) {
-    fail("QX_PROJECT_GENERATION_INVALID", field + " must be a string" + (allowEmpty ? "" : " containing text"));
+function assertPlainJSONData(value, field, seen = new Set()) {
+  if (value === null || typeof value === "string" || typeof value === "boolean") return;
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) fail("QX_PROJECT_GENERATION_INVALID", field + " must contain finite numbers");
+    return;
   }
-  return value;
+  if (typeof value !== "object" || seen.has(value)) {
+    fail("QX_PROJECT_GENERATION_INVALID", field + " must contain acyclic JSON data");
+  }
+
+  seen.add(value);
+  if (Array.isArray(value)) {
+    const descriptors = Object.getOwnPropertyDescriptors(value);
+    const keys = Reflect.ownKeys(descriptors).filter(key => key !== "length");
+    if (keys.length !== value.length || keys.some((key, index) =>
+      key !== String(index) || !descriptors[key].enumerable ||
+      !Object.hasOwn(descriptors[key], "value"))) {
+      fail("QX_PROJECT_GENERATION_INVALID", field + " must contain dense data arrays without extra properties");
+    }
+    for (let index = 0; index < value.length; index += 1) {
+      assertPlainJSONData(descriptors[String(index)].value, field + "[" + index + "]", seen);
+    }
+  } else {
+    if (Object.getPrototypeOf(value) !== Object.prototype) {
+      fail("QX_PROJECT_GENERATION_INVALID", field + " must contain plain data objects");
+    }
+    const descriptors = Object.getOwnPropertyDescriptors(value);
+    for (const key of Reflect.ownKeys(descriptors)) {
+      const descriptor = descriptors[key];
+      if (typeof key !== "string" || !descriptor.enumerable ||
+          !Object.hasOwn(descriptor, "value")) {
+        fail("QX_PROJECT_GENERATION_INVALID", field + " must not contain symbols, hidden fields, or accessors");
+      }
+      assertPlainJSONData(descriptor.value, field + "." + key, seen);
+    }
+  }
+  seen.delete(value);
+}
+
+function assertExactKeys(value, keys, field) {
+  if (!value || typeof value !== "object" || Array.isArray(value) ||
+      Object.keys(value).sort().join("\u0000") !== [...keys].sort().join("\u0000")) {
+    fail("QX_PROJECT_GENERATION_INVALID", field + " contains unsupported or missing fields");
+  }
 }
 
 function pageNodeId(pageId) {
@@ -25,28 +64,39 @@ function componentNode(id, type, props, children) {
   return { kind: "component", id, type, version: "1.0.0", props, children };
 }
 
-export function generateQXSourceFromProject(project, { expectedProjectDigest } = {}) {
-  assertProjectApproved(project, { expectedDigest: expectedProjectDigest });
+export function generateQXSourceFromProject(project, options = {}) {
+  assertPlainJSONData(options, "options");
+  assertExactKeys(options, ["expectedProjectDigest"], "options");
+  assertPlainJSONData(project, "project");
+
   const expectedKeys = [
     "approval", "dataRequirements", "description", "digest", "integrationRequirements",
     "openQuestions", "pages", "projectId", "requirements", "revision", "schemaVersion",
     "status", "title"
   ];
-  if (Object.keys(project).sort().join("\\0") !== expectedKeys.sort().join("\\0")) {
-    fail("QX_PROJECT_GENERATION_INVALID", "Approved project manifest contains unsupported fields");
-  }
+  assertExactKeys(project, expectedKeys, "Approved project manifest");
+
+  assertProjectApproved(project, { expectedDigest: options.expectedProjectDigest });
+
   if (!Array.isArray(project.pages) || project.pages.length === 0 ||
-      typeof project.title !== "string" || typeof project.description !== "string") {
+      typeof project.title !== "string" || project.title.trim().length === 0 ||
+      typeof project.description !== "string" || project.description.trim().length === 0) {
     fail("QX_PROJECT_GENERATION_INVALID", "An approved project must contain a title, description, and at least one page");
+  }
+
+  for (const field of ["requirements", "dataRequirements", "integrationRequirements", "openQuestions"]) {
+    if (!Array.isArray(project[field]) || project[field].some(value => typeof value !== "string")) {
+      fail("QX_PROJECT_GENERATION_INVALID", field + " must be a dense array of strings");
+    }
   }
 
   const pageIds = new Set();
   const generatedIds = new Set(["project-root", "project-title", "project-description"]);
   const pageNodes = project.pages.map((page, index) => {
-    if (!page || typeof page !== "object" || Array.isArray(page) ||
-        typeof page.id !== "string" || !/^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(page.id) ||
+    assertExactKeys(page, ["id", "title", "description"], "Project page " + index);
+    if (typeof page.id !== "string" || !/^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(page.id) ||
         typeof page.title !== "string" || page.title.trim().length === 0 ||
-        (page.description !== undefined && typeof page.description !== "string")) {
+        typeof page.description !== "string") {
       fail("QX_PROJECT_GENERATION_INVALID", "Project page " + index + " is malformed");
     }
     if (pageIds.has(page.id)) fail("QX_PROJECT_GENERATION_INVALID", "Project page IDs must be unique");
@@ -60,7 +110,7 @@ export function generateQXSourceFromProject(project, { expectedProjectDigest } =
     const children = [
       componentNode(id + "-heading", "UI.HEADING", { level: 2 }, [textNode(page.title)])
     ];
-    if ((page.description ?? "").length > 0) {
+    if (page.description.length > 0) {
       children.push(componentNode(id + "-description", "UI.TEXT_BLOCK", {}, [textNode(page.description)]));
     }
     return componentNode(id, "UI.CONTAINER", {}, children);
@@ -71,8 +121,8 @@ export function generateQXSourceFromProject(project, { expectedProjectDigest } =
     version: "1.0",
     children: [
       componentNode("project-root", "UI.CONTAINER", {}, [
-        componentNode("project-title", "UI.HEADING", { level: 1 }, [textNode(requireText(project.title, "title"))]),
-        componentNode("project-description", "UI.TEXT_BLOCK", {}, [textNode(requireText(project.description, "description"))]),
+        componentNode("project-title", "UI.HEADING", { level: 1 }, [textNode(project.title)]),
+        componentNode("project-description", "UI.TEXT_BLOCK", {}, [textNode(project.description)]),
         ...pageNodes
       ])
     ]
