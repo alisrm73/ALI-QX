@@ -33,6 +33,15 @@ test("generates deterministic QX source and exact UI lock from an approved manif
   assert.deepEqual(first.uiLock, second.uiLock);
   assert.equal(first.projectDigest, project.digest);
   assert.equal(first.projectRevision, project.revision);
+  const tree = JSON.parse(first.treeJson);
+  const root = tree.children[0];
+  assert.equal(root.type, "UI.CONTAINER");
+  assert.equal(root.version, "1.1.0");
+  assert.equal(root.children[2].type, "UI.DIVIDER");
+  assert.equal(root.children[2].version, "1.0.0");
+  assert.deepEqual(root.children.slice(3).map(node => node.type), ["UI.CONTAINER", "UI.CONTAINER"]);
+  assert.ok(first.uiLock.components.some(pin => pin.type === "UI.DIVIDER" && pin.contractVersion === "1.0.0"));
+  assert.ok(first.uiLock.components.some(pin => pin.type === "UI.CONTAINER" && pin.contractVersion === "1.1.0"));
 });
 
 test("reports project requirements that the static generator does not implement", () => {
@@ -113,6 +122,8 @@ test("generated source passes parser, semantic analysis, QIR, VM, and static web
   });
   assert.deepEqual(Object.keys(webProject.files).sort(), ["app.js", "index.html", "styles.css"]);
   assert.match(webProject.files["index.html"], /Generated Project/);
+  assert.match(webProject.files["app.js"], /createElement\("hr"\)/);
+  assert.match(webProject.files["app.js"], /qx-ui-divider/);
 });
 
 
