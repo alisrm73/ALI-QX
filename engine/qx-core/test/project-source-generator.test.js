@@ -114,3 +114,55 @@ test("generated source passes parser, semantic analysis, QIR, VM, and static web
   assert.deepEqual(Object.keys(webProject.files).sort(), ["app.js", "index.html", "styles.css"]);
   assert.match(webProject.files["index.html"], /Generated Project/);
 });
+
+
+test("rejects sparse approved requirement arrays instead of returning undefined mappings", () => {
+  const project = approvedProject({ requirements: new Array(1) });
+  assert.throws(() => generateQXSourceFromProject(project), {
+    code: "QX_PROJECT_GENERATION_INVALID"
+  });
+});
+
+test("rejects sparse approved page arrays before constructing the UI tree", () => {
+  const project = approvedProject({ pages: new Array(1) });
+  assert.throws(() => generateQXSourceFromProject(project), {
+    code: "QX_PROJECT_GENERATION_INVALID"
+  });
+});
+
+test("rejects accessor-backed manifests without invoking their getters", () => {
+  const project = approvedProject();
+  const descriptors = Object.getOwnPropertyDescriptors(project);
+  delete descriptors.title;
+  const untrusted = Object.defineProperties({}, descriptors);
+  let invoked = false;
+  Object.defineProperty(untrusted, "title", {
+    enumerable: true,
+    get() {
+      invoked = true;
+      return project.title;
+    }
+  });
+
+  assert.throws(() => generateQXSourceFromProject(untrusted), {
+    code: "QX_PROJECT_GENERATION_INVALID"
+  });
+  assert.equal(invoked, false);
+});
+
+test("rejects accessor-backed generator options without invoking their getters", () => {
+  const project = approvedProject();
+  let invoked = false;
+  const options = Object.defineProperty({}, "expectedProjectDigest", {
+    enumerable: true,
+    get() {
+      invoked = true;
+      return project.digest;
+    }
+  });
+
+  assert.throws(() => generateQXSourceFromProject(project, options), {
+    code: "QX_PROJECT_GENERATION_INVALID"
+  });
+  assert.equal(invoked, false);
+});
