@@ -71,6 +71,7 @@
 - [مواصفات لغة QX الحالية](QX/README.md).
 - [نواة QX البرمجية — Lexer/Parser](engine/qx-core/README.md).
 - [مرجع الرموز الرياضية المستقل](Mathematics/README.md).
+- [قرارات وملاحظات المشروع](docs/قرارات وملاحظات المشروع.md).
 لا توجد نسخة أرشيفية من مواصفات QX ضمن مجلد Mathematics؛ المرجع التفصيلي الحالي هو [QX/README.md](QX/README.md).
 
 ## 4. الرموز الخاصة بلغة QX
