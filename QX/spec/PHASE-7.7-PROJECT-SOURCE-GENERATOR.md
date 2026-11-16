@@ -75,7 +75,7 @@ No QX V1 grammar, command registry, UI component contract, lifecycle policy, exi
 
 **CI evidence on the verified generator head:** Phase 3 run `42588610378`, phase 4 run `42588610532`, phase 5 Chromium run `42588610230`, phase 6 run `42588610284`, and phase 7 project workflow run `42588610283` all completed successfully.
 
-The follow-on integrated workflow is specified separately in `QX/spec/PHASE-7.8-INTEGRATED-PROJECT-WORKFLOW.md` and is not yet verified.
+The follow-on integrated workflow is implemented and verified separately in `QX/spec/PHASE-7.8-INTEGRATED-PROJECT-WORKFLOW.md`. The workflow can optionally require explicit requirement-to-acceptance-criteria mappings backed by passing tests and packaged file evidence; without complete coverage, it does not report the project as ready.
 
 ## 7. Compatibility
 
