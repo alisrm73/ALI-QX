@@ -69,6 +69,7 @@
 ## وثائق المشروع
 
 - [مواصفات لغة QX الحالية](QX/README.md).
+- [المخطط المعماري وخطة التنفيذ والتسليم](QX/spec/ALI-QX-16-ITEM-IMPLEMENTATION-PLAN.md).
 - [نواة QX البرمجية — Lexer/Parser](engine/qx-core/README.md).
 - [مرجع الرموز الرياضية المستقل](Mathematics/README.md).
 - [قرارات وملاحظات المشروع](docs/قرارات وملاحظات المشروع.md).
