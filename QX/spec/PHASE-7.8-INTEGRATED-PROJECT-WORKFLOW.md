@@ -5,7 +5,7 @@
 
 ## 1. Goal
 
-Connect the approved project manifest, deterministic QX source generator, existing Web Backend, protected workspace, test-suite contract, and delivery package into one explicit orchestration entry point.
+Connect the approved project manifest, deterministic QX source generator, existing Web Backend, protected workspace, test-suite contract, and delivery package into one explicit orchestration entry point. The workflow also supports optional, evidence-backed requirement coverage so readiness can be withheld until every declared requirement is mapped to acceptance criteria, passing tests, and packaged files.
 
 ## 2. Public entry point
 
@@ -23,6 +23,7 @@ Connect the approved project manifest, deterministic QX source generator, existi
 7. Write the three assets through `writeProjectFile`; no directories are created by the workflow.
 8. Run the supplied test cases through the caller-provided `executeTest` callback, binding results to the actual written-file digests.
 9. Package all three generated assets through `createProjectDeliveryPackage`.
+10. When `requirementCoverage` is supplied, verify before the first workspace write that every requirement, data requirement, and integration requirement is mapped to acceptance criteria referencing declared tests and safe evidence paths; after tests and packaging, bind the coverage report to the actual test and delivery digests.
 
 ## 3. Result semantics
 
@@ -30,7 +31,7 @@ Connect the approved project manifest, deterministic QX source generator, existi
 - `requires_requirement_review`: tests and delivery package are ready, but the generator has requirements it cannot prove it implemented. The package is available for review, but the overall workflow is not represented as fully accepted.
 - `ready`: delivery is ready and the generator reports no unmapped requirements. This is reserved for future coverage-aware generator contracts.
 
-The current manifest stores natural-language requirement strings without structured coverage links. Therefore the initial static generator returns them in `unmappedRequirements`; the workflow must not claim final acceptance merely because static assets were generated and packaged.
+The project manifest stores natural-language requirement strings without built-in structured coverage links. The generator therefore always exposes requirements outside its static implementation in `unmappedRequirements`. If `requirementCoverage` is omitted, the workflow remains `requires_requirement_review` (unless blocked). If supplied, every project requirement, data requirement, and integration requirement must be mapped to acceptance criteria backed by passing declared tests and matching files included in the delivery package. Only a fully covered report with no open project questions can yield `ready`; partial, missing, or clarification-dependent coverage cannot.
 
 ## 4. Explicit permissions and side effects
 
@@ -57,7 +58,8 @@ The current manifest stores natural-language requirement strings without structu
 - [x] All three files are written only through the protected workspace API.
 - [x] Tests run with actual written-file digests and required failures block delivery.
 - [x] Delivery package contains all three generated assets and validates against the same project, plan, and test report.
-- [x] Unmapped requirements force `requires_requirement_review`, never `ready`.
+- [x] Unmapped requirements force `requires_requirement_review` when no complete evidence-backed coverage mapping is supplied.
+- [x] Optional requirement coverage validates complete mappings and acceptance criteria before writes, then binds coverage to passing tests and packaged file digests; partial or clarification-dependent coverage cannot yield `ready`.
 - [x] Partial write failure semantics and non-transactional behavior are documented.
 - [x] All phase 3–7 and browser compatibility workflows pass on the final head.
 
