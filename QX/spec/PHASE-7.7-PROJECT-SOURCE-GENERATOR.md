@@ -1,8 +1,8 @@
 # 7.7 — Deterministic Project-to-QX Source Generator
 
-**Status:** Initial static generator implementation passed its original acceptance tests. Supported-UI expansion is in progress on `feat/project-generator-supported-ui-components`; it is not complete until CI and review evidence are recorded.
-**Target branch:** `feat/project-generator-supported-ui-components`
-**Parent work:** PR #27 (keep Draft/open; do not merge without explicit approval).
+**Status:** The bounded static generator and its supported-UI expansion, including `UI.CONTAINER@1.1.0` and `UI.DIVIDER@1.0.0`, are merged into `main`. PR #27 established the initial phase-7 implementation; PR #54 hardened manifest inputs; PR #55 added the divider and focused regression/browser-renderer assertions. The generator remains intentionally limited to static Web UI, and phase 7 is not closed.
+**Current branch:** `main` (the implementation is merged; the former feature branch is historical, not the active target).
+**Parent work:** PR #27 is closed and merged as `c683ff476a0b8290c0d8c144374f114c5edb495f`.
 
 ## 1. Decision
 
@@ -62,7 +62,7 @@ No QX V1 grammar, command registry, UI component contract, lifecycle policy, exi
 
 - [x] Reject unapproved, stale, malformed, or modified project manifests.
 - [x] Produce a valid static UI tree for a minimal approved project with one or more pages.
-- [ ] Use all supported static generator UI components, including the versioned root container and divider, with an exact lock and browser renderer test.
+- [x] Use all currently supported static generator UI components, including the versioned root container and divider, with an exact lock and browser-renderer assertion.
 - [x] Preserve all source text as JSON data, including quotes, backslashes, newlines, Arabic, and Unicode.
 - [x] Produce stable IDs and byte-identical outputs for repeated generation from the same manifest.
 - [x] Validate the tree using the exact UI registry and lock.
