@@ -63,8 +63,8 @@ function textNode(value) {
   return { kind: "text", value };
 }
 
-function componentNode(id, type, props, children) {
-  return { kind: "component", id, type, version: "1.0.0", props, children };
+function componentNode(id, type, props, children, version = "1.0.0") {
+  return { kind: "component", id, type, version, props, children };
 }
 
 export function generateQXSourceFromProject(project, options = {}) {
@@ -100,7 +100,7 @@ export function generateQXSourceFromProject(project, options = {}) {
   }
 
   const pageIds = new Set();
-  const generatedIds = new Set(["project-root", "project-title", "project-description"]);
+  const generatedIds = new Set(["project-root", "project-title", "project-description", "project-pages-divider"]);
   const pageNodes = project.pages.map((page, index) => {
     assertExactKeys(page, ["id", "title", "description"], "Project page " + index);
     if (typeof page.id !== "string" || !/^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(page.id) ||
@@ -132,8 +132,9 @@ export function generateQXSourceFromProject(project, options = {}) {
       componentNode("project-root", "UI.CONTAINER", {}, [
         componentNode("project-title", "UI.HEADING", { level: 1 }, [textNode(project.title)]),
         componentNode("project-description", "UI.TEXT_BLOCK", {}, [textNode(project.description)]),
+        componentNode("project-pages-divider", "UI.DIVIDER", {}, []),
         ...pageNodes
-      ])
+      ], "1.1.0")
     ]
   };
   const treeJson = JSON.stringify(tree);

@@ -1,7 +1,7 @@
 # 7.7 — Deterministic Project-to-QX Source Generator
 
-**Status:** Initial static generator implementation and its acceptance tests passed CI on head `fbc3cd0d76d7690fd67c917478b7290a267cdf05`.
-**Target branch:** `phase7/project-build-test-delivery`
+**Status:** Initial static generator implementation passed its original acceptance tests. Supported-UI expansion is in progress on `feat/project-generator-supported-ui-components`; it is not complete until CI and review evidence are recorded.
+**Target branch:** `feat/project-generator-supported-ui-components`
 **Parent work:** PR #27 (keep Draft/open; do not merge without explicit approval).
 
 ## 1. Decision
@@ -12,15 +12,18 @@ The primary ALI-QX project path generates QX source from the exact approved proj
 
 The first generator supports the existing static Web UI target only, using the currently registered built-in components:
 
-- `UI.CONTAINER@1.0.0`
+- `UI.CONTAINER@1.0.0` for page containers
+- `UI.CONTAINER@1.1.0` for the project root that contains the divider
 - `UI.HEADING@1.0.0`
 - `UI.TEXT_BLOCK@1.0.0`
+- `UI.DIVIDER@1.0.0` for a visual separator between the project summary and generated pages
 
 It maps the approved manifest's existing fields into a deterministic static UI tree:
 
 - Project `title` becomes the top-level heading.
 - Project `description` becomes top-level descriptive text.
-- Each manifest `pages[]` entry becomes a container with a heading and, when non-empty, descriptive text.
+- Each manifest `pages[]` entry becomes a `UI.CONTAINER@1.0.0` with a heading and, when non-empty, descriptive text.
+- A single `UI.DIVIDER@1.0.0` separates the project summary from the page list; its parent uses `UI.CONTAINER@1.1.0`.
 - Stable node IDs are derived only from validated page IDs and fixed prefixes.
 - All user-provided strings are JSON-serialized as data; they are never interpolated as executable QX syntax.
 
@@ -59,6 +62,7 @@ No QX V1 grammar, command registry, UI component contract, lifecycle policy, exi
 
 - [x] Reject unapproved, stale, malformed, or modified project manifests.
 - [x] Produce a valid static UI tree for a minimal approved project with one or more pages.
+- [ ] Use all supported static generator UI components, including the versioned root container and divider, with an exact lock and browser renderer test.
 - [x] Preserve all source text as JSON data, including quotes, backslashes, newlines, Arabic, and Unicode.
 - [x] Produce stable IDs and byte-identical outputs for repeated generation from the same manifest.
 - [x] Validate the tree using the exact UI registry and lock.
