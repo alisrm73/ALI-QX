@@ -66,13 +66,14 @@ function proposalFor(project, paths) {
   });
 }
 
-function authorize(project, proposal, changes) {
+function authorize(project, proposal, changes, options = {}) {
   const changesDigest = createProjectRepairChangeSetDigest(changes);
   return authorizeProjectRepair({
     project,
     expectedProjectDigest: project.digest,
     proposal,
     changes,
+    ...options,
     approval: {
       confirmed: true,
       proposalId: proposal.id,
@@ -198,4 +199,21 @@ test("rejects forged authorization objects and proposal path mismatches", async 
     relativePath: "src/other.js", mode: "replace", content: "after",
     expectedContentDigest: sha("before")
   }]), { code: "QX_PROJECT_REPAIR_AUTHORIZATION_INVALID" });
+});
+
+
+test("expires repair authorization and requires a fresh approval", async t => {
+  const { project, workspace } = await fixture(t);
+  const proposal = proposalFor(project, ["src/app.js"]);
+  const changes = [{
+    relativePath: "src/app.js",
+    mode: "replace",
+    content: "after",
+    expectedContentDigest: sha("before")
+  }];
+  const authorization = authorize(project, proposal, changes, { expiresInMs: 1 });
+  await new Promise(resolve => setTimeout(resolve, 10));
+  await assert.rejects(executeProjectRepair({
+    authorization, workspace, project, expectedProjectDigest: project.digest
+  }), { code: "QX_PROJECT_REPAIR_AUTHORIZATION_EXPIRED" });
 });

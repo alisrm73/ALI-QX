@@ -4,6 +4,8 @@ import { assertProjectApproved, QXProjectError } from "./project-model.js";
 const AUTHORIZATIONS = new WeakMap();
 const MAX_CHANGES = 20;
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
+const MAX_TOTAL_BYTES = 20 * 1024 * 1024;
+const MAX_AUTHORIZATION_LIFETIME_MS = 5 * 60 * 1000;
 const DIGEST = /^sha256:[a-f0-9]{64}$/;
 const SAFE_PATH = /^(?!\.)(?!.*(?:^|\/)\.\.(?:\/|$))[A-Za-z0-9_@+.-]+(?:\/[A-Za-z0-9_@+.-]+)*$/;
 
@@ -33,6 +35,7 @@ function normalizeChanges(changes) {
       "Approved changes must contain between 1 and " + MAX_CHANGES + " files");
   }
   const seen = new Set();
+  let totalBytes = 0;
   return Object.freeze(changes.map((change, index) => {
     const allowed = ["relativePath", "mode", "content", "expectedContentDigest"];
     if (!plainObject(change) || Object.keys(change).some(key => !allowed.includes(key)) ||
@@ -51,9 +54,15 @@ function normalizeChanges(changes) {
       fail("QX_PROJECT_REPAIR_AUTHORIZATION_INVALID",
         "Approved change mode must be create or replace");
     }
-    if (typeof content !== "string" || Buffer.byteLength(content, "utf8") > MAX_FILE_BYTES) {
+    const contentBytes = typeof content === "string" ? Buffer.byteLength(content, "utf8") : Infinity;
+    if (typeof content !== "string" || contentBytes > MAX_FILE_BYTES) {
       fail("QX_PROJECT_REPAIR_AUTHORIZATION_INVALID",
         "Approved file content must be UTF-8 text no larger than 10 MiB");
+    }
+    totalBytes += contentBytes;
+    if (totalBytes > MAX_TOTAL_BYTES) {
+      fail("QX_PROJECT_REPAIR_AUTHORIZATION_INVALID",
+        "The complete approved change set must not exceed 20 MiB");
     }
     if (mode === "create" && expectedContentDigest !== null) {
       fail("QX_PROJECT_REPAIR_AUTHORIZATION_INVALID",
@@ -130,9 +139,15 @@ export function authorizeProjectRepair({
   expectedProjectDigest,
   proposal,
   changes,
-  approval
+  approval,
+  expiresInMs = 60 * 1000
 } = {}) {
   assertProjectApproved(project, { expectedDigest: expectedProjectDigest });
+  if (!Number.isSafeInteger(expiresInMs) || expiresInMs < 1 ||
+      expiresInMs > MAX_AUTHORIZATION_LIFETIME_MS) {
+    fail("QX_PROJECT_REPAIR_AUTHORIZATION_INVALID",
+      "Authorization lifetime must be between 1 ms and 5 minutes");
+  }
   assertProposal(proposal, project);
   if (!plainObject(approval) ||
       Object.keys(approval).some(key =>
@@ -160,7 +175,10 @@ export function authorizeProjectRepair({
   }
 
   const token = Object.freeze(Object.create(null));
+  const issuedAt = Date.now();
   AUTHORIZATIONS.set(token, {
+    issuedAt,
+    expiresAt: issuedAt + expiresInMs,
     projectId: project.projectId,
     projectDigest: project.digest,
     proposalId: proposal.id,
@@ -179,6 +197,10 @@ export function consumeProjectRepairAuthorization(token, project, expectedProjec
       "Repair authorization is invalid or has already been consumed");
   }
   state.consumed = true;
+  if (Date.now() >= state.expiresAt) {
+    fail("QX_PROJECT_REPAIR_AUTHORIZATION_EXPIRED",
+      "Repair authorization has expired and must be approved again");
+  }
   assertProjectApproved(project, { expectedDigest: expectedProjectDigest });
   if (project.projectId !== state.projectId || project.digest !== state.projectDigest ||
       expectedProjectDigest !== state.projectDigest) {
@@ -190,6 +212,8 @@ export function consumeProjectRepairAuthorization(token, project, expectedProjec
     projectDigest: state.projectDigest,
     proposalId: state.proposalId,
     changesDigest: state.changesDigest,
+    issuedAt: state.issuedAt,
+    expiresAt: state.expiresAt,
     changes: state.changes
   });
 }
