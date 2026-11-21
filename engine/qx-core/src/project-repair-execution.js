@@ -52,14 +52,23 @@ export async function executeProjectRepair({
   }
 
   const writes = [];
+  const fileEvidence = grant.changes.map(change => ({
+    relativePath: change.relativePath,
+    expectedContentDigest: change.expectedContentDigest,
+    contentMatch: null,
+    postContentDigest: null,
+    status: "not_run"
+  }));
   let failed = null;
   let cancelled = false;
   let remainingStart = 0;
 
   for (let index = 0; index < grant.changes.length; index += 1) {
     const change = grant.changes[index];
+    const evidence = fileEvidence[index];
     if (signal?.aborted === true) {
       cancelled = true;
+      evidence.status = "cancelled";
       failed = cancellationFailure(change.relativePath);
       remainingStart = index;
       break;
@@ -79,6 +88,9 @@ export async function executeProjectRepair({
           mode: change.mode
         }
       });
+      evidence.contentMatch = true;
+      evidence.postContentDigest = result.contentDigest;
+      evidence.status = "applied";
       writes.push(Object.freeze({
         relativePath: result.relativePath,
         contentDigest: result.contentDigest,
@@ -86,6 +98,9 @@ export async function executeProjectRepair({
         changeLogWarning: result.changeLogWarning ?? null
       }));
     } catch (error) {
+      evidence.contentMatch = error?.code === "QX_WORKSPACE_CONTENT_STALE"
+        ? false : null;
+      evidence.status = "failed";
       failed = failure(error, change.relativePath);
       remainingStart = index + 1;
       break;
@@ -93,6 +108,7 @@ export async function executeProjectRepair({
 
     if (signal?.aborted === true && index + 1 < grant.changes.length) {
       cancelled = true;
+      fileEvidence[index + 1].status = "cancelled";
       failed = cancellationFailure(grant.changes[index + 1].relativePath);
       remainingStart = index + 1;
       break;
@@ -110,6 +126,7 @@ export async function executeProjectRepair({
     changesDigest: grant.changesDigest,
     status,
     writes: Object.freeze(writes),
+    fileEvidence: Object.freeze(fileEvidence.map(entry => Object.freeze(entry))),
     failure: failed,
     remainingPaths: Object.freeze(
       grant.changes.slice(remainingStart).map(change => change.relativePath)
