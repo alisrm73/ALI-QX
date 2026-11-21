@@ -121,3 +121,22 @@ test("rejects unsupported content types without creating a target", async t => {
     code: "ENOENT"
   });
 });
+
+test("rejects replacing an existing file larger than the backup and restore limit", async t => {
+  const { project, workspace, projectRoot } = await fixture(t);
+  const target = path.join(projectRoot, "src/large-existing.bin");
+  const original = Buffer.alloc(10 * 1024 * 1024 + 1, 0x5a);
+  await fs.writeFile(target, original);
+
+  await assert.rejects(writeProjectFile(workspace, {
+    project, expectedProjectDigest: project.digest,
+    relativePath: "src/large-existing.bin",
+    content: "small replacement",
+    permission: permission(project, "write", "src/large-existing.bin", { mode: "replace" })
+  }), { code: "QX_WORKSPACE_CONTENT_INVALID" });
+
+  assert.deepEqual(await fs.readFile(target), original);
+  await assert.rejects(fs.lstat(path.join(projectRoot, ".qx-workspace")), {
+    code: "ENOENT"
+  });
+});
