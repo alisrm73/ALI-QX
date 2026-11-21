@@ -237,6 +237,10 @@ test("allows only one of two concurrent create writes to publish the target", as
   assert.ok(["first", "second"].includes(
     await fs.readFile(path.join(projectRoot, relativePath), "utf8")
   ));
+
+  const log = await readProjectChangeLog(workspace);
+  assert.equal(log.filter(entry => entry.event === "write_started").length, 2);
+  assert.equal(log.filter(entry => entry.event === "write_completed").length, 1);
 });
 
 test("rejects a file that grows beyond the read limit while it is being read", async t => {
