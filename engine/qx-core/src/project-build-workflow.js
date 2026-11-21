@@ -47,7 +47,8 @@ function validateWritePermissions(permissions, project) {
 /**
  * Runs the first integrated approved-manifest -> static-web -> test -> delivery path.
  * Workspace writes require explicit per-file permissions and existing parent directories.
- * Test behavior is delegated to the caller-provided executeTest callback.
+ * Tests may use the legacy executeTest callback or explicit smart-runner capabilities and adapters.
+ * Smart-runner failures, unavailable required capabilities, and cancellation block delivery.
  */
 export async function runProjectBuildWorkflow({
   workspace,
