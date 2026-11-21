@@ -6,6 +6,7 @@ import { assertProjectApproved, QXProjectError } from "./project-model.js";
 
 const METADATA_DIR = ".qx-workspace";
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
+const MAX_BACKUP_RECORD_BYTES = Math.ceil(MAX_FILE_BYTES / 3) * 4 + 16 * 1024;
 const OPEN_WORKSPACES = new WeakSet();
 
 function assertWorkspace(workspace) {
@@ -99,6 +100,52 @@ async function inspectRegularTarget(target) {
   } catch (error) {
     if (error.code === "ENOENT") return null;
     throw error;
+  }
+}
+
+async function readRegularFileBounded(target, {
+  maxBytes, initialInfo, sizeErrorCode, sizeErrorMessage
+}) {
+  let handle;
+  try {
+    const flags = fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW ?? 0);
+    handle = await fs.open(target, flags);
+    const opened = await handle.stat();
+    if (!opened.isFile()) {
+      fail("QX_WORKSPACE_PATH_UNSAFE", "Target must be a regular file");
+    }
+    if (initialInfo && (opened.dev !== initialInfo.dev || opened.ino !== initialInfo.ino)) {
+      fail("QX_WORKSPACE_CONCURRENT_CHANGE", "Target changed while it was being opened");
+    }
+    if (opened.size > maxBytes) {
+      fail(sizeErrorCode, sizeErrorMessage);
+    }
+
+    const bounded = Buffer.alloc(maxBytes + 1);
+    let bytesRead = 0;
+    while (bytesRead < bounded.length) {
+      const result = await handle.read(
+        bounded, bytesRead, bounded.length - bytesRead, bytesRead
+      );
+      if (result.bytesRead === 0) break;
+      bytesRead += result.bytesRead;
+    }
+    if (bytesRead > maxBytes) {
+      fail(sizeErrorCode, sizeErrorMessage);
+    }
+    const finalInfo = await handle.stat();
+    if (bytesRead !== finalInfo.size ||
+        finalInfo.dev !== opened.dev || finalInfo.ino !== opened.ino) {
+      fail("QX_WORKSPACE_CONCURRENT_CHANGE", "Target changed while it was being read");
+    }
+    return bounded.subarray(0, bytesRead);
+  } catch (error) {
+    if (error.code === "ELOOP") {
+      fail("QX_WORKSPACE_PATH_UNSAFE", "Symbolic-link targets are not permitted");
+    }
+    throw error;
+  } finally {
+    await handle?.close();
   }
 }
 
@@ -216,11 +263,19 @@ async function readBackup(workspace, backupId) {
   if (!info) fail("QX_WORKSPACE_BACKUP_NOT_FOUND", "Backup does not exist");
   let record;
   try {
-    record = JSON.parse(await fs.readFile(file, "utf8"));
-  } catch {
+    const serialized = await readRegularFileBounded(file, {
+      maxBytes: MAX_BACKUP_RECORD_BYTES,
+      initialInfo: info,
+      sizeErrorCode: "QX_WORKSPACE_BACKUP_INVALID",
+      sizeErrorMessage: "Backup record exceeds the maximum permitted size"
+    });
+    record = JSON.parse(serialized.toString("utf8"));
+  } catch (error) {
+    if (error instanceof QXProjectError) throw error;
     fail("QX_WORKSPACE_BACKUP_INVALID", "Backup record cannot be read");
   }
-  if (record.schemaVersion !== "1.0.0" || record.backupId !== backupId ||
+  if (!record || typeof record !== "object" || Array.isArray(record) ||
+      record.schemaVersion !== "1.0.0" || record.backupId !== backupId ||
       record.projectId !== workspace.projectId || typeof record.contentBase64 !== "string") {
     fail("QX_WORKSPACE_BACKUP_INVALID", "Backup record metadata is invalid");
   }
@@ -264,37 +319,18 @@ export async function readProjectFile(workspace, { project, expectedProjectDiges
   if (initial.size > MAX_FILE_BYTES) {
     fail("QX_WORKSPACE_CONTENT_INVALID", "File exceeds the 10 MiB workspace read limit");
   }
-  let handle;
-  try {
-    const flags = fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW ?? 0);
-    handle = await fs.open(resolved.target, flags);
-    const opened = await handle.stat();
-    if (!opened.isFile() || opened.dev !== initial.dev || opened.ino !== initial.ino ||
-        opened.size > MAX_FILE_BYTES) {
-      fail("QX_WORKSPACE_CONCURRENT_CHANGE", "Target changed or became unsafe while it was being opened");
-    }
-    const content = await handle.readFile();
-    const finalInfo = await handle.stat();
-    if (content.length > MAX_FILE_BYTES) {
-      fail("QX_WORKSPACE_CONTENT_INVALID", "File exceeds the 10 MiB workspace read limit");
-    }
-    if (content.length !== finalInfo.size) {
-      fail("QX_WORKSPACE_CONCURRENT_CHANGE", "Target changed while it was being read");
-    }
-    return Object.freeze({
-      relativePath: resolved.relativePath,
-      content,
-      contentDigest: hash(content),
-      size: content.length
-    });
-  } catch (error) {
-    if (error.code === "ELOOP") {
-      fail("QX_WORKSPACE_PATH_UNSAFE", "Symbolic-link targets are not permitted");
-    }
-    throw error;
-  } finally {
-    await handle?.close();
-  }
+  const content = await readRegularFileBounded(resolved.target, {
+    maxBytes: MAX_FILE_BYTES,
+    initialInfo: initial,
+    sizeErrorCode: "QX_WORKSPACE_CONTENT_INVALID",
+    sizeErrorMessage: "File exceeds the 10 MiB workspace read limit"
+  });
+  return Object.freeze({
+    relativePath: resolved.relativePath,
+    content,
+    contentDigest: hash(content),
+    size: content.length
+  });
 }
 
 export async function writeProjectFile(workspace, {
@@ -335,11 +371,12 @@ export async function writeProjectFile(workspace, {
 
   let backupId = null;
   if (current) {
-    const existing = await fs.readFile(resolved.target);
-    if (existing.length > MAX_FILE_BYTES) {
-      fail("QX_WORKSPACE_CONTENT_INVALID",
-        "Existing file exceeds the 10 MiB workspace backup and restore limit");
-    }
+    const existing = await readRegularFileBounded(resolved.target, {
+      maxBytes: MAX_FILE_BYTES,
+      initialInfo: current,
+      sizeErrorCode: "QX_WORKSPACE_CONTENT_INVALID",
+      sizeErrorMessage: "Existing file exceeds the 10 MiB workspace backup and restore limit"
+    });
     backupId = await saveBackup(workspace, resolved.relativePath, existing, "before_replace");
   }
   const rechecked = await inspectRegularTarget(resolved.target);
@@ -398,11 +435,12 @@ export async function restoreProjectFile(workspace, {
     event: "restore_started", relativePath: resolved.relativePath,
     backupId, projectDigest: project.digest
   });
-  const currentBytes = await fs.readFile(resolved.target);
-  if (currentBytes.length > MAX_FILE_BYTES) {
-    fail("QX_WORKSPACE_CONTENT_INVALID",
-      "Existing file exceeds the 10 MiB workspace backup and restore limit");
-  }
+  const currentBytes = await readRegularFileBounded(resolved.target, {
+    maxBytes: MAX_FILE_BYTES,
+    initialInfo: current,
+    sizeErrorCode: "QX_WORKSPACE_CONTENT_INVALID",
+    sizeErrorMessage: "Existing file exceeds the 10 MiB workspace backup and restore limit"
+  });
   const safetyBackupId = await saveBackup(workspace, resolved.relativePath, currentBytes, "before_restore");
   const rechecked = await inspectRegularTarget(resolved.target);
   if (!rechecked || current.dev !== rechecked.dev || current.ino !== rechecked.ino) {
