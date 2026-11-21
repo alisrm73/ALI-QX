@@ -135,6 +135,13 @@ test("applies an approved repair through Workspace and consumes authorization on
   assert.equal(result.status, "applied");
   assert.equal(result.writes.length, 1);
   assert.ok(result.writes[0].backupId);
+  assert.deepEqual(result.fileEvidence, [{
+    relativePath: "src/app.js",
+    expectedContentDigest: sha("before"),
+    contentMatch: true,
+    postContentDigest: sha("after"),
+    status: "applied"
+  }]);
   assert.equal(await fs.readFile(path.join(root, "src/app.js"), "utf8"), "after");
   await assert.rejects(executeProjectRepair({
     authorization, workspace, project, expectedProjectDigest: project.digest
@@ -157,6 +164,13 @@ test("rejects a changed file after approval without overwriting the new content"
   });
   assert.equal(result.status, "failed");
   assert.equal(result.failure.code, "QX_WORKSPACE_CONTENT_STALE");
+  assert.deepEqual(result.fileEvidence, [{
+    relativePath: "src/app.js",
+    expectedContentDigest: sha("before"),
+    contentMatch: false,
+    postContentDigest: null,
+    status: "failed"
+  }]);
   assert.equal(await fs.readFile(path.join(root, "src/app.js"), "utf8"), "external change");
 });
 
@@ -183,6 +197,16 @@ test("reports partial application and stops after the first failed file", async 
   assert.equal(result.status, "partial");
   assert.equal(result.writes.length, 1);
   assert.equal(result.failure.code, "QX_WORKSPACE_CONTENT_STALE");
+  assert.deepEqual(result.fileEvidence, [
+    {
+      relativePath: "src/first.js", expectedContentDigest: sha("first-before"),
+      contentMatch: true, postContentDigest: sha("first-after"), status: "applied"
+    },
+    {
+      relativePath: "src/second.js", expectedContentDigest: sha("approved-old-content"),
+      contentMatch: false, postContentDigest: null, status: "failed"
+    }
+  ]);
   assert.deepEqual(result.remainingPaths, []);
   assert.equal(await fs.readFile(path.join(root, "src/first.js"), "utf8"), "first-after");
   assert.equal(await fs.readFile(path.join(root, "src/second.js"), "utf8"), "second-before");
@@ -247,6 +271,16 @@ test("cancels before the first write without changing any file", async t => {
   assert.equal(result.status, "cancelled");
   assert.equal(result.failure.code, "QX_PROJECT_REPAIR_CANCELLED");
   assert.equal(result.writes.length, 0);
+  assert.deepEqual(result.fileEvidence, [
+    {
+      relativePath: "src/first.js", expectedContentDigest: sha("first-before"),
+      contentMatch: null, postContentDigest: null, status: "cancelled"
+    },
+    {
+      relativePath: "src/second.js", expectedContentDigest: sha("second-before"),
+      contentMatch: null, postContentDigest: null, status: "not_run"
+    }
+  ]);
   assert.deepEqual(result.remainingPaths, ["src/first.js", "src/second.js"]);
   assert.equal(await fs.readFile(path.join(root, "src/first.js"), "utf8"), "first-before");
   assert.equal(await fs.readFile(path.join(root, "src/second.js"), "utf8"), "second-before");
@@ -289,6 +323,16 @@ test("stops between file writes after cooperative cancellation and reports parti
   assert.equal(result.status, "partial");
   assert.equal(result.failure.code, "QX_PROJECT_REPAIR_CANCELLED");
   assert.equal(result.writes.length, 1);
+  assert.deepEqual(result.fileEvidence, [
+    {
+      relativePath: "src/first.js", expectedContentDigest: sha("first-before"),
+      contentMatch: true, postContentDigest: sha("first-after"), status: "applied"
+    },
+    {
+      relativePath: "src/second.js", expectedContentDigest: sha("second-before"),
+      contentMatch: null, postContentDigest: null, status: "cancelled"
+    }
+  ]);
   assert.deepEqual(result.remainingPaths, ["src/second.js"]);
   assert.equal(await fs.readFile(path.join(root, "src/first.js"), "utf8"), "first-after");
   assert.equal(await fs.readFile(path.join(root, "src/second.js"), "utf8"), "second-before");
