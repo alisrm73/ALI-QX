@@ -194,6 +194,44 @@ test("reports a completion-log warning when a write succeeds but its completion 
   assert.match(result.changeLogWarning.message, /was written/);
 });
 
+test("records a failed write without replacing the original filesystem error", async t => {
+  const { project, workspace, projectRoot } = await fixture(t);
+  const target = path.join(projectRoot, "src/write-operation-failure.js");
+  await fs.writeFile(target, "before");
+  const originalRename = fs.rename;
+  const originalError = Object.assign(new Error("simulated target publication failure"), {
+    code: "EIO"
+  });
+  fs.rename = async (source, destination) => {
+    if (destination === target) throw originalError;
+    return originalRename(source, destination);
+  };
+
+  let thrown;
+  try {
+    await writeProjectFile(workspace, {
+      project, expectedProjectDigest: project.digest,
+      relativePath: "src/write-operation-failure.js", content: "after",
+      permission: permission(project, "write", "src/write-operation-failure.js", { mode: "replace" })
+    });
+  } catch (error) {
+    thrown = error;
+  } finally {
+    fs.rename = originalRename;
+  }
+
+  assert.strictEqual(thrown, originalError);
+  assert.equal(await fs.readFile(target, "utf8"), "before");
+  const log = await readProjectChangeLog(workspace);
+  const writeEvents = log.filter(entry =>
+    entry.relativePath === "src/write-operation-failure.js"
+  );
+  assert.deepEqual(writeEvents.map(entry => entry.event), ["write_started", "write_failed"]);
+  assert.equal(writeEvents[1].stage, "write");
+  assert.equal(writeEvents[1].errorCode, "EIO");
+  assert.equal(writeEvents.some(entry => entry.event === "write_completed"), false);
+});
+
 test("reports a completion-log warning when a restore succeeds but its completion event fails", async t => {
   const { project, workspace, projectRoot, target, backupId } = await createBackupFixture(t);
   const originalAppendFile = fs.appendFile;
@@ -262,6 +300,10 @@ test("allows only one of two concurrent create writes to publish the target", as
   const log = await readProjectChangeLog(workspace);
   assert.equal(log.filter(entry => entry.event === "write_started").length, 2);
   assert.equal(log.filter(entry => entry.event === "write_completed").length, 1);
+  const failures = log.filter(entry => entry.event === "write_failed");
+  assert.equal(failures.length, 1);
+  assert.equal(failures[0].stage, "lock");
+  assert.equal(failures[0].errorCode, "QX_WORKSPACE_FILE_EXISTS");
 });
 
 test("bounds change-log reads to the configured limit when the file grows during reading", async t => {
