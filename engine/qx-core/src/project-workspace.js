@@ -220,12 +220,20 @@ async function acquireWriteLock(workspace, relativePath, operation = null) {
     throw error;
   }
   return async () => {
-    await handle.close();
+    let releaseFailed = false;
+    try {
+      await handle.close();
+    } catch {
+      releaseFailed = true;
+    }
     try {
       await fs.rm(lockPath);
-    } catch (error) {
+    } catch {
+      releaseFailed = true;
+    }
+    if (releaseFailed) {
       fail("QX_WORKSPACE_LOCK_RELEASE_FAILED",
-        "Workspace mutation completed or failed, but its coordination lock could not be removed");
+        "Workspace mutation completed or failed, but its coordination lock could not be fully released");
     }
   };
 }
@@ -606,8 +614,19 @@ export async function writeProjectFile(workspace, options = {}) {
     throw error;
   }
 
-  await releaseLock();
-  return result;
+  let lockReleaseWarning = null;
+  try {
+    await releaseLock();
+  } catch (error) {
+    lockReleaseWarning = Object.freeze({
+      code: error?.code === "QX_WORKSPACE_LOCK_RELEASE_FAILED"
+        ? error.code : "QX_WORKSPACE_LOCK_RELEASE_FAILED",
+      message: "File content was written, but the workspace coordination lock could not be fully released"
+    });
+  }
+  return Object.freeze(lockReleaseWarning
+    ? { ...result, lockReleaseWarning }
+    : result);
 }
 
 
