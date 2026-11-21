@@ -13,16 +13,36 @@ function failure(error, relativePath) {
   });
 }
 
+function assertAbortSignal(signal) {
+  if (signal !== undefined && signal !== null &&
+      (typeof signal !== "object" || typeof signal.aborted !== "boolean")) {
+    throw new QXProjectError("QX_PROJECT_REPAIR_SIGNAL_INVALID",
+      "signal must be an AbortSignal-compatible object");
+  }
+}
+
+function cancellationFailure(relativePath) {
+  return Object.freeze({
+    relativePath,
+    code: "QX_PROJECT_REPAIR_CANCELLED",
+    message: "Repair execution was cancelled before the next file write"
+  });
+}
+
 /**
  * Applies a previously authorized, exact repair change set through Workspace.
- * Execution stops at the first failure; multi-file changes are not transactional.
+ * Execution stops at the first failure or cooperative cancellation. Cancellation
+ * is observed between file writes; an in-progress Workspace write is not interrupted.
+ * Multi-file changes are not transactional.
  */
 export async function executeProjectRepair({
   authorization,
   workspace,
   project,
-  expectedProjectDigest
+  expectedProjectDigest,
+  signal
 } = {}) {
+  assertAbortSignal(signal);
   const grant = consumeProjectRepairAuthorization(
     authorization, project, expectedProjectDigest
   );
@@ -33,7 +53,18 @@ export async function executeProjectRepair({
 
   const writes = [];
   let failed = null;
-  for (const change of grant.changes) {
+  let cancelled = false;
+  let remainingStart = 0;
+
+  for (let index = 0; index < grant.changes.length; index += 1) {
+    const change = grant.changes[index];
+    if (signal?.aborted === true) {
+      cancelled = true;
+      failed = cancellationFailure(change.relativePath);
+      remainingStart = index;
+      break;
+    }
+
     try {
       const result = await writeProjectFile(workspace, {
         project,
@@ -56,11 +87,22 @@ export async function executeProjectRepair({
       }));
     } catch (error) {
       failed = failure(error, change.relativePath);
+      remainingStart = index + 1;
+      break;
+    }
+
+    if (signal?.aborted === true && index + 1 < grant.changes.length) {
+      cancelled = true;
+      failed = cancellationFailure(grant.changes[index + 1].relativePath);
+      remainingStart = index + 1;
       break;
     }
   }
 
-  const status = failed === null ? "applied" : writes.length === 0 ? "failed" : "partial";
+  const status = cancelled
+    ? (writes.length === 0 ? "cancelled" : "partial")
+    : failed === null ? "applied" : writes.length === 0 ? "failed" : "partial";
+
   return Object.freeze({
     schemaVersion: "1.0.0",
     proposalId: grant.proposalId,
@@ -70,7 +112,7 @@ export async function executeProjectRepair({
     writes: Object.freeze(writes),
     failure: failed,
     remainingPaths: Object.freeze(
-      grant.changes.slice(writes.length + (failed ? 1 : 0)).map(change => change.relativePath)
+      grant.changes.slice(remainingStart).map(change => change.relativePath)
     )
   });
 }
