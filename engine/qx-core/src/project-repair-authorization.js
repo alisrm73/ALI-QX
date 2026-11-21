@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { performance } from "node:perf_hooks";
 import { assertProjectApproved, QXProjectError } from "./project-model.js";
 
 const AUTHORIZATIONS = new WeakMap();
@@ -175,7 +176,7 @@ export function authorizeProjectRepair({
   }
 
   const token = Object.freeze(Object.create(null));
-  const issuedAt = Date.now();
+  const issuedAt = performance.now();
   AUTHORIZATIONS.set(token, {
     issuedAt,
     expiresAt: issuedAt + expiresInMs,
@@ -197,7 +198,7 @@ export function consumeProjectRepairAuthorization(token, project, expectedProjec
       "Repair authorization is invalid or has already been consumed");
   }
   state.consumed = true;
-  if (Date.now() >= state.expiresAt) {
+  if (performance.now() >= state.expiresAt) {
     fail("QX_PROJECT_REPAIR_AUTHORIZATION_EXPIRED",
       "Repair authorization has expired and must be approved again");
   }
