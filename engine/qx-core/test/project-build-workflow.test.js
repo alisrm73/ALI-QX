@@ -206,3 +206,51 @@ test("rejects stale project approval before writing any generated assets", async
     project, expectedProjectDigest: project.digest, relativePath: "dist/index.html"
   }), { code: "QX_WORKSPACE_FILE_MISSING" });
 });
+
+
+test("integrates the smart runner and preserves the legacy test report for delivery", async t => {
+  const { project, buildPlan, workspace, writePermissions, testCases } = await fixture(t);
+  const result = await runProjectBuildWorkflow({
+    workspace,
+    project,
+    expectedProjectDigest: project.digest,
+    buildPlan,
+    writePermissions,
+    testCases,
+    testCapabilities: ["project"],
+    testExecutors: {
+      project: async ({ testCase, fileDigests, signal }) => {
+        assert.equal(testCase.id, "project.static-web-smoke");
+        assert.ok(fileDigests["dist/index.html"]);
+        assert.equal(signal.aborted, false);
+        return { status: "passed", summary: "Smart project smoke test passed" };
+      }
+    }
+  });
+  assert.equal(result.testReport.status, "passed");
+  assert.equal(result.smartTestReport.status, "passed");
+  assert.equal(result.delivery.report.status, "ready");
+  assert.equal(result.status, "requires_requirement_review");
+});
+
+test("blocks delivery when a required smart test capability is unavailable", async t => {
+  const { project, buildPlan, workspace, writePermissions, testCases } = await fixture(t);
+  const result = await runProjectBuildWorkflow({
+    workspace,
+    project,
+    expectedProjectDigest: project.digest,
+    buildPlan,
+    writePermissions,
+    testCases,
+    testCapabilities: [],
+    testExecutors: {}
+  });
+  assert.equal(result.testReport.status, "incomplete");
+  assert.equal(result.smartTestReport.status, "incomplete");
+  assert.equal(result.delivery.report.status, "blocked");
+  assert.equal(result.delivery.package, null);
+  assert.equal(result.status, "blocked");
+  assert.ok(result.delivery.report.issues.some(issue =>
+    issue.code === "QX_DELIVERY_ADDITIONAL_BLOCKER"
+  ));
+});
