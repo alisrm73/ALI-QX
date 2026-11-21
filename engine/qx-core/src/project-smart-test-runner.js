@@ -184,18 +184,18 @@ export async function runProjectSmartTestRunner(project, plan, {
     })));
     const interruption = new Promise((resolve, reject) => {
       timer = setTimeout(() => {
-        controller.abort(new Error("Test timed out"));
         const error = Object.assign(new Error("Test exceeded its " + timeoutMs + " ms timeout"), {
           code: "QX_SMART_TEST_TIMEOUT"
         });
         reject(error);
+        controller.abort(error);
       }, timeoutMs);
       if (externalSignal) {
         abortHandler = () => {
-          controller.abort(externalSignal.reason);
           reject(Object.assign(new Error("Test was cancelled by the host"), {
             code: "QX_SMART_TEST_CANCELLED"
           }));
+          controller.abort(externalSignal.reason);
         };
         externalSignal.addEventListener("abort", abortHandler, { once: true });
         if (externalSignal.aborted) abortHandler();
@@ -334,8 +334,9 @@ export function assertProjectSmartTestReport(project, plan, report) {
       report.projectDigest !== project.digest ||
       report.buildPlanDigest !== plan.digest ||
       !isPlainObject(report.fileDigests) ||
+      !["all", "affected"].includes(report.scope) ||
       !Array.isArray(report.selectedTestIds) ||
-      !Array.isArray(report.results) ||
+      !Array.isArray(report.results) || report.results.length > MAX_TESTS ||
       !isPlainObject(report.summary) ||
       !["passed", "failed", "incomplete", "cancelled"].includes(report.status) ||
       typeof report.digest !== "string" ||
@@ -347,8 +348,13 @@ export function assertProjectSmartTestReport(project, plan, report) {
       typeof item.testId !== "string" || !TEST_ID_PATTERN.test(item.testId) ||
       !TEST_LEVELS.includes(item.level) || typeof item.required !== "boolean" ||
       !["passed", "failed", "skipped", "not_run", "cancelled"].includes(item.status) ||
-      typeof item.summary !== "string" || !Number.isSafeInteger(item.durationMs) ||
-      item.durationMs < 0 || (item.reason !== null && typeof item.reason !== "string"))) {
+      typeof item.summary !== "string" || item.summary.length === 0 || item.summary.length > 1000 ||
+      !Number.isSafeInteger(item.durationMs) || item.durationMs < 0 ||
+      (item.reason !== null && typeof item.reason !== "string") ||
+      (item.error !== null && !isPlainObject(item.error))) ||
+      new Set(report.results.map(item => item.testId)).size !== report.results.length ||
+      report.selectedTestIds.some(id => typeof id !== "string" || !TEST_ID_PATTERN.test(id)) ||
+      new Set(report.selectedTestIds).size !== report.selectedTestIds.length) {
     fail("QX_SMART_TEST_REPORT_INVALID", "Smart test report contains malformed result entries");
   }
   const counts = {
@@ -366,10 +372,11 @@ export function assertProjectSmartTestReport(project, plan, report) {
   const expectedStatus = counts.failed > 0 ? "failed" :
     counts.cancelled > 0 ? "cancelled" :
     counts.requiredUnsuccessful > 0 ? "incomplete" : "passed";
+  const actualSelectedIds = report.results
+    .filter(item => item.status !== "not_run")
+    .map(item => item.testId);
   if (canonicalJSON(counts) !== canonicalJSON(report.summary) ||
-      report.selectedTestIds.length !== counts.selected ||
-      report.results.some(item => item.status !== "not_run" &&
-        !report.selectedTestIds.includes(item.testId)) ||
+      canonicalJSON(report.selectedTestIds) !== canonicalJSON(actualSelectedIds) ||
       report.status !== expectedStatus) {
     fail("QX_SMART_TEST_REPORT_INVALID", "Smart test report aggregate summary is inconsistent");
   }
