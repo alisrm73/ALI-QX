@@ -366,7 +366,7 @@ export async function readProjectChangeLog(workspace) {
     await assertDirectoryNoSymlink(path.join(workspace.root, METADATA_DIR), workspace.root);
     await assertDirectoryNoSymlink(projectDir, workspace.root);
   } catch (error) {
-    if (error.code === "ENOENT") return Object.freeze([]);
+    if (error.code === "QX_WORKSPACE_PARENT_MISSING") return Object.freeze([]);
     throw error;
   }
   const info = await inspectRegularTarget(logPath);
