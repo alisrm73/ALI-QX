@@ -184,7 +184,7 @@ async function ensureMetadata(workspace) {
   return { projectDir, backupDir, lockDir, logPath: path.join(projectDir, "changes.jsonl") };
 }
 
-async function acquireWriteLock(workspace, relativePath) {
+async function acquireWriteLock(workspace, relativePath, operation = null) {
   const { lockDir } = await ensureMetadata(workspace);
   await assertDirectoryNoSymlink(lockDir, workspace.root);
   const lockKey = createHash("sha256").update(relativePath, "utf8").digest("hex");
@@ -194,6 +194,10 @@ async function acquireWriteLock(workspace, relativePath) {
     handle = await fs.open(lockPath, "wx", 0o600);
   } catch (error) {
     if (error.code === "EEXIST") {
+      if (operation === "create") {
+        fail("QX_WORKSPACE_FILE_EXISTS",
+          "Another create operation has already claimed this project file path");
+      }
       fail("QX_WORKSPACE_CONCURRENT_CHANGE",
         "Another workspace mutation holds this file lock; stale locks require manual inspection");
     }
@@ -379,6 +383,68 @@ export async function readProjectFile(workspace, { project, expectedProjectDiges
   });
 }
 
+async function preflightProjectFileWrite(workspace, options = {}) {
+  const {
+    project, expectedProjectDigest, relativePath, content, permission,
+    expectedContentDigest
+  } = options;
+  const hasExpectedContentDigest = Object.hasOwn(options, "expectedContentDigest");
+  assertWorkspace(workspace);
+  assertProjectApproved(project, { expectedDigest: expectedProjectDigest });
+  if (project.projectId !== workspace.projectId) {
+    fail("QX_WORKSPACE_PROJECT_MISMATCH", "Approved project ID does not match the selected workspace");
+  }
+  const resolved = await resolveTarget(workspace, relativePath);
+  assertPermission(permission, { operation: "write", relativePath: resolved.relativePath, project });
+  const bytes = Buffer.isBuffer(content) ? content : Buffer.from(
+    typeof content === "string" ? content : fail("QX_WORKSPACE_CONTENT_INVALID", "File content must be a string or Buffer"),
+    "utf8"
+  );
+  if (bytes.length > MAX_FILE_BYTES) {
+    fail("QX_WORKSPACE_CONTENT_INVALID", "File exceeds the 10 MiB workspace limit");
+  }
+
+  const current = await inspectRegularTarget(resolved.target);
+  if (current && current.size > MAX_FILE_BYTES) {
+    fail("QX_WORKSPACE_CONTENT_INVALID",
+      "Existing file exceeds the 10 MiB workspace backup and restore limit");
+  }
+  if (permission.mode === "create" && current) {
+    fail("QX_WORKSPACE_FILE_EXISTS", "Create permission cannot overwrite an existing file");
+  }
+  if (permission.mode === "replace" && !current) {
+    fail("QX_WORKSPACE_FILE_MISSING", "Replace permission requires an existing file");
+  }
+  if (permission.mode !== "create" && permission.mode !== "replace") {
+    fail("QX_WORKSPACE_PERMISSION_REQUIRED", "Write permission mode must be create or replace");
+  }
+
+  if (hasExpectedContentDigest) {
+    if (permission.mode === "create" && expectedContentDigest !== null) {
+      fail("QX_WORKSPACE_CONTENT_PRECONDITION_INVALID",
+        "Create operations must explicitly expect an absent target (null digest)");
+    }
+    if (permission.mode === "replace") {
+      if (typeof expectedContentDigest !== "string" ||
+          !/^sha256:[0-9a-f]{64}$/.test(expectedContentDigest)) {
+        fail("QX_WORKSPACE_CONTENT_PRECONDITION_INVALID",
+          "Replace operations require the expected SHA-256 digest of the current file");
+      }
+      const currentBytes = await readRegularFileBounded(resolved.target, {
+        maxBytes: MAX_FILE_BYTES,
+        initialInfo: current,
+        sizeErrorCode: "QX_WORKSPACE_CONTENT_INVALID",
+        sizeErrorMessage: "Existing file exceeds the 10 MiB workspace backup and restore limit"
+      });
+      if (hash(currentBytes) !== expectedContentDigest) {
+        fail("QX_WORKSPACE_CONTENT_STALE",
+          "Current file content no longer matches the approved content digest");
+      }
+    }
+  }
+  return resolved;
+}
+
 async function writeProjectFileUnlocked(workspace, options = {}) {
   const {
     project, expectedProjectDigest, relativePath, content, permission,
@@ -436,11 +502,6 @@ async function writeProjectFileUnlocked(workspace, options = {}) {
       }
     }
   }
-
-  await appendChangeLog(workspace, {
-    event: "write_started", relativePath: resolved.relativePath,
-    projectDigest: project.digest, operation: permission.mode
-  });
 
   let backupId = null;
   if (current) {
@@ -501,9 +562,12 @@ export async function writeProjectFile(workspace, options = {}) {
   if (project.projectId !== workspace.projectId) {
     fail("QX_WORKSPACE_PROJECT_MISMATCH", "Approved project ID does not match the selected workspace");
   }
-  const resolved = await resolveTarget(workspace, relativePath);
-  assertPermission(permission, { operation: "write", relativePath: resolved.relativePath, project });
-  const releaseLock = await acquireWriteLock(workspace, resolved.relativePath);
+  const resolved = await preflightProjectFileWrite(workspace, options);
+  await appendChangeLog(workspace, {
+    event: "write_started", relativePath: resolved.relativePath,
+    projectDigest: project.digest, operation: permission.mode
+  });
+  const releaseLock = await acquireWriteLock(workspace, resolved.relativePath, permission.mode);
   try {
     return await writeProjectFileUnlocked(workspace, options);
   } finally {
