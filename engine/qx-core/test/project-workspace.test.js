@@ -196,3 +196,15 @@ test("refuses to restore corrupted backup records", async t => {
     permission: permission(project, "restore", "src/app.js", { backupId: replaced.backupId })
   }), { code: "QX_WORKSPACE_BACKUP_CORRUPT" });
 });
+
+
+test("returns an empty change log when workspace metadata has not been created", async t => {
+  const { workspace } = await fixture(t);
+  assert.deepEqual(await readProjectChangeLog(workspace), []);
+});
+
+test("returns an empty change log when the project metadata directory is missing", async t => {
+  const { workspace, projectRoot } = await fixture(t);
+  await fs.mkdir(path.join(projectRoot, ".qx-workspace"));
+  assert.deepEqual(await readProjectChangeLog(workspace), []);
+});
