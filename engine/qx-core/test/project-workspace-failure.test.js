@@ -220,3 +220,56 @@ test("rejects restoring over an oversized current file before creating a safety 
   const backups = await fs.readdir(backupDir);
   assert.equal(backups.length, 1);
 });
+
+
+test("allows only one of two concurrent create writes to publish the target", async t => {
+  const { project, workspace, projectRoot } = await fixture(t);
+  const relativePath = "src/concurrent-create.js";
+  const writes = ["first", "second"].map(content => writeProjectFile(workspace, {
+    project, expectedProjectDigest: project.digest, relativePath, content,
+    permission: permission(project, "write", relativePath, { mode: "create" })
+  }));
+
+  const results = await Promise.allSettled(writes);
+  assert.equal(results.filter(result => result.status === "fulfilled").length, 1);
+  const rejected = results.find(result => result.status === "rejected");
+  assert.equal(rejected.reason.code, "QX_WORKSPACE_FILE_EXISTS");
+  assert.ok(["first", "second"].includes(
+    await fs.readFile(path.join(projectRoot, relativePath), "utf8")
+  ));
+});
+
+test("rejects a file that grows beyond the read limit while it is being read", async t => {
+  const { project, workspace, projectRoot } = await fixture(t);
+  const target = path.join(projectRoot, "src/growing-during-read.bin");
+  await fs.writeFile(target, "small");
+  const originalOpen = fs.open;
+  const originalAppendFile = fs.appendFile;
+
+  fs.open = async (...args) => {
+    const handle = await originalOpen(...args);
+    if (args[0] !== target) return handle;
+    return new Proxy(handle, {
+      get(fileHandle, property) {
+        if (property === "readFile") {
+          return async (...readArgs) => {
+            await originalAppendFile(target, Buffer.alloc(10 * 1024 * 1024 + 1));
+            return fileHandle.readFile(...readArgs);
+          };
+        }
+        const value = Reflect.get(fileHandle, property, fileHandle);
+        return typeof value === "function" ? value.bind(fileHandle) : value;
+      }
+    });
+  };
+
+  try {
+    await assert.rejects(readProjectFile(workspace, {
+      project, expectedProjectDigest: project.digest, relativePath: "src/growing-during-read.bin"
+    }), { code: "QX_WORKSPACE_CONTENT_INVALID" });
+  } finally {
+    fs.open = originalOpen;
+  }
+
+  assert.ok((await fs.stat(target)).size > 10 * 1024 * 1024);
+});
