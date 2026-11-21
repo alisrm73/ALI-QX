@@ -276,7 +276,8 @@ test("stops between file writes after cooperative cancellation and reports parti
   const signal = {
     get aborted() {
       reads += 1;
-      return reads >= 2;
+      // The executor validates the signal once before entering the write loop.
+      return reads >= 3;
     }
   };
 
