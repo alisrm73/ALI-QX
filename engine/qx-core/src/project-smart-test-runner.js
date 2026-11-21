@@ -292,7 +292,7 @@ export async function runProjectSmartTestRunner(project, plan, {
   };
   const status = summary.failed > 0 ? "failed" :
     summary.cancelled > 0 ? "cancelled" :
-    summary.requiredUnsuccessful > 0 ? "incomplete" : "passed";
+    (summary.requiredUnsuccessful > 0 || summary.selected === 0) ? "incomplete" : "passed";
   const content = {
     schemaVersion: "1.0.0",
     projectId: project.projectId,
@@ -371,7 +371,7 @@ export function assertProjectSmartTestReport(project, plan, report) {
   };
   const expectedStatus = counts.failed > 0 ? "failed" :
     counts.cancelled > 0 ? "cancelled" :
-    counts.requiredUnsuccessful > 0 ? "incomplete" : "passed";
+    (counts.requiredUnsuccessful > 0 || counts.selected === 0) ? "incomplete" : "passed";
   const actualSelectedIds = report.results
     .filter(item => item.status !== "not_run")
     .map(item => item.testId);
