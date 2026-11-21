@@ -4,6 +4,10 @@ import { buildWebProject } from "./web-backend.js";
 import { generateQXSourceFromProject } from "./project-source-generator.js";
 import { writeProjectFile } from "./project-workspace.js";
 import { runProjectTestSuite } from "./project-test-suite.js";
+import {
+  runProjectSmartTestRunner,
+  assertProjectSmartTestRunnerConfig
+} from "./project-smart-test-runner.js";
 import { createProjectDeliveryPackage } from "./project-delivery.js";
 import { assertRequirementCoverageInput, createRequirementCoverageReport } from "./requirement-coverage.js";
 
@@ -43,7 +47,8 @@ function validateWritePermissions(permissions, project) {
 /**
  * Runs the first integrated approved-manifest -> static-web -> test -> delivery path.
  * Workspace writes require explicit per-file permissions and existing parent directories.
- * Test behavior is delegated to the caller-provided executeTest callback.
+ * Tests may use the legacy executeTest callback or explicit smart-runner capabilities and adapters.
+ * Smart-runner failures, unavailable required capabilities, and cancellation block delivery.
  */
 export async function runProjectBuildWorkflow({
   workspace,
@@ -53,6 +58,10 @@ export async function runProjectBuildWorkflow({
   writePermissions,
   testCases,
   executeTest,
+  testCapabilities,
+  testExecutors,
+  testTimeoutMs = 30000,
+  signal,
   scope = "all",
   changedArtifactIds = [],
   requirementCoverage
@@ -63,8 +72,23 @@ export async function runProjectBuildWorkflow({
     fail("QX_WORKSPACE_CONFIG_INVALID", "An opened project workspace is required");
   }
   const permissions = validateWritePermissions(writePermissions, project);
-  if (typeof executeTest !== "function" || !Array.isArray(testCases) || testCases.length === 0) {
-    fail("QX_TEST_EXECUTOR_REQUIRED", "A non-empty test case list and caller-provided test executor are required before project files are written");
+  const smartRunnerRequested = testCapabilities !== undefined || testExecutors !== undefined;
+  if (!Array.isArray(testCases) || testCases.length === 0 ||
+      (!smartRunnerRequested && typeof executeTest !== "function")) {
+    fail("QX_TEST_EXECUTOR_REQUIRED", "A non-empty test case list and an appropriate test executor are required before project files are written");
+  }
+  if (smartRunnerRequested) {
+    if (testCapabilities === undefined || testExecutors === undefined) {
+      fail("QX_SMART_TEST_CONFIG_REQUIRED", "testCapabilities and testExecutors must be supplied together");
+    }
+    assertProjectSmartTestRunnerConfig({
+      capabilities: testCapabilities,
+      executors: testExecutors,
+      timeoutMs: testTimeoutMs,
+      signal
+    });
+  } else if (testTimeoutMs !== 30000 || signal !== undefined) {
+    fail("QX_SMART_TEST_CONFIG_REQUIRED", "testTimeoutMs and signal require smart test runner configuration");
   }
   if (scope !== "all" && scope !== "affected") {
     fail("QX_TEST_REPORT_INVALID", "scope must be all or affected");
@@ -106,17 +130,38 @@ export async function runProjectBuildWorkflow({
     fileDigests[output.path] = result.contentDigest;
   }
 
-  const testReport = await runProjectTestSuite(project, buildPlan, {
-    expectedProjectDigest,
-    testCases,
-    executeTest,
-    fileDigests,
-    scope,
-    changedArtifactIds
-  });
+  let testReport;
+  let smartTestReport = null;
+  if (smartRunnerRequested) {
+    const smartResult = await runProjectSmartTestRunner(project, buildPlan, {
+      expectedProjectDigest,
+      testCases,
+      capabilities: testCapabilities,
+      executors: testExecutors,
+      fileDigests,
+      scope,
+      changedArtifactIds,
+      timeoutMs: testTimeoutMs,
+      signal
+    });
+    testReport = smartResult.testReport;
+    smartTestReport = smartResult.smartTestReport;
+  } else {
+    testReport = await runProjectTestSuite(project, buildPlan, {
+      expectedProjectDigest,
+      testCases,
+      executeTest,
+      fileDigests,
+      scope,
+      changedArtifactIds
+    });
+  }
   const delivery = await createProjectDeliveryPackage(workspace, project, buildPlan, testReport, {
     expectedProjectDigest,
-    deliverables: OUTPUTS.map(output => ({ path: output.path, required: true }))
+    deliverables: OUTPUTS.map(output => ({ path: output.path, required: true })),
+    blockReasons: smartTestReport && smartTestReport.status !== "passed"
+      ? ["Smart test runner status is " + smartTestReport.status]
+      : []
   });
 
   const coverageReport = requirementCoverage === undefined ? null :
@@ -134,6 +179,7 @@ export async function runProjectBuildWorkflow({
     writes: Object.freeze(writes),
     fileDigests: Object.freeze(fileDigests),
     testReport,
+    smartTestReport,
     delivery,
     requirementCoverage: coverageReport
   });

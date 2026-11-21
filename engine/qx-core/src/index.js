@@ -58,6 +58,12 @@ export {
 } from "./project-test-suite.js";
 
 export {
+  runProjectSmartTestRunner,
+  assertProjectSmartTestRunnerConfig,
+  assertProjectSmartTestReport
+} from "./project-smart-test-runner.js";
+
+export {
   createProjectDeliveryPackage,
   assertProjectDeliveryReport,
   assertProjectDeliveryPackage
