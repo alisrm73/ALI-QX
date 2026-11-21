@@ -1,14 +1,24 @@
-import { createHash } from "node:crypto";
+import {
+  createHash,
+  createPublicKey,
+  randomUUID,
+  verify
+} from "node:crypto";
 import { performance } from "node:perf_hooks";
 import { assertProjectApproved, QXProjectError } from "./project-model.js";
 
 const AUTHORIZATIONS = new WeakMap();
+const PENDING_APPROVAL_CHALLENGES = new Map();
 const MAX_CHANGES = 20;
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 20 * 1024 * 1024;
 const MAX_AUTHORIZATION_LIFETIME_MS = 5 * 60 * 1000;
+const MAX_APPROVAL_CHALLENGE_LIFETIME_MS = 2 * 60 * 1000;
+const MAX_PENDING_APPROVAL_CHALLENGES = 1000;
 const DIGEST = /^sha256:[a-f0-9]{64}$/;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const SAFE_PATH = /^(?!\.)(?!.*(?:^|\/)\.\.(?:\/|$))[A-Za-z0-9_@+.-]+(?:\/[A-Za-z0-9_@+.-]+)*$/;
+const APPROVAL_PUBLIC_KEY_ENV = "QX_PROJECT_REPAIR_APPROVAL_PUBLIC_KEY";
 
 function fail(code, message) {
   throw new QXProjectError(code, message);
@@ -120,20 +130,125 @@ function assertProposal(proposal, project) {
   }
 }
 
-/**
- * Computes the digest a trusted host must display and bind to its explicit
- * user-confirmation event. The host must call authorizeProjectRepair only
- * after the user has reviewed and confirmed these exact file contents.
- */
-export function createProjectRepairChangeSetDigest(changes) {
-  return changeSetDigest(normalizeChanges(changes));
+function assertChangesMatchProposal(proposal, normalizedChanges) {
+  const proposalPaths = proposal.changes.map(change => change.filePath);
+  if (normalizedChanges.length !== proposalPaths.length ||
+      normalizedChanges.some((change, index) => change.relativePath !== proposalPaths[index])) {
+    fail("QX_PROJECT_REPAIR_AUTHORIZATION_INVALID",
+      "Approved change paths and order must exactly match the repair proposal");
+  }
+}
+
+function assertChallengePayload(challenge) {
+  const allowed = [
+    "schemaVersion", "challengeId", "projectId",
+    "projectDigest", "proposalId", "changesDigest"
+  ];
+  if (!plainObject(challenge) || Object.keys(challenge).length !== allowed.length ||
+      Object.keys(challenge).some(key => !allowed.includes(key)) ||
+      challenge.schemaVersion !== "1.0.0" ||
+      typeof challenge.challengeId !== "string" || !UUID.test(challenge.challengeId) ||
+      typeof challenge.projectId !== "string" || challenge.projectId.length === 0 ||
+      typeof challenge.projectDigest !== "string" || !DIGEST.test(challenge.projectDigest) ||
+      typeof challenge.proposalId !== "string" ||
+      !/^qxrepair:[a-f0-9]{64}$/.test(challenge.proposalId) ||
+      typeof challenge.changesDigest !== "string" || !DIGEST.test(challenge.changesDigest)) {
+    fail("QX_PROJECT_REPAIR_APPROVAL_REQUIRED",
+      "A valid host approval challenge and Ed25519 signature are required");
+  }
+}
+
+function cleanupPendingChallenges(now) {
+  for (const [challengeId, state] of PENDING_APPROVAL_CHALLENGES) {
+    if (now >= state.expiresAt) PENDING_APPROVAL_CHALLENGES.delete(challengeId);
+  }
+}
+
+function readTrustedApprovalPublicKey() {
+  const pem = process.env[APPROVAL_PUBLIC_KEY_ENV];
+  if (typeof pem !== "string" || pem.length === 0 || pem.length > 16 * 1024) {
+    fail("QX_PROJECT_REPAIR_APPROVAL_KEY_REQUIRED",
+      "The host must configure its trusted Ed25519 public key in " + APPROVAL_PUBLIC_KEY_ENV);
+  }
+  let key;
+  try {
+    key = createPublicKey(pem);
+  } catch {
+    fail("QX_PROJECT_REPAIR_APPROVAL_KEY_INVALID",
+      "The configured host approval public key is not valid PEM");
+  }
+  if (key.asymmetricKeyType !== "ed25519") {
+    fail("QX_PROJECT_REPAIR_APPROVAL_KEY_INVALID",
+      "The configured host approval public key must use Ed25519");
+  }
+  return key;
 }
 
 /**
- * Issues an opaque, single-use capability after the trusted host attests that
- * the user explicitly approved the exact proposal and change-set digest.
- * This is a host trust boundary, not proof of a human click against malicious
- * code running inside the same Node.js process.
+ * Creates a short-lived, process-local challenge for a trusted host.
+ * The host must display the exact proposal and changes to the user, obtain
+ * explicit confirmation, and sign the serialized challenge with its private
+ * Ed25519 key. The private key must never be exposed to qx-core or the client.
+ */
+export function createProjectRepairApprovalChallenge({
+  project,
+  expectedProjectDigest,
+  proposal,
+  changes,
+  expiresInMs = MAX_APPROVAL_CHALLENGE_LIFETIME_MS
+} = {}) {
+  assertProjectApproved(project, { expectedDigest: expectedProjectDigest });
+  if (!Number.isSafeInteger(expiresInMs) || expiresInMs < 1 ||
+      expiresInMs > MAX_APPROVAL_CHALLENGE_LIFETIME_MS) {
+    fail("QX_PROJECT_REPAIR_APPROVAL_REQUIRED",
+      "Approval challenge lifetime must be between 1 ms and 2 minutes");
+  }
+  assertProposal(proposal, project);
+  const normalizedChanges = normalizeChanges(changes);
+  assertChangesMatchProposal(proposal, normalizedChanges);
+  const changesDigest = changeSetDigest(normalizedChanges);
+  const issuedAt = performance.now();
+  cleanupPendingChallenges(issuedAt);
+  if (PENDING_APPROVAL_CHALLENGES.size >= MAX_PENDING_APPROVAL_CHALLENGES) {
+    fail("QX_PROJECT_REPAIR_APPROVAL_CAPACITY",
+      "Too many pending host approval challenges; retry after existing challenges expire");
+  }
+
+  const challenge = Object.freeze({
+    schemaVersion: "1.0.0",
+    challengeId: randomUUID(),
+    projectId: project.projectId,
+    projectDigest: project.digest,
+    proposalId: proposal.id,
+    changesDigest
+  });
+  PENDING_APPROVAL_CHALLENGES.set(challenge.challengeId, {
+    serialized: canonicalJSON(challenge),
+    issuedAt,
+    expiresAt: issuedAt + expiresInMs,
+    projectId: project.projectId,
+    projectDigest: project.digest,
+    proposalId: proposal.id,
+    changesDigest,
+    changes: normalizedChanges
+  });
+  return challenge;
+}
+
+/**
+ * Returns the canonical UTF-8 text the host must sign with Ed25519.
+ * The signature is supplied to authorizeProjectRepair as base64url.
+ */
+export function serializeProjectRepairApprovalChallenge(challenge) {
+  assertChallengePayload(challenge);
+  return canonicalJSON(challenge);
+}
+
+/**
+ * Issues an opaque, single-use capability only after a pending challenge has
+ * been signed by the trusted host key configured at process startup/runtime.
+ * This verifies the host key holder, not a human click by itself: the host
+ * application must sign only after its explicit user-confirmation event.
  */
 export function authorizeProjectRepair({
   project,
@@ -151,30 +266,51 @@ export function authorizeProjectRepair({
   }
   assertProposal(proposal, project);
   if (!plainObject(approval) ||
-      Object.keys(approval).some(key =>
-        !["confirmed", "proposalId", "projectDigest", "changesDigest"].includes(key)) ||
-      Object.keys(approval).length !== 4 ||
-      approval.confirmed !== true ||
-      approval.proposalId !== proposal.id ||
-      approval.projectDigest !== project.digest ||
-      typeof approval.changesDigest !== "string" || !DIGEST.test(approval.changesDigest)) {
+      Object.keys(approval).length !== 2 ||
+      Object.keys(approval).some(key => !["challenge", "signature"].includes(key)) ||
+      typeof approval.signature !== "string" ||
+      !/^[A-Za-z0-9_-]{86}$/.test(approval.signature)) {
     fail("QX_PROJECT_REPAIR_APPROVAL_REQUIRED",
-      "An explicit host confirmation matching the exact proposal and project is required");
+      "A valid host approval challenge and Ed25519 signature are required");
   }
+  assertChallengePayload(approval.challenge);
 
   const normalizedChanges = normalizeChanges(changes);
-  const proposalPaths = proposal.changes.map(change => change.filePath);
-  if (normalizedChanges.length !== proposalPaths.length ||
-      normalizedChanges.some((change, index) => change.relativePath !== proposalPaths[index])) {
-    fail("QX_PROJECT_REPAIR_AUTHORIZATION_INVALID",
-      "Approved change paths and order must exactly match the repair proposal");
-  }
+  assertChangesMatchProposal(proposal, normalizedChanges);
   const actualChangesDigest = changeSetDigest(normalizedChanges);
-  if (approval.changesDigest !== actualChangesDigest) {
+  const serializedChallenge = canonicalJSON(approval.challenge);
+  const challengeState = PENDING_APPROVAL_CHALLENGES.get(approval.challenge.challengeId);
+  if (!challengeState || performance.now() >= challengeState.expiresAt ||
+      challengeState.serialized !== serializedChallenge) {
+    if (challengeState && performance.now() >= challengeState.expiresAt) {
+      PENDING_APPROVAL_CHALLENGES.delete(approval.challenge.challengeId);
+      fail("QX_PROJECT_REPAIR_APPROVAL_CHALLENGE_EXPIRED",
+        "Host approval challenge expired; request a new user confirmation");
+    }
+    fail("QX_PROJECT_REPAIR_APPROVAL_CHALLENGE_INVALID",
+      "Host approval challenge is unknown, altered, or already consumed");
+  }
+  if (approval.challenge.projectId !== project.projectId ||
+      approval.challenge.projectDigest !== project.digest ||
+      approval.challenge.proposalId !== proposal.id ||
+      approval.challenge.changesDigest !== actualChangesDigest ||
+      challengeState.projectId !== project.projectId ||
+      challengeState.projectDigest !== project.digest ||
+      challengeState.proposalId !== proposal.id ||
+      challengeState.changesDigest !== actualChangesDigest) {
     fail("QX_PROJECT_REPAIR_APPROVAL_MISMATCH",
-      "Approved change contents do not match the confirmed change-set digest");
+      "Host approval does not match the current project, proposal, or exact change contents");
   }
 
+  const publicKey = readTrustedApprovalPublicKey();
+  const signature = Buffer.from(approval.signature, "base64url");
+  if (signature.length !== 64 || signature.toString("base64url") !== approval.signature ||
+      !verify(null, Buffer.from(serializedChallenge, "utf8"), publicKey, signature)) {
+    fail("QX_PROJECT_REPAIR_APPROVAL_INVALID",
+      "Host approval signature is invalid");
+  }
+
+  PENDING_APPROVAL_CHALLENGES.delete(approval.challenge.challengeId);
   const token = Object.freeze(Object.create(null));
   const issuedAt = performance.now();
   AUTHORIZATIONS.set(token, {
