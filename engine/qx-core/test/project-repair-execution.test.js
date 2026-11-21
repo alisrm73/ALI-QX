@@ -226,6 +226,30 @@ test("rejects forged authorization objects and proposal path mismatches", async 
 });
 
 
+test("uses monotonic time despite wall-clock changes", async t => {
+  const { project, workspace } = await fixture(t);
+  const proposal = proposalFor(project, ["src/app.js"]);
+  const changes = [{
+    relativePath: "src/app.js",
+    mode: "replace",
+    content: "after",
+    expectedContentDigest: sha("before")
+  }];
+  const originalNow = Date.now;
+  let authorization;
+  try {
+    Date.now = () => 0;
+    authorization = authorize(project, proposal, changes, { expiresInMs: 5000 });
+    Date.now = () => Number.MAX_SAFE_INTEGER;
+    const result = await executeProjectRepair({
+      authorization, workspace, project, expectedProjectDigest: project.digest
+    });
+    assert.equal(result.status, "applied");
+  } finally {
+    Date.now = originalNow;
+  }
+});
+
 test("expires repair authorization and requires a fresh approval", async t => {
   const { project, workspace } = await fixture(t);
   const proposal = proposalFor(project, ["src/app.js"]);
