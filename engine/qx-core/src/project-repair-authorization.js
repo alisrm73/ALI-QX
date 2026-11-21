@@ -104,6 +104,10 @@ function changeSetDigest(normalizedChanges) {
   })));
 }
 
+export function createProjectRepairChangeSetDigest(changes) {
+  return changeSetDigest(normalizeChanges(changes));
+}
+
 function assertProposal(proposal, project) {
   if (!plainObject(proposal) || proposal.schemaVersion !== "1.0.0" ||
       proposal.projectDigest !== project.digest || proposal.status !== "proposed" ||
