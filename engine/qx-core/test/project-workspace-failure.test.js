@@ -79,7 +79,28 @@ test("rejects a malformed change-log record instead of returning partial history
   const logPath = path.join(metadataRoot, projectDir, "changes.jsonl");
   await fs.writeFile(logPath, "{malformed-json}\n", "utf8");
 
-  await assert.rejects(readProjectChangeLog(workspace), SyntaxError);
+  await assert.rejects(readProjectChangeLog(workspace), { code: "QX_WORKSPACE_CHANGE_LOG_INVALID" });
+});
+
+test("rejects syntactically valid JSON values that are not change-log events", async t => {
+  const { project, workspace, projectRoot } = await fixture(t);
+  await writeProjectFile(workspace, {
+    project, expectedProjectDigest: project.digest, relativePath: "src/seed.js",
+    content: "seed",
+    permission: permission(project, "write", "src/seed.js", { mode: "create" })
+  });
+  const metadataRoot = path.join(projectRoot, ".qx-workspace");
+  const projectDir = (await fs.readdir(metadataRoot))[0];
+  const logPath = path.join(metadataRoot, projectDir, "changes.jsonl");
+
+  for (const invalidRecord of ["null", "[]", "17", "{}", '{"event":"unknown"}',
+    JSON.stringify({ timestamp: new Date().toISOString(), event: "write_started",
+      relativePath: "../escape", projectDigest: project.digest, operation: "create" })]) {
+    await fs.writeFile(logPath, invalidRecord + "\n", "utf8");
+    await assert.rejects(readProjectChangeLog(workspace), {
+      code: "QX_WORKSPACE_CHANGE_LOG_INVALID"
+    });
+  }
 });
 
 test("rejects oversized files during read", async t => {
@@ -241,6 +262,51 @@ test("allows only one of two concurrent create writes to publish the target", as
   const log = await readProjectChangeLog(workspace);
   assert.equal(log.filter(entry => entry.event === "write_started").length, 2);
   assert.equal(log.filter(entry => entry.event === "write_completed").length, 1);
+});
+
+test("bounds change-log reads to the configured limit when the file grows during reading", async t => {
+  const { project, workspace, projectRoot } = await fixture(t);
+  await writeProjectFile(workspace, {
+    project, expectedProjectDigest: project.digest, relativePath: "src/seed.js",
+    content: "seed",
+    permission: permission(project, "write", "src/seed.js", { mode: "create" })
+  });
+  const metadataRoot = path.join(projectRoot, ".qx-workspace");
+  const projectDir = (await fs.readdir(metadataRoot))[0];
+  const logPath = path.join(metadataRoot, projectDir, "changes.jsonl");
+  const originalOpen = fs.open;
+  const originalAppendFile = fs.appendFile;
+  let requestedBytes = 0;
+
+  fs.open = async (...args) => {
+    const handle = await originalOpen(...args);
+    if (args[0] !== logPath) return handle;
+    return new Proxy(handle, {
+      get(fileHandle, property) {
+        if (property === "read") {
+          return async (buffer, offset, length, position) => {
+            requestedBytes = Math.max(requestedBytes, length);
+            if (position === 0) {
+              await originalAppendFile(logPath, Buffer.alloc(12 * 1024 * 1024));
+            }
+            return fileHandle.read(buffer, offset, length, position);
+          };
+        }
+        const value = Reflect.get(fileHandle, property, fileHandle);
+        return typeof value === "function" ? value.bind(fileHandle) : value;
+      }
+    });
+  };
+
+  try {
+    await assert.rejects(readProjectChangeLog(workspace), {
+      code: "QX_WORKSPACE_CHANGE_LOG_INVALID"
+    });
+  } finally {
+    fs.open = originalOpen;
+  }
+  assert.equal(requestedBytes, 10 * 1024 * 1024 + 1);
+  assert.ok((await fs.stat(logPath)).size > requestedBytes);
 });
 
 test("rejects a file that grows beyond the read limit while it is being read", async t => {

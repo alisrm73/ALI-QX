@@ -429,6 +429,39 @@ export async function restoreProjectFile(workspace, {
   return Object.freeze(changeLogWarning ? { ...result, changeLogWarning } : result);
 }
 
+function isValidChangeLogEntry(entry) {
+  if (!entry || typeof entry !== "object" || Array.isArray(entry)) return false;
+  const { timestamp, event, relativePath, projectDigest } = entry;
+  if (typeof timestamp !== "string" || !Number.isFinite(Date.parse(timestamp)) ||
+      new Date(timestamp).toISOString() !== timestamp ||
+      typeof relativePath !== "string" || typeof projectDigest !== "string" ||
+      !/^sha256:[0-9a-f]{64}$/.test(projectDigest)) return false;
+  try {
+    normalizeRelativePath(relativePath);
+  } catch {
+    return false;
+  }
+  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const digest = /^sha256:[0-9a-f]{64}$/;
+  const shapes = {
+    write_started: entry.operation === "create" || entry.operation === "replace"
+      ? ["timestamp", "event", "relativePath", "projectDigest", "operation"] : null,
+    write_completed: typeof entry.contentDigest === "string" && digest.test(entry.contentDigest) &&
+      (entry.backupId === null || (typeof entry.backupId === "string" && uuid.test(entry.backupId)))
+      ? ["timestamp", "event", "relativePath", "projectDigest", "contentDigest", "backupId"] : null,
+    restore_started: typeof entry.backupId === "string" && uuid.test(entry.backupId)
+      ? ["timestamp", "event", "relativePath", "projectDigest", "backupId"] : null,
+    restore_completed: typeof entry.contentDigest === "string" && digest.test(entry.contentDigest) &&
+      typeof entry.restoredBackupId === "string" && uuid.test(entry.restoredBackupId) &&
+      typeof entry.safetyBackupId === "string" && uuid.test(entry.safetyBackupId)
+      ? ["timestamp", "event", "relativePath", "projectDigest", "contentDigest", "restoredBackupId", "safetyBackupId"] : null
+  };
+  const expectedKeys = shapes[event];
+  return Array.isArray(expectedKeys) &&
+    Object.keys(entry).length === expectedKeys.length &&
+    expectedKeys.every(key => Object.hasOwn(entry, key));
+}
+
 export async function readProjectChangeLog(workspace) {
   assertWorkspace(workspace);
   const projectDir = path.join(workspace.root, METADATA_DIR, projectKey(workspace.projectId));
@@ -442,7 +475,52 @@ export async function readProjectChangeLog(workspace) {
   }
   const info = await inspectRegularTarget(logPath);
   if (!info) return Object.freeze([]);
-  const content = await fs.readFile(logPath, "utf8");
-  const entries = content.split("\n").filter(Boolean).map(line => JSON.parse(line));
+  if (info.size > MAX_FILE_BYTES) {
+    fail("QX_WORKSPACE_CHANGE_LOG_INVALID", "Change log exceeds the 10 MiB read limit");
+  }
+
+  let handle;
+  let content;
+  try {
+    const flags = fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW ?? 0);
+    handle = await fs.open(logPath, flags);
+    const opened = await handle.stat();
+    if (!opened.isFile() || opened.dev !== info.dev || opened.ino !== info.ino ||
+        opened.size > MAX_FILE_BYTES) {
+      fail("QX_WORKSPACE_CONCURRENT_CHANGE", "Change log changed or became unsafe while it was being opened");
+    }
+    const bounded = Buffer.alloc(MAX_FILE_BYTES + 1);
+    let bytesRead = 0;
+    while (bytesRead < bounded.length) {
+      const result = await handle.read(bounded, bytesRead, bounded.length - bytesRead, bytesRead);
+      if (result.bytesRead === 0) break;
+      bytesRead += result.bytesRead;
+    }
+    if (bytesRead > MAX_FILE_BYTES) {
+      fail("QX_WORKSPACE_CHANGE_LOG_INVALID", "Change log exceeds the 10 MiB read limit");
+    }
+    const finalInfo = await handle.stat();
+    if (bytesRead !== finalInfo.size) {
+      fail("QX_WORKSPACE_CONCURRENT_CHANGE", "Change log changed while it was being read");
+    }
+    content = bounded.subarray(0, bytesRead).toString("utf8");
+  } catch (error) {
+    if (error.code === "ELOOP") {
+      fail("QX_WORKSPACE_PATH_UNSAFE", "Symbolic-link targets are not permitted");
+    }
+    throw error;
+  } finally {
+    await handle?.close();
+  }
+
+  let entries;
+  try {
+    entries = content.split("\n").filter(Boolean).map(line => JSON.parse(line));
+  } catch {
+    fail("QX_WORKSPACE_CHANGE_LOG_INVALID", "Change log contains malformed JSON");
+  }
+  if (!entries.every(isValidChangeLogEntry)) {
+    fail("QX_WORKSPACE_CHANGE_LOG_INVALID", "Change log contains an invalid event record");
+  }
   return Object.freeze(entries.map(entry => Object.freeze(entry)));
 }
