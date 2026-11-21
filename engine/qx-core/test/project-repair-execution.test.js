@@ -439,3 +439,42 @@ test("stops between file writes after cooperative cancellation and reports parti
   assert.equal(await fs.readFile(path.join(root, "src/first.js"), "utf8"), "first-after");
   assert.equal(await fs.readFile(path.join(root, "src/second.js"), "utf8"), "second-before");
 });
+
+
+test("reports an applied repair with a lock-release warning when cleanup fails", async t => {
+  const { root, project, workspace } = await fixture(t);
+  const relativePath = "src/app.js";
+  const proposal = proposalFor(project, [relativePath]);
+  const changes = [{
+    relativePath,
+    mode: "replace",
+    content: "after",
+    expectedContentDigest: sha("before")
+  }];
+  const authorization = authorize(project, proposal, changes);
+  const lockKey = createHash("sha256").update(relativePath, "utf8").digest("hex");
+  const lockPath = path.join(root, ".qx-workspace", "locks", lockKey + ".lock");
+  const originalRm = fs.rm;
+  fs.rm = async (candidate, ...args) => {
+    if (candidate === lockPath) {
+      throw Object.assign(new Error("simulated lock removal failure"), { code: "EACCES" });
+    }
+    return originalRm(candidate, ...args);
+  };
+
+  let result;
+  try {
+    result = await executeProjectRepair({
+      authorization, workspace, project, expectedProjectDigest: project.digest
+    });
+  } finally {
+    fs.rm = originalRm;
+  }
+
+  assert.equal(await fs.readFile(path.join(root, relativePath), "utf8"), "after");
+  assert.equal(result.status, "applied");
+  assert.equal(result.failure, null);
+  assert.equal(result.writes.length, 1);
+  assert.equal(result.writes[0].lockReleaseWarning.code, "QX_WORKSPACE_LOCK_RELEASE_FAILED");
+  assert.equal(result.fileEvidence[0].status, "applied");
+});
