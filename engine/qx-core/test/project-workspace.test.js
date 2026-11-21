@@ -221,7 +221,7 @@ test("rejects a symbolic-link change log instead of reading outside the workspac
   const projectDir = (await fs.readdir(metadataRoot))[0];
   const logPath = path.join(metadataRoot, projectDir, "changes.jsonl");
   const outsideLog = path.join(root, "outside-changes.jsonl");
-  await fs.writeFile(outsideLog, JSON.stringify({ event: "outside" }) + "\\n");
+  await fs.writeFile(outsideLog, JSON.stringify({ event: "outside" }) + "\n");
   await fs.rm(logPath);
   await fs.symlink(outsideLog, logPath);
 
