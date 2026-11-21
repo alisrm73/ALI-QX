@@ -116,6 +116,37 @@ function reportContent(report) {
   };
 }
 
+function isValidReportError(value) {
+  return isPlainObject(value) &&
+    Object.keys(value).every(key => ["name", "code", "message"].includes(key)) &&
+    typeof value.name === "string" && value.name.length > 0 && value.name.length <= 120 &&
+    (value.code === null || (typeof value.code === "string" && value.code.length <= 120)) &&
+    typeof value.message === "string" && value.message.length > 0 && value.message.length <= 1000;
+}
+
+function isValidSmartResult(item) {
+  if (!isPlainObject(item) ||
+      Object.keys(item).some(key => ![
+        "testId", "level", "required", "status", "summary", "reason", "error", "durationMs"
+      ].includes(key)) ||
+      !["testId", "level", "required", "status", "summary", "reason", "error", "durationMs"]
+        .every(key => Object.hasOwn(item, key)) ||
+      typeof item.testId !== "string" || !TEST_ID_PATTERN.test(item.testId) ||
+      !TEST_LEVELS.includes(item.level) || typeof item.required !== "boolean" ||
+      !["passed", "failed", "skipped", "not_run", "cancelled"].includes(item.status) ||
+      typeof item.summary !== "string" || item.summary.trim().length === 0 || item.summary.length > 1000 ||
+      !Number.isSafeInteger(item.durationMs) || item.durationMs < 0 ||
+      (item.reason !== null && (typeof item.reason !== "string" || item.reason.length === 0 || item.reason.length > 1000)) ||
+      (item.error !== null && !isValidReportError(item.error))) {
+    return false;
+  }
+  if (item.status === "passed") return item.reason === null && item.error === null;
+  if (item.status === "not_run") return item.durationMs === 0 && item.reason === null && item.error === null;
+  if (item.status === "failed") return item.error !== null;
+  if (item.status === "skipped" || item.status === "cancelled") return item.reason !== null;
+  return false;
+}
+
 /**
  * Runs host-provided test adapters while preserving the legacy project test report.
  * A timeout or AbortSignal stops waiting and signals the adapter; it cannot forcibly
@@ -344,15 +375,9 @@ export function assertProjectSmartTestReport(project, plan, report) {
     fail("QX_SMART_TEST_REPORT_INVALID", "Smart test report is malformed, stale, or its digest does not match");
   }
   normalizeFileDigests(report.fileDigests);
-  if (report.results.some(item => !isPlainObject(item) ||
-      typeof item.testId !== "string" || !TEST_ID_PATTERN.test(item.testId) ||
-      !TEST_LEVELS.includes(item.level) || typeof item.required !== "boolean" ||
-      !["passed", "failed", "skipped", "not_run", "cancelled"].includes(item.status) ||
-      typeof item.summary !== "string" || item.summary.length === 0 || item.summary.length > 1000 ||
-      !Number.isSafeInteger(item.durationMs) || item.durationMs < 0 ||
-      (item.reason !== null && typeof item.reason !== "string") ||
-      (item.error !== null && !isPlainObject(item.error))) ||
+  if (report.results.some(item => !isValidSmartResult(item)) ||
       new Set(report.results.map(item => item.testId)).size !== report.results.length ||
+      report.selectedTestIds.length > MAX_TESTS ||
       report.selectedTestIds.some(id => typeof id !== "string" || !TEST_ID_PATTERN.test(id)) ||
       new Set(report.selectedTestIds).size !== report.selectedTestIds.length) {
     fail("QX_SMART_TEST_REPORT_INVALID", "Smart test report contains malformed result entries");
