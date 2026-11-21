@@ -96,7 +96,7 @@ test("rejects syntactically valid JSON values that are not change-log events", a
   for (const invalidRecord of ["null", "[]", "17", "{}", '{"event":"unknown"}',
     JSON.stringify({ timestamp: new Date().toISOString(), event: "write_started",
       relativePath: "../escape", projectDigest: project.digest, operation: "create" })]) {
-    await fs.writeFile(logPath, invalidRecord + "\\n", "utf8");
+    await fs.writeFile(logPath, invalidRecord + "\n", "utf8");
     await assert.rejects(readProjectChangeLog(workspace), {
       code: "QX_WORKSPACE_CHANGE_LOG_INVALID"
     });
