@@ -457,6 +457,13 @@ async function preflightProjectFileWrite(workspace, options = {}) {
   return resolved;
 }
 
+/**
+ * Writes under the per-file Workspace coordination lock and checks the approved
+ * current-content digest again immediately before atomic replacement. This is
+ * a cooperative-writer guarantee, not an OS-level compare-and-swap: a process
+ * that bypasses Workspace can still race after the final digest check and
+ * before rename. Callers must not claim protection against such hostile writers.
+ */
 async function writeProjectFileUnlocked(workspace, options = {}) {
   const {
     project, expectedProjectDigest, relativePath, content, permission,
@@ -531,6 +538,9 @@ async function writeProjectFileUnlocked(workspace, options = {}) {
     fail("QX_WORKSPACE_CONCURRENT_CHANGE", "Target changed while the write was being prepared");
   }
 
+  // Last content check before replacement. Workspace locks serialize only
+  // cooperating Workspace writers; external filesystem writers are outside
+  // this lock and can still race between this check and writeAtomic().
   if (hasExpectedContentDigest && permission.mode === "replace") {
     const latestBytes = await readRegularFileBounded(resolved.target, {
       maxBytes: MAX_FILE_BYTES,
