@@ -140,3 +140,83 @@ test("rejects replacing an existing file larger than the backup and restore limi
     code: "ENOENT"
   });
 });
+
+
+test("reports a completion-log warning when a write succeeds but its completion event fails", async t => {
+  const { project, workspace, projectRoot } = await fixture(t);
+  const target = path.join(projectRoot, "src/write-log-failure.js");
+  await fs.writeFile(target, "before");
+  const originalAppendFile = fs.appendFile;
+  let appendCalls = 0;
+  fs.appendFile = async (...args) => {
+    appendCalls += 1;
+    if (appendCalls === 2) {
+      const error = new Error("simulated completion log failure");
+      error.code = "EIO";
+      throw error;
+    }
+    return originalAppendFile(...args);
+  };
+  let result;
+  try {
+    result = await writeProjectFile(workspace, {
+      project, expectedProjectDigest: project.digest,
+      relativePath: "src/write-log-failure.js", content: "after",
+      permission: permission(project, "write", "src/write-log-failure.js", { mode: "replace" })
+    });
+  } finally {
+    fs.appendFile = originalAppendFile;
+  }
+
+  assert.equal(await fs.readFile(target, "utf8"), "after");
+  assert.equal(result.changeLogWarning.code, "EIO");
+  assert.match(result.changeLogWarning.message, /was written/);
+});
+
+test("reports a completion-log warning when a restore succeeds but its completion event fails", async t => {
+  const { project, workspace, projectRoot, target, backupId } = await createBackupFixture(t);
+  const originalAppendFile = fs.appendFile;
+  let appendCalls = 0;
+  fs.appendFile = async (...args) => {
+    appendCalls += 1;
+    if (appendCalls === 2) {
+      const error = new Error("simulated completion log failure");
+      error.code = "EIO";
+      throw error;
+    }
+    return originalAppendFile(...args);
+  };
+  let result;
+  try {
+    result = await restoreProjectFile(workspace, {
+      project, expectedProjectDigest: project.digest, backupId,
+      relativePath: "src/app.js",
+      permission: permission(project, "restore", "src/app.js", { backupId })
+    });
+  } finally {
+    fs.appendFile = originalAppendFile;
+  }
+
+  assert.equal(await fs.readFile(target, "utf8"), "before");
+  assert.equal(result.changeLogWarning.code, "EIO");
+  assert.match(result.changeLogWarning.message, /was restored/);
+});
+
+test("rejects restoring over an oversized current file before creating a safety backup", async t => {
+  const { project, workspace, projectRoot, target, backupId } = await createBackupFixture(t);
+  const oversized = Buffer.alloc(10 * 1024 * 1024 + 1, 0x61);
+  await fs.writeFile(target, oversized);
+
+  await assert.rejects(restoreProjectFile(workspace, {
+    project, expectedProjectDigest: project.digest, backupId,
+    relativePath: "src/app.js",
+    permission: permission(project, "restore", "src/app.js", { backupId })
+  }), { code: "QX_WORKSPACE_CONTENT_INVALID" });
+
+  assert.deepEqual(await fs.readFile(target), oversized);
+  const metadataRoot = path.join(projectRoot, ".qx-workspace");
+  const projectDir = (await fs.readdir(metadataRoot))[0];
+  const backupDir = path.join(metadataRoot, projectDir, "backups");
+  const backups = await fs.readdir(backupDir);
+  assert.equal(backups.length, 1);
+});
