@@ -318,10 +318,18 @@ export async function writeProjectFile(workspace, {
     contentDigest: hash(bytes),
     backupId
   };
-  await appendChangeLog(workspace, {
-    event: "write_completed", ...result, projectDigest: project.digest
-  });
-  return Object.freeze(result);
+  let changeLogWarning = null;
+  try {
+    await appendChangeLog(workspace, {
+      event: "write_completed", ...result, projectDigest: project.digest
+    });
+  } catch (error) {
+    changeLogWarning = Object.freeze({
+      code: typeof error.code === "string" ? error.code : "QX_WORKSPACE_CHANGE_LOG_FAILED",
+      message: "File content was written, but the completion event could not be recorded"
+    });
+  }
+  return Object.freeze(changeLogWarning ? { ...result, changeLogWarning } : result);
 }
 
 export async function restoreProjectFile(workspace, {
@@ -343,11 +351,19 @@ export async function restoreProjectFile(workspace, {
   }
   const current = await inspectRegularTarget(resolved.target);
   if (!current) fail("QX_WORKSPACE_FILE_MISSING", "Restore only replaces an existing regular file");
+  if (current.size > MAX_FILE_BYTES) {
+    fail("QX_WORKSPACE_CONTENT_INVALID",
+      "Existing file exceeds the 10 MiB workspace backup and restore limit");
+  }
   await appendChangeLog(workspace, {
     event: "restore_started", relativePath: resolved.relativePath,
     backupId, projectDigest: project.digest
   });
   const currentBytes = await fs.readFile(resolved.target);
+  if (currentBytes.length > MAX_FILE_BYTES) {
+    fail("QX_WORKSPACE_CONTENT_INVALID",
+      "Existing file exceeds the 10 MiB workspace backup and restore limit");
+  }
   const safetyBackupId = await saveBackup(workspace, resolved.relativePath, currentBytes, "before_restore");
   const rechecked = await inspectRegularTarget(resolved.target);
   if (!rechecked || current.dev !== rechecked.dev || current.ino !== rechecked.ino) {
@@ -360,10 +376,18 @@ export async function restoreProjectFile(workspace, {
     restoredBackupId: backupId,
     safetyBackupId
   };
-  await appendChangeLog(workspace, {
-    event: "restore_completed", ...result, projectDigest: project.digest
-  });
-  return Object.freeze(result);
+  let changeLogWarning = null;
+  try {
+    await appendChangeLog(workspace, {
+      event: "restore_completed", ...result, projectDigest: project.digest
+    });
+  } catch (error) {
+    changeLogWarning = Object.freeze({
+      code: typeof error.code === "string" ? error.code : "QX_WORKSPACE_CHANGE_LOG_FAILED",
+      message: "File content was restored, but the completion event could not be recorded"
+    });
+  }
+  return Object.freeze(changeLogWarning ? { ...result, changeLogWarning } : result);
 }
 
 export async function readProjectChangeLog(workspace) {
