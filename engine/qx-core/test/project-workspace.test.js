@@ -1,4 +1,5 @@
 import test from "node:test";
+import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -228,4 +229,99 @@ test("rejects a symbolic-link change log instead of reading outside the workspac
   await assert.rejects(readProjectChangeLog(workspace), {
     code: "QX_WORKSPACE_PATH_UNSAFE"
   });
+});
+
+
+function testDigest(value) {
+  return "sha256:" + createHash("sha256").update(value, "utf8").digest("hex");
+}
+
+test("requires an exact current-content digest for conditional replacement", async t => {
+  const { project, workspace, projectRoot } = await fixture(t);
+  const target = path.join(projectRoot, "src/app.js");
+  await fs.writeFile(target, "approved-before");
+  await assert.rejects(writeProjectFile(workspace, {
+    project, expectedProjectDigest: project.digest, relativePath: "src/app.js",
+    content: "after", expectedContentDigest: testDigest("different"),
+    permission: permission(project, "write", "src/app.js", { mode: "replace" })
+  }), { code: "QX_WORKSPACE_CONTENT_STALE" });
+  assert.equal(await fs.readFile(target, "utf8"), "approved-before");
+  const result = await writeProjectFile(workspace, {
+    project, expectedProjectDigest: project.digest, relativePath: "src/app.js",
+    content: "after", expectedContentDigest: testDigest("approved-before"),
+    permission: permission(project, "write", "src/app.js", { mode: "replace" })
+  });
+  assert.ok(result.backupId);
+  assert.equal(await fs.readFile(target, "utf8"), "after");
+});
+
+test("documents that an external writer can race after the final digest check", async t => {
+  const { project, workspace, projectRoot } = await fixture(t);
+  const target = path.join(projectRoot, "src/app.js");
+  await fs.writeFile(target, "approved-before");
+
+  const originalRename = fs.rename;
+  const originalWriteFile = fs.writeFile;
+  let externalWriteInjected = false;
+  fs.rename = async (source, destination) => {
+    if (destination === target && !externalWriteInjected) {
+      externalWriteInjected = true;
+      await originalWriteFile(target, "external-race");
+    }
+    return originalRename(source, destination);
+  };
+
+  try {
+    await writeProjectFile(workspace, {
+      project,
+      expectedProjectDigest: project.digest,
+      relativePath: "src/app.js",
+      content: "approved-after",
+      expectedContentDigest: testDigest("approved-before"),
+      permission: permission(project, "write", "src/app.js", { mode: "replace" })
+    });
+  } finally {
+    fs.rename = originalRename;
+  }
+
+  assert.equal(externalWriteInjected, true);
+  // This intentionally records the threat-model boundary: an external writer
+  // bypassing Workspace can race between the final digest check and rename.
+  assert.equal(await fs.readFile(target, "utf8"), "approved-after");
+});
+
+test("conditional create must explicitly expect an absent target", async t => {
+  const { project, workspace, projectRoot } = await fixture(t);
+  const target = path.join(projectRoot, "src/new.js");
+  await assert.rejects(writeProjectFile(workspace, {
+    project, expectedProjectDigest: project.digest, relativePath: "src/new.js",
+    content: "created", expectedContentDigest: testDigest("not absent"),
+    permission: permission(project, "write", "src/new.js", { mode: "create" })
+  }), { code: "QX_WORKSPACE_CONTENT_PRECONDITION_INVALID" });
+  const result = await writeProjectFile(workspace, {
+    project, expectedProjectDigest: project.digest, relativePath: "src/new.js",
+    content: "created", expectedContentDigest: null,
+    permission: permission(project, "write", "src/new.js", { mode: "create" })
+  });
+  assert.equal(result.contentDigest, testDigest("created"));
+  assert.equal(await fs.readFile(target, "utf8"), "created");
+});
+
+test("serializes workspace mutations with a per-file lock and fails closed on a held lock", async t => {
+  const { project, workspace, projectRoot } = await fixture(t);
+  const target = path.join(projectRoot, "src/seed.js");
+  await writeProjectFile(workspace, {
+    project, expectedProjectDigest: project.digest, relativePath: "src/seed.js",
+    content: "seed",
+    permission: permission(project, "write", "src/seed.js", { mode: "create" })
+  });
+  const lockKey = createHash("sha256").update("src/seed.js", "utf8").digest("hex");
+  const lockDir = path.join(projectRoot, ".qx-workspace", "locks");
+  await fs.writeFile(path.join(lockDir, lockKey + ".lock"), "held");
+  await assert.rejects(writeProjectFile(workspace, {
+    project, expectedProjectDigest: project.digest, relativePath: "src/seed.js",
+    content: "blocked",
+    permission: permission(project, "write", "src/seed.js", { mode: "replace" })
+  }), { code: "QX_WORKSPACE_CONCURRENT_CHANGE" });
+  assert.equal(await fs.readFile(target, "utf8"), "seed");
 });

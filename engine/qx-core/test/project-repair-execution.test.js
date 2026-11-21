@@ -1,0 +1,573 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { createHash, generateKeyPairSync, sign } from "node:crypto";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import {
+  createProjectDraft, submitProjectForReview, approveProjectDraft
+} from "../src/project-model.js";
+import { createProjectDiagnostic } from "../src/project-diagnostics.js";
+import { createProjectRepairProposal } from "../src/project-repair.js";
+import {
+  authorizeProjectRepair,
+  createProjectRepairApprovalChallenge,
+  createProjectRepairChangeSetDigest,
+  serializeProjectRepairApprovalChallenge,
+  requestProjectRepairApproval
+} from "../src/project-repair-authorization.js";
+import { executeProjectRepair } from "../src/project-repair-execution.js";
+import { openProjectWorkspace } from "../src/project-workspace.js";
+
+const approvalKeys = generateKeyPairSync("ed25519");
+const approvalPublicKeyPem = approvalKeys.publicKey.export({
+  type: "spki",
+  format: "pem"
+}).toString();
+process.env.QX_PROJECT_REPAIR_APPROVAL_PUBLIC_KEY = approvalPublicKeyPem;
+
+function signedApproval(project, proposal, changes) {
+  const challenge = createProjectRepairApprovalChallenge({
+    project,
+    expectedProjectDigest: project.digest,
+    proposal,
+    changes
+  });
+  const payload = Buffer.from(
+    serializeProjectRepairApprovalChallenge(challenge),
+    "utf8"
+  );
+  return {
+    challenge,
+    signature: sign(null, payload, approvalKeys.privateKey).toString("base64url")
+  };
+}
+
+function sha(value) {
+  return "sha256:" + createHash("sha256").update(value, "utf8").digest("hex");
+}
+
+async function fixture(t, fileContents = { "src/app.js": "before" }) {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "qx-repair-execution-"));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  await fs.mkdir(path.join(root, "src"));
+  for (const [relativePath, content] of Object.entries(fileContents)) {
+    await fs.mkdir(path.dirname(path.join(root, relativePath)), { recursive: true });
+    await fs.writeFile(path.join(root, relativePath), content);
+  }
+  const draft = createProjectDraft({
+    projectId: "repair-execution-demo",
+    title: "Repair execution demo",
+    description: "A project for repair authorization tests",
+    requirements: ["A home page is available"],
+    pages: [{ id: "home", title: "Home" }]
+  });
+  const reviewed = submitProjectForReview(draft).project;
+  const project = approveProjectDraft(reviewed, { approvedDigest: reviewed.digest });
+  const workspace = await openProjectWorkspace({ root, projectId: project.projectId });
+  const diagnostic = createProjectDiagnostic({
+    error: Object.assign(new Error("Unexpected token"), { code: "QX2005" }),
+    phase: "parser",
+    source: "QX parser",
+    certainty: "confirmed"
+  });
+  return { root, project, workspace, diagnostic };
+}
+
+function proposalFor(project, paths) {
+  return createProjectRepairProposal({
+    diagnostic: createProjectDiagnostic({
+      error: Object.assign(new Error("Unexpected token"), { code: "QX2005" }),
+      phase: "parser",
+      source: "QX parser",
+      certainty: "confirmed"
+    }),
+    projectDigest: project.digest,
+    basis: "The diagnostic identifies the source file requiring a bounded correction.",
+    changes: paths.map(filePath => ({
+      filePath,
+      scope: "Replace the diagnosed file with the reviewed correction.",
+      rationale: "The proposed change is limited to the named file."
+    })),
+    tests: [{ name: "repair regression", purpose: "Verify the corrected file." }]
+  });
+}
+
+function authorize(project, proposal, changes, options = {}) {
+  const approval = signedApproval(project, proposal, changes);
+  return authorizeProjectRepair({
+    project,
+    expectedProjectDigest: project.digest,
+    proposal,
+    changes,
+    ...options,
+    approval
+  });
+}
+
+test("requires a trusted host callback to return an explicit human approval and exact challenge signature", async t => {
+  const { project } = await fixture(t);
+  const proposal = proposalFor(project, ["src/app.js"]);
+  const changes = [{
+    relativePath: "src/app.js",
+    mode: "replace",
+    content: "after",
+    expectedContentDigest: sha("before")
+  }];
+
+  await assert.rejects(requestProjectRepairApproval({
+    project,
+    expectedProjectDigest: project.digest,
+    proposal,
+    changes
+  }), { code: "QX_PROJECT_REPAIR_APPROVAL_REQUIRED" });
+
+  await assert.rejects(requestProjectRepairApproval({
+    project,
+    expectedProjectDigest: project.digest,
+    proposal,
+    changes,
+    requestExplicitUserApproval: async () => ({ approved: false })
+  }), { code: "QX_PROJECT_REPAIR_APPROVAL_DENIED" });
+
+  let presented;
+  const approval = await requestProjectRepairApproval({
+    project,
+    expectedProjectDigest: project.digest,
+    proposal,
+    changes,
+    requestExplicitUserApproval: async request => {
+      presented = request;
+      assert.equal(Object.isFrozen(request), true);
+      assert.equal(request.action, "project_repair");
+      assert.equal(request.proposal.id, proposal.id);
+      assert.deepEqual(request.changes, [{
+        relativePath: "src/app.js",
+        mode: "replace",
+        content: "after",
+        expectedContentDigest: sha("before"),
+        contentDigest: sha("after")
+      }]);
+      return {
+        approved: true,
+        signature: sign(
+          null,
+          Buffer.from(request.serializedChallenge, "utf8"),
+          approvalKeys.privateKey
+        ).toString("base64url")
+      };
+    }
+  });
+
+  assert.ok(presented.challenge.challengeId);
+  const authorization = authorizeProjectRepair({
+    project,
+    expectedProjectDigest: project.digest,
+    proposal,
+    changes,
+    approval
+  });
+  assert.ok(authorization);
+});
+
+test("does not issue approval when the host callback fails or omits an explicit decision", async t => {
+  const { project } = await fixture(t);
+  const proposal = proposalFor(project, ["src/app.js"]);
+  const changes = [{
+    relativePath: "src/app.js",
+    mode: "replace",
+    content: "after",
+    expectedContentDigest: sha("before")
+  }];
+
+  await assert.rejects(requestProjectRepairApproval({
+    project,
+    expectedProjectDigest: project.digest,
+    proposal,
+    changes,
+    requestExplicitUserApproval: async () => { throw new Error("private host error"); }
+  }), { code: "QX_PROJECT_REPAIR_APPROVAL_FAILED" });
+
+  await assert.rejects(requestProjectRepairApproval({
+    project,
+    expectedProjectDigest: project.digest,
+    proposal,
+    changes,
+    requestExplicitUserApproval: async () => ({ signature: "A".repeat(86) })
+  }), { code: "QX_PROJECT_REPAIR_APPROVAL_REQUIRED" });
+});
+
+test("requires a valid Ed25519 host signature bound to the exact proposal and change digest", async t => {
+  const { project } = await fixture(t);
+  const proposal = proposalFor(project, ["src/app.js"]);
+  const changes = [{
+    relativePath: "src/app.js",
+    mode: "replace",
+    content: "after",
+    expectedContentDigest: sha("before")
+  }];
+  const approval = signedApproval(project, proposal, changes);
+  const authorizationArgs = {
+    project,
+    expectedProjectDigest: project.digest,
+    proposal,
+    changes,
+    approval
+  };
+
+  const configuredKey = process.env.QX_PROJECT_REPAIR_APPROVAL_PUBLIC_KEY;
+  try {
+    delete process.env.QX_PROJECT_REPAIR_APPROVAL_PUBLIC_KEY;
+    assert.throws(() => authorizeProjectRepair(authorizationArgs), {
+      code: "QX_PROJECT_REPAIR_APPROVAL_KEY_REQUIRED"
+    });
+  } finally {
+    process.env.QX_PROJECT_REPAIR_APPROVAL_PUBLIC_KEY = configuredKey;
+  }
+
+  assert.throws(() => authorizeProjectRepair({
+    ...authorizationArgs,
+    approval: {
+      confirmed: true,
+      proposalId: proposal.id,
+      projectDigest: project.digest,
+      changesDigest: createProjectRepairChangeSetDigest(changes)
+    }
+  }), { code: "QX_PROJECT_REPAIR_APPROVAL_REQUIRED" });
+
+  assert.throws(() => authorizeProjectRepair({
+    ...authorizationArgs,
+    approval: { ...approval, signature: "A".repeat(86) }
+  }), { code: "QX_PROJECT_REPAIR_APPROVAL_INVALID" });
+
+  const changedContents = [{
+    ...changes[0],
+    content: "different approved content"
+  }];
+  assert.throws(() => authorizeProjectRepair({
+    ...authorizationArgs,
+    changes: changedContents
+  }), { code: "QX_PROJECT_REPAIR_APPROVAL_MISMATCH" });
+
+  const authorization = authorizeProjectRepair(authorizationArgs);
+  assert.ok(authorization);
+  assert.throws(() => authorizeProjectRepair(authorizationArgs), {
+    code: "QX_PROJECT_REPAIR_APPROVAL_CHALLENGE_INVALID"
+  });
+});
+
+test("expires host approval challenges using monotonic time", async t => {
+  const { project } = await fixture(t);
+  const proposal = proposalFor(project, ["src/app.js"]);
+  const changes = [{
+    relativePath: "src/app.js",
+    mode: "replace",
+    content: "after",
+    expectedContentDigest: sha("before")
+  }];
+  const challenge = createProjectRepairApprovalChallenge({
+    project,
+    expectedProjectDigest: project.digest,
+    proposal,
+    changes,
+    expiresInMs: 1
+  });
+  const approval = {
+    challenge,
+    signature: sign(
+      null,
+      Buffer.from(serializeProjectRepairApprovalChallenge(challenge), "utf8"),
+      approvalKeys.privateKey
+    ).toString("base64url")
+  };
+  await new Promise(resolve => setTimeout(resolve, 10));
+  assert.throws(() => authorizeProjectRepair({
+    project,
+    expectedProjectDigest: project.digest,
+    proposal,
+    changes,
+    approval
+  }), { code: "QX_PROJECT_REPAIR_APPROVAL_CHALLENGE_EXPIRED" });
+});
+
+test("applies an approved repair through Workspace and consumes authorization once", async t => {
+  const { root, project, workspace } = await fixture(t);
+  const proposal = proposalFor(project, ["src/app.js"]);
+  const changes = [{
+    relativePath: "src/app.js",
+    mode: "replace",
+    content: "after",
+    expectedContentDigest: sha("before")
+  }];
+  const authorization = authorize(project, proposal, changes);
+  const result = await executeProjectRepair({
+    authorization, workspace, project, expectedProjectDigest: project.digest
+  });
+  assert.equal(result.status, "applied");
+  assert.equal(result.writes.length, 1);
+  assert.ok(result.writes[0].backupId);
+  assert.deepEqual(result.fileEvidence, [{
+    relativePath: "src/app.js",
+    expectedContentDigest: sha("before"),
+    contentMatch: true,
+    postContentDigest: sha("after"),
+    status: "applied"
+  }]);
+  assert.equal(await fs.readFile(path.join(root, "src/app.js"), "utf8"), "after");
+  await assert.rejects(executeProjectRepair({
+    authorization, workspace, project, expectedProjectDigest: project.digest
+  }), { code: "QX_PROJECT_REPAIR_AUTHORIZATION_INVALID" });
+});
+
+test("rejects a changed file after approval without overwriting the new content", async t => {
+  const { root, project, workspace } = await fixture(t);
+  const proposal = proposalFor(project, ["src/app.js"]);
+  const changes = [{
+    relativePath: "src/app.js",
+    mode: "replace",
+    content: "approved repair",
+    expectedContentDigest: sha("before")
+  }];
+  const authorization = authorize(project, proposal, changes);
+  await fs.writeFile(path.join(root, "src/app.js"), "external change");
+  const result = await executeProjectRepair({
+    authorization, workspace, project, expectedProjectDigest: project.digest
+  });
+  assert.equal(result.status, "failed");
+  assert.equal(result.failure.code, "QX_WORKSPACE_CONTENT_STALE");
+  assert.deepEqual(result.fileEvidence, [{
+    relativePath: "src/app.js",
+    expectedContentDigest: sha("before"),
+    contentMatch: false,
+    postContentDigest: null,
+    status: "failed"
+  }]);
+  assert.equal(await fs.readFile(path.join(root, "src/app.js"), "utf8"), "external change");
+});
+
+test("reports partial application and stops after the first failed file", async t => {
+  const { root, project, workspace } = await fixture(t, {
+    "src/first.js": "first-before",
+    "src/second.js": "second-before"
+  });
+  const proposal = proposalFor(project, ["src/first.js", "src/second.js"]);
+  const changes = [
+    {
+      relativePath: "src/first.js", mode: "replace", content: "first-after",
+      expectedContentDigest: sha("first-before")
+    },
+    {
+      relativePath: "src/second.js", mode: "replace", content: "second-after",
+      expectedContentDigest: sha("approved-old-content")
+    }
+  ];
+  const authorization = authorize(project, proposal, changes);
+  const result = await executeProjectRepair({
+    authorization, workspace, project, expectedProjectDigest: project.digest
+  });
+  assert.equal(result.status, "partial");
+  assert.equal(result.writes.length, 1);
+  assert.equal(result.failure.code, "QX_WORKSPACE_CONTENT_STALE");
+  assert.deepEqual(result.fileEvidence, [
+    {
+      relativePath: "src/first.js", expectedContentDigest: sha("first-before"),
+      contentMatch: true, postContentDigest: sha("first-after"), status: "applied"
+    },
+    {
+      relativePath: "src/second.js", expectedContentDigest: sha("approved-old-content"),
+      contentMatch: false, postContentDigest: null, status: "failed"
+    }
+  ]);
+  assert.deepEqual(result.remainingPaths, []);
+  assert.equal(await fs.readFile(path.join(root, "src/first.js"), "utf8"), "first-after");
+  assert.equal(await fs.readFile(path.join(root, "src/second.js"), "utf8"), "second-before");
+});
+
+test("rejects forged authorization objects and proposal path mismatches", async t => {
+  const { project, workspace } = await fixture(t);
+  await assert.rejects(executeProjectRepair({
+    authorization: Object.freeze({ projectDigest: project.digest }),
+    workspace, project, expectedProjectDigest: project.digest
+  }), { code: "QX_PROJECT_REPAIR_AUTHORIZATION_INVALID" });
+  const proposal = proposalFor(project, ["src/app.js"]);
+  assert.throws(() => authorize(project, proposal, [{
+    relativePath: "src/other.js", mode: "replace", content: "after",
+    expectedContentDigest: sha("before")
+  }]), { code: "QX_PROJECT_REPAIR_AUTHORIZATION_INVALID" });
+});
+
+
+test("uses monotonic time despite wall-clock changes", async t => {
+  const { project, workspace } = await fixture(t);
+  const proposal = proposalFor(project, ["src/app.js"]);
+  const changes = [{
+    relativePath: "src/app.js",
+    mode: "replace",
+    content: "after",
+    expectedContentDigest: sha("before")
+  }];
+  const originalNow = Date.now;
+  let authorization;
+  try {
+    Date.now = () => 0;
+    authorization = authorize(project, proposal, changes, { expiresInMs: 5000 });
+    Date.now = () => Number.MAX_SAFE_INTEGER;
+    const result = await executeProjectRepair({
+      authorization, workspace, project, expectedProjectDigest: project.digest
+    });
+    assert.equal(result.status, "applied");
+  } finally {
+    Date.now = originalNow;
+  }
+});
+
+test("expires repair authorization and requires a fresh approval", async t => {
+  const { project, workspace } = await fixture(t);
+  const proposal = proposalFor(project, ["src/app.js"]);
+  const changes = [{
+    relativePath: "src/app.js",
+    mode: "replace",
+    content: "after",
+    expectedContentDigest: sha("before")
+  }];
+  const authorization = authorize(project, proposal, changes, { expiresInMs: 1 });
+  await new Promise(resolve => setTimeout(resolve, 10));
+  await assert.rejects(executeProjectRepair({
+    authorization, workspace, project, expectedProjectDigest: project.digest
+  }), { code: "QX_PROJECT_REPAIR_AUTHORIZATION_EXPIRED" });
+});
+
+
+test("cancels before the first write without changing any file", async t => {
+  const { root, project, workspace } = await fixture(t, {
+    "src/first.js": "first-before",
+    "src/second.js": "second-before"
+  });
+  const proposal = proposalFor(project, ["src/first.js", "src/second.js"]);
+  const changes = [
+    {
+      relativePath: "src/first.js", mode: "replace", content: "first-after",
+      expectedContentDigest: sha("first-before")
+    },
+    {
+      relativePath: "src/second.js", mode: "replace", content: "second-after",
+      expectedContentDigest: sha("second-before")
+    }
+  ];
+  const authorization = authorize(project, proposal, changes);
+  const controller = new AbortController();
+  controller.abort();
+
+  const result = await executeProjectRepair({
+    authorization, workspace, project, expectedProjectDigest: project.digest,
+    signal: controller.signal
+  });
+
+  assert.equal(result.status, "cancelled");
+  assert.equal(result.failure.code, "QX_PROJECT_REPAIR_CANCELLED");
+  assert.equal(result.writes.length, 0);
+  assert.deepEqual(result.fileEvidence, [
+    {
+      relativePath: "src/first.js", expectedContentDigest: sha("first-before"),
+      contentMatch: null, postContentDigest: null, status: "cancelled"
+    },
+    {
+      relativePath: "src/second.js", expectedContentDigest: sha("second-before"),
+      contentMatch: null, postContentDigest: null, status: "not_run"
+    }
+  ]);
+  assert.deepEqual(result.remainingPaths, ["src/first.js", "src/second.js"]);
+  assert.equal(await fs.readFile(path.join(root, "src/first.js"), "utf8"), "first-before");
+  assert.equal(await fs.readFile(path.join(root, "src/second.js"), "utf8"), "second-before");
+  await assert.rejects(executeProjectRepair({
+    authorization, workspace, project, expectedProjectDigest: project.digest
+  }), { code: "QX_PROJECT_REPAIR_AUTHORIZATION_INVALID" });
+});
+
+test("stops between file writes after cooperative cancellation and reports partial application", async t => {
+  const { root, project, workspace } = await fixture(t, {
+    "src/first.js": "first-before",
+    "src/second.js": "second-before"
+  });
+  const proposal = proposalFor(project, ["src/first.js", "src/second.js"]);
+  const changes = [
+    {
+      relativePath: "src/first.js", mode: "replace", content: "first-after",
+      expectedContentDigest: sha("first-before")
+    },
+    {
+      relativePath: "src/second.js", mode: "replace", content: "second-after",
+      expectedContentDigest: sha("second-before")
+    }
+  ];
+  const authorization = authorize(project, proposal, changes);
+  let reads = 0;
+  const signal = {
+    get aborted() {
+      reads += 1;
+      // The executor validates the signal once before entering the write loop.
+      return reads >= 3;
+    }
+  };
+
+  const result = await executeProjectRepair({
+    authorization, workspace, project, expectedProjectDigest: project.digest,
+    signal
+  });
+
+  assert.equal(result.status, "partial");
+  assert.equal(result.failure.code, "QX_PROJECT_REPAIR_CANCELLED");
+  assert.equal(result.writes.length, 1);
+  assert.deepEqual(result.fileEvidence, [
+    {
+      relativePath: "src/first.js", expectedContentDigest: sha("first-before"),
+      contentMatch: true, postContentDigest: sha("first-after"), status: "applied"
+    },
+    {
+      relativePath: "src/second.js", expectedContentDigest: sha("second-before"),
+      contentMatch: null, postContentDigest: null, status: "cancelled"
+    }
+  ]);
+  assert.deepEqual(result.remainingPaths, ["src/second.js"]);
+  assert.equal(await fs.readFile(path.join(root, "src/first.js"), "utf8"), "first-after");
+  assert.equal(await fs.readFile(path.join(root, "src/second.js"), "utf8"), "second-before");
+});
+
+
+test("reports an applied repair with a lock-release warning when cleanup fails", async t => {
+  const { root, project, workspace } = await fixture(t);
+  const relativePath = "src/app.js";
+  const proposal = proposalFor(project, [relativePath]);
+  const changes = [{
+    relativePath,
+    mode: "replace",
+    content: "after",
+    expectedContentDigest: sha("before")
+  }];
+  const authorization = authorize(project, proposal, changes);
+  const lockKey = createHash("sha256").update(relativePath, "utf8").digest("hex");
+  const lockPath = path.join(root, ".qx-workspace", "locks", lockKey + ".lock");
+  const originalRm = fs.rm;
+  fs.rm = async (candidate, ...args) => {
+    if (candidate === lockPath) {
+      throw Object.assign(new Error("simulated lock removal failure"), { code: "EACCES" });
+    }
+    return originalRm(candidate, ...args);
+  };
+
+  let result;
+  try {
+    result = await executeProjectRepair({
+      authorization, workspace, project, expectedProjectDigest: project.digest
+    });
+  } finally {
+    fs.rm = originalRm;
+  }
+
+  assert.equal(await fs.readFile(path.join(root, relativePath), "utf8"), "after");
+  assert.equal(result.status, "applied");
+  assert.equal(result.failure, null);
+  assert.equal(result.writes.length, 1);
+  assert.equal(result.writes[0].lockReleaseWarning.code, "QX_WORKSPACE_LOCK_RELEASE_FAILED");
+  assert.equal(result.fileEvidence[0].status, "applied");
+});

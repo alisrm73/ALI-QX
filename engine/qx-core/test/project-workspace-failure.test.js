@@ -1,4 +1,5 @@
 import test from "node:test";
+import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -194,6 +195,44 @@ test("reports a completion-log warning when a write succeeds but its completion 
   assert.match(result.changeLogWarning.message, /was written/);
 });
 
+test("records a failed write without replacing the original filesystem error", async t => {
+  const { project, workspace, projectRoot } = await fixture(t);
+  const target = path.join(projectRoot, "src/write-operation-failure.js");
+  await fs.writeFile(target, "before");
+  const originalRename = fs.rename;
+  const originalError = Object.assign(new Error("simulated target publication failure"), {
+    code: "EIO"
+  });
+  fs.rename = async (source, destination) => {
+    if (destination === target) throw originalError;
+    return originalRename(source, destination);
+  };
+
+  let thrown;
+  try {
+    await writeProjectFile(workspace, {
+      project, expectedProjectDigest: project.digest,
+      relativePath: "src/write-operation-failure.js", content: "after",
+      permission: permission(project, "write", "src/write-operation-failure.js", { mode: "replace" })
+    });
+  } catch (error) {
+    thrown = error;
+  } finally {
+    fs.rename = originalRename;
+  }
+
+  assert.strictEqual(thrown, originalError);
+  assert.equal(await fs.readFile(target, "utf8"), "before");
+  const log = await readProjectChangeLog(workspace);
+  const writeEvents = log.filter(entry =>
+    entry.relativePath === "src/write-operation-failure.js"
+  );
+  assert.deepEqual(writeEvents.map(entry => entry.event), ["write_started", "write_failed"]);
+  assert.equal(writeEvents[1].stage, "write");
+  assert.equal(writeEvents[1].errorCode, "EIO");
+  assert.equal(writeEvents.some(entry => entry.event === "write_completed"), false);
+});
+
 test("reports a completion-log warning when a restore succeeds but its completion event fails", async t => {
   const { project, workspace, projectRoot, target, backupId } = await createBackupFixture(t);
   const originalAppendFile = fs.appendFile;
@@ -243,6 +282,52 @@ test("rejects restoring over an oversized current file before creating a safety 
 });
 
 
+test("classifies a held create lock as FILE_EXISTS only when the target exists", async t => {
+  const { project, workspace, projectRoot } = await fixture(t);
+  const relativePath = "src/locked-existing.js";
+  const target = path.join(projectRoot, relativePath);
+  await fs.writeFile(target, "existing");
+  const seedPath = "src/metadata-seed.js";
+  await writeProjectFile(workspace, {
+    project, expectedProjectDigest: project.digest, relativePath: seedPath,
+    content: "seed",
+    permission: permission(project, "write", seedPath, { mode: "create" })
+  });
+  const lockDir = path.join(projectRoot, ".qx-workspace", "locks");
+  const lockKey = createHash("sha256").update(relativePath, "utf8").digest("hex");
+  const lockPath = path.join(lockDir, lockKey + ".lock");
+  await fs.writeFile(lockPath, "held", { flag: "wx" });
+
+  await assert.rejects(writeProjectFile(workspace, {
+    project, expectedProjectDigest: project.digest, relativePath,
+    content: "replacement",
+    permission: permission(project, "write", relativePath, { mode: "create" })
+  }), { code: "QX_WORKSPACE_FILE_EXISTS" });
+  assert.equal(await fs.readFile(target, "utf8"), "existing");
+});
+
+test("classifies a held create lock without a target as CONCURRENT_CHANGE", async t => {
+  const { project, workspace, projectRoot } = await fixture(t);
+  const relativePath = "src/locked-missing.js";
+  const seedPath = "src/metadata-seed.js";
+  await writeProjectFile(workspace, {
+    project, expectedProjectDigest: project.digest, relativePath: seedPath,
+    content: "seed",
+    permission: permission(project, "write", seedPath, { mode: "create" })
+  });
+  const lockDir = path.join(projectRoot, ".qx-workspace", "locks");
+  const lockKey = createHash("sha256").update(relativePath, "utf8").digest("hex");
+  const lockPath = path.join(lockDir, lockKey + ".lock");
+  await fs.writeFile(lockPath, "held", { flag: "wx" });
+
+  await assert.rejects(writeProjectFile(workspace, {
+    project, expectedProjectDigest: project.digest, relativePath,
+    content: "new",
+    permission: permission(project, "write", relativePath, { mode: "create" })
+  }), { code: "QX_WORKSPACE_CONCURRENT_CHANGE" });
+  await assert.rejects(fs.lstat(path.join(projectRoot, relativePath)), { code: "ENOENT" });
+});
+
 test("allows only one of two concurrent create writes to publish the target", async t => {
   const { project, workspace, projectRoot } = await fixture(t);
   const relativePath = "src/concurrent-create.js";
@@ -254,7 +339,7 @@ test("allows only one of two concurrent create writes to publish the target", as
   const results = await Promise.allSettled(writes);
   assert.equal(results.filter(result => result.status === "fulfilled").length, 1);
   const rejected = results.find(result => result.status === "rejected");
-  assert.equal(rejected.reason.code, "QX_WORKSPACE_FILE_EXISTS");
+  assert.ok(["QX_WORKSPACE_FILE_EXISTS", "QX_WORKSPACE_CONCURRENT_CHANGE"].includes(rejected.reason.code));
   assert.ok(["first", "second"].includes(
     await fs.readFile(path.join(projectRoot, relativePath), "utf8")
   ));
@@ -262,6 +347,10 @@ test("allows only one of two concurrent create writes to publish the target", as
   const log = await readProjectChangeLog(workspace);
   assert.equal(log.filter(entry => entry.event === "write_started").length, 2);
   assert.equal(log.filter(entry => entry.event === "write_completed").length, 1);
+  const failures = log.filter(entry => entry.event === "write_failed");
+  assert.equal(failures.length, 1);
+  assert.equal(failures[0].stage, "lock");
+  assert.equal(failures[0].errorCode, rejected.reason.code);
 });
 
 test("bounds change-log reads to the configured limit when the file grows during reading", async t => {
@@ -455,4 +544,40 @@ test("bounds backup reads and rejects a backup that grows beyond its limit durin
   assert.equal(requestedBytes, maxBackupRecordBytes + 1);
   assert.ok((await fs.stat(backupPath)).size > maxBackupRecordBytes);
   assert.equal(await fs.readFile(target, "utf8"), "after");
+});
+
+
+test("returns a lock-release warning when a write succeeds but lock removal fails", async t => {
+  const { project, workspace, projectRoot } = await fixture(t);
+  const relativePath = "src/lock-release-warning.js";
+  const target = path.join(projectRoot, relativePath);
+  await fs.writeFile(target, "before");
+  const lockKey = createHash("sha256").update(relativePath, "utf8").digest("hex");
+  const lockPath = path.join(projectRoot, ".qx-workspace", "locks", lockKey + ".lock");
+  const originalRm = fs.rm;
+  fs.rm = async (candidate, ...args) => {
+    if (candidate === lockPath) {
+      throw Object.assign(new Error("simulated lock removal failure"), { code: "EACCES" });
+    }
+    return originalRm(candidate, ...args);
+  };
+
+  let result;
+  try {
+    result = await writeProjectFile(workspace, {
+      project, expectedProjectDigest: project.digest, relativePath,
+      content: "after",
+      permission: permission(project, "write", relativePath, { mode: "replace" })
+    });
+  } finally {
+    fs.rm = originalRm;
+  }
+
+  assert.equal(await fs.readFile(target, "utf8"), "after");
+  assert.equal(result.lockReleaseWarning.code, "QX_WORKSPACE_LOCK_RELEASE_FAILED");
+  assert.match(result.lockReleaseWarning.message, /was written/);
+  const events = (await readProjectChangeLog(workspace)).filter(entry =>
+    entry.relativePath === relativePath
+  );
+  assert.deepEqual(events.map(entry => entry.event), ["write_started", "write_completed"]);
 });
