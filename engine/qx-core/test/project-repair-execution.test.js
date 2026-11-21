@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
+import { createHash, generateKeyPairSync, sign } from "node:crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -11,10 +11,36 @@ import { createProjectDiagnostic } from "../src/project-diagnostics.js";
 import { createProjectRepairProposal } from "../src/project-repair.js";
 import {
   authorizeProjectRepair,
-  createProjectRepairChangeSetDigest
+  createProjectRepairApprovalChallenge,
+  createProjectRepairChangeSetDigest,
+  serializeProjectRepairApprovalChallenge
 } from "../src/project-repair-authorization.js";
 import { executeProjectRepair } from "../src/project-repair-execution.js";
 import { openProjectWorkspace } from "../src/project-workspace.js";
+
+const approvalKeys = generateKeyPairSync("ed25519");
+const approvalPublicKeyPem = approvalKeys.publicKey.export({
+  type: "spki",
+  format: "pem"
+}).toString();
+process.env.QX_PROJECT_REPAIR_APPROVAL_PUBLIC_KEY = approvalPublicKeyPem;
+
+function signedApproval(project, proposal, changes) {
+  const challenge = createProjectRepairApprovalChallenge({
+    project,
+    expectedProjectDigest: project.digest,
+    proposal,
+    changes
+  });
+  const payload = Buffer.from(
+    serializeProjectRepairApprovalChallenge(challenge),
+    "utf8"
+  );
+  return {
+    challenge,
+    signature: sign(null, payload, approvalKeys.privateKey).toString("base64url")
+  };
+}
 
 function sha(value) {
   return "sha256:" + createHash("sha256").update(value, "utf8").digest("hex");
@@ -67,23 +93,18 @@ function proposalFor(project, paths) {
 }
 
 function authorize(project, proposal, changes, options = {}) {
-  const changesDigest = createProjectRepairChangeSetDigest(changes);
+  const approval = signedApproval(project, proposal, changes);
   return authorizeProjectRepair({
     project,
     expectedProjectDigest: project.digest,
     proposal,
     changes,
     ...options,
-    approval: {
-      confirmed: true,
-      proposalId: proposal.id,
-      projectDigest: project.digest,
-      changesDigest
-    }
+    approval
   });
 }
 
-test("requires an explicit host confirmation bound to the exact proposal and change digest", async t => {
+test("requires a valid Ed25519 host signature bound to the exact proposal and change digest", async t => {
   const { project } = await fixture(t);
   const proposal = proposalFor(project, ["src/app.js"]);
   const changes = [{
@@ -92,31 +113,88 @@ test("requires an explicit host confirmation bound to the exact proposal and cha
     content: "after",
     expectedContentDigest: sha("before")
   }];
-  const changesDigest = createProjectRepairChangeSetDigest(changes);
-  assert.throws(() => authorizeProjectRepair({
+  const approval = signedApproval(project, proposal, changes);
+  const authorizationArgs = {
     project,
     expectedProjectDigest: project.digest,
     proposal,
     changes,
-    approval: {
-      confirmed: false,
-      proposalId: proposal.id,
-      projectDigest: project.digest,
-      changesDigest
-    }
-  }), { code: "QX_PROJECT_REPAIR_APPROVAL_REQUIRED" });
+    approval
+  };
+
+  const configuredKey = process.env.QX_PROJECT_REPAIR_APPROVAL_PUBLIC_KEY;
+  try {
+    delete process.env.QX_PROJECT_REPAIR_APPROVAL_PUBLIC_KEY;
+    assert.throws(() => authorizeProjectRepair(authorizationArgs), {
+      code: "QX_PROJECT_REPAIR_APPROVAL_KEY_REQUIRED"
+    });
+  } finally {
+    process.env.QX_PROJECT_REPAIR_APPROVAL_PUBLIC_KEY = configuredKey;
+  }
+
   assert.throws(() => authorizeProjectRepair({
-    project,
-    expectedProjectDigest: project.digest,
-    proposal,
-    changes,
+    ...authorizationArgs,
     approval: {
       confirmed: true,
       proposalId: proposal.id,
       projectDigest: project.digest,
-      changesDigest: sha("different")
+      changesDigest: createProjectRepairChangeSetDigest(changes)
     }
+  }), { code: "QX_PROJECT_REPAIR_APPROVAL_REQUIRED" });
+
+  assert.throws(() => authorizeProjectRepair({
+    ...authorizationArgs,
+    approval: { ...approval, signature: "A".repeat(86) }
+  }), { code: "QX_PROJECT_REPAIR_APPROVAL_INVALID" });
+
+  const changedContents = [{
+    ...changes[0],
+    content: "different approved content"
+  }];
+  assert.throws(() => authorizeProjectRepair({
+    ...authorizationArgs,
+    changes: changedContents
   }), { code: "QX_PROJECT_REPAIR_APPROVAL_MISMATCH" });
+
+  const authorization = authorizeProjectRepair(authorizationArgs);
+  assert.ok(authorization);
+  assert.throws(() => authorizeProjectRepair(authorizationArgs), {
+    code: "QX_PROJECT_REPAIR_APPROVAL_CHALLENGE_INVALID"
+  });
+});
+
+test("expires host approval challenges using monotonic time", async t => {
+  const { project } = await fixture(t);
+  const proposal = proposalFor(project, ["src/app.js"]);
+  const changes = [{
+    relativePath: "src/app.js",
+    mode: "replace",
+    content: "after",
+    expectedContentDigest: sha("before")
+  }];
+  const challenge = createProjectRepairApprovalChallenge({
+    project,
+    expectedProjectDigest: project.digest,
+    proposal,
+    changes,
+    expiresInMs: 1
+  });
+  const approval = {
+    challenge,
+    signature: sign(
+      null,
+      Buffer.from(serializeProjectRepairApprovalChallenge(challenge), "utf8"),
+      approvalKeys.privateKey
+    ).toString("base64url")
+  };
+  await new Promise(resolve => setTimeout(resolve, 10));
+  assert.throws(() => authorizeProjectRepair({
+    project,
+    expectedProjectDigest: project.digest,
+    proposal,
+    changes,
+    approval
+  }), { code: "QX_PROJECT_REPAIR_APPROVAL_CHALLENGE_EXPIRED" });
 });
 
 test("applies an approved repair through Workspace and consumes authorization once", async t => {
