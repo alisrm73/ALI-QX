@@ -208,3 +208,24 @@ test("returns an empty change log when the project metadata directory is missing
   await fs.mkdir(path.join(projectRoot, ".qx-workspace"));
   assert.deepEqual(await readProjectChangeLog(workspace), []);
 });
+
+test("rejects a symbolic-link change log instead of reading outside the workspace", async t => {
+  const { project, workspace, projectRoot, root } = await fixture(t);
+  await writeProjectFile(workspace, {
+    project, expectedProjectDigest: project.digest,
+    relativePath: "src/log-seed.txt", content: "seed",
+    permission: permission(project, "write", "src/log-seed.txt", { mode: "create" })
+  });
+
+  const metadataRoot = path.join(projectRoot, ".qx-workspace");
+  const projectDir = (await fs.readdir(metadataRoot))[0];
+  const logPath = path.join(metadataRoot, projectDir, "changes.jsonl");
+  const outsideLog = path.join(root, "outside-changes.jsonl");
+  await fs.writeFile(outsideLog, JSON.stringify({ event: "outside" }) + "\n");
+  await fs.rm(logPath);
+  await fs.symlink(outsideLog, logPath);
+
+  await assert.rejects(readProjectChangeLog(workspace), {
+    code: "QX_WORKSPACE_PATH_UNSAFE"
+  });
+});
