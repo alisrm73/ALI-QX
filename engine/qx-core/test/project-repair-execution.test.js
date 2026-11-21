@@ -217,3 +217,78 @@ test("expires repair authorization and requires a fresh approval", async t => {
     authorization, workspace, project, expectedProjectDigest: project.digest
   }), { code: "QX_PROJECT_REPAIR_AUTHORIZATION_EXPIRED" });
 });
+
+
+test("cancels before the first write without changing any file", async t => {
+  const { root, project, workspace } = await fixture(t, {
+    "src/first.js": "first-before",
+    "src/second.js": "second-before"
+  });
+  const proposal = proposalFor(project, ["src/first.js", "src/second.js"]);
+  const changes = [
+    {
+      relativePath: "src/first.js", mode: "replace", content: "first-after",
+      expectedContentDigest: sha("first-before")
+    },
+    {
+      relativePath: "src/second.js", mode: "replace", content: "second-after",
+      expectedContentDigest: sha("second-before")
+    }
+  ];
+  const authorization = authorize(project, proposal, changes);
+  const controller = new AbortController();
+  controller.abort();
+
+  const result = await executeProjectRepair({
+    authorization, workspace, project, expectedProjectDigest: project.digest,
+    signal: controller.signal
+  });
+
+  assert.equal(result.status, "cancelled");
+  assert.equal(result.failure.code, "QX_PROJECT_REPAIR_CANCELLED");
+  assert.equal(result.writes.length, 0);
+  assert.deepEqual(result.remainingPaths, ["src/first.js", "src/second.js"]);
+  assert.equal(await fs.readFile(path.join(root, "src/first.js"), "utf8"), "first-before");
+  assert.equal(await fs.readFile(path.join(root, "src/second.js"), "utf8"), "second-before");
+  await assert.rejects(executeProjectRepair({
+    authorization, workspace, project, expectedProjectDigest: project.digest
+  }), { code: "QX_PROJECT_REPAIR_AUTHORIZATION_INVALID" });
+});
+
+test("stops between file writes after cooperative cancellation and reports partial application", async t => {
+  const { root, project, workspace } = await fixture(t, {
+    "src/first.js": "first-before",
+    "src/second.js": "second-before"
+  });
+  const proposal = proposalFor(project, ["src/first.js", "src/second.js"]);
+  const changes = [
+    {
+      relativePath: "src/first.js", mode: "replace", content: "first-after",
+      expectedContentDigest: sha("first-before")
+    },
+    {
+      relativePath: "src/second.js", mode: "replace", content: "second-after",
+      expectedContentDigest: sha("second-before")
+    }
+  ];
+  const authorization = authorize(project, proposal, changes);
+  let reads = 0;
+  const signal = {
+    get aborted() {
+      reads += 1;
+      return reads >= 2;
+    }
+  };
+
+  const result = await executeProjectRepair({
+    authorization, workspace, project, expectedProjectDigest: project.digest,
+    signal
+  });
+
+  assert.equal(result.status, "partial");
+  assert.equal(result.failure.code, "QX_PROJECT_REPAIR_CANCELLED");
+  assert.equal(result.writes.length, 1);
+  assert.deepEqual(result.remainingPaths, ["src/second.js"]);
+  assert.equal(await fs.readFile(path.join(root, "src/first.js"), "utf8"), "first-after");
+  assert.equal(await fs.readFile(path.join(root, "src/second.js"), "utf8"), "second-before");
+});
