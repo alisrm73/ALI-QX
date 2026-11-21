@@ -545,3 +545,39 @@ test("bounds backup reads and rejects a backup that grows beyond its limit durin
   assert.ok((await fs.stat(backupPath)).size > maxBackupRecordBytes);
   assert.equal(await fs.readFile(target, "utf8"), "after");
 });
+
+
+test("returns a lock-release warning when a write succeeds but lock removal fails", async t => {
+  const { project, workspace, projectRoot } = await fixture(t);
+  const relativePath = "src/lock-release-warning.js";
+  const target = path.join(projectRoot, relativePath);
+  await fs.writeFile(target, "before");
+  const lockKey = createHash("sha256").update(relativePath, "utf8").digest("hex");
+  const lockPath = path.join(projectRoot, ".qx-workspace", "locks", lockKey + ".lock");
+  const originalRm = fs.rm;
+  fs.rm = async (candidate, ...args) => {
+    if (candidate === lockPath) {
+      throw Object.assign(new Error("simulated lock removal failure"), { code: "EACCES" });
+    }
+    return originalRm(candidate, ...args);
+  };
+
+  let result;
+  try {
+    result = await writeProjectFile(workspace, {
+      project, expectedProjectDigest: project.digest, relativePath,
+      content: "after",
+      permission: permission(project, "write", relativePath, { mode: "replace" })
+    });
+  } finally {
+    fs.rm = originalRm;
+  }
+
+  assert.equal(await fs.readFile(target, "utf8"), "after");
+  assert.equal(result.lockReleaseWarning.code, "QX_WORKSPACE_LOCK_RELEASE_FAILED");
+  assert.match(result.lockReleaseWarning.message, /was written/);
+  const events = (await readProjectChangeLog(workspace)).filter(entry =>
+    entry.relativePath === relativePath
+  );
+  assert.deepEqual(events.map(entry => entry.event), ["write_started", "write_completed"]);
+});
