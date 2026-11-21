@@ -1,5 +1,10 @@
 export { createProjectDiagnostic, createProjectDiagnostics, PROJECT_DIAGNOSTIC_PHASES, PROJECT_DIAGNOSTIC_CERTAINTIES } from "./project-diagnostics.js";
 export { createProjectRepairProposal, PROJECT_REPAIR_RISKS } from "./project-repair.js";
+export {
+  authorizeProjectRepair,
+  createProjectRepairChangeSetDigest
+} from "./project-repair-authorization.js";
+export { executeProjectRepair } from "./project-repair-execution.js";
 export { Lexer, QXLexError, tokenize } from "./lexer.js";
 export { Parser, QXParseError, parse } from "./parser.js";
 export { COMMAND_DOMAINS, COMMAND_REGISTRY, isCommandEnabled, resolveCommand } from "./command-registry.js";
