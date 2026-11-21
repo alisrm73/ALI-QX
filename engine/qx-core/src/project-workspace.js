@@ -134,8 +134,16 @@ async function appendChangeLog(workspace, event) {
   await assertDirectoryNoSymlink(projectDir, workspace.root);
   const info = await inspectRegularTarget(logPath);
   if (info === null) {
-    const handle = await fs.open(logPath, "wx", 0o600);
-    await handle.close();
+    try {
+      const handle = await fs.open(logPath, "wx", 0o600);
+      await handle.close();
+    } catch (error) {
+      if (error.code !== "EEXIST") throw error;
+      // Another writer may have created the log after our initial inspection.
+      // Re-inspect it before appending so symlinks and non-files remain rejected.
+      const racedInfo = await inspectRegularTarget(logPath);
+      if (racedInfo === null) throw error;
+    }
   }
   await fs.appendFile(logPath, JSON.stringify({ timestamp: new Date().toISOString(), ...event }) + "\n", { encoding: "utf8" });
 }
