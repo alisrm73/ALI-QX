@@ -1,4 +1,5 @@
 import test from "node:test";
+import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
 import {
   createProjectDraft, submitProjectForReview, approveProjectDraft
@@ -169,4 +170,57 @@ test("an affected scope that selects no tests is incomplete, not a pass", async 
   assert.equal(result.testReport.status, "passed");
   assert.equal(result.smartTestReport.summary.selected, 0);
   assert.equal(result.smartTestReport.status, "incomplete");
+});
+
+
+function canonicalJSON(value) {
+  if (value === null || typeof value !== "object") return JSON.stringify(value);
+  if (Array.isArray(value)) return "[" + value.map(canonicalJSON).join(",") + "]";
+  return "{" + Object.keys(value).sort().map(key =>
+    JSON.stringify(key) + ":" + canonicalJSON(value[key])).join(",") + "}";
+}
+
+function resignSmartReport(report) {
+  const content = { ...report };
+  delete content.digest;
+  return {
+    ...content,
+    digest: "sha256:" + createHash("sha256").update(canonicalJSON(content), "utf8").digest("hex")
+  };
+}
+
+test("smart report validator rejects malformed result fields even with a recomputed digest", async () => {
+  const { project, plan, testCases } = fixture();
+  const result = await runProjectSmartTestRunner(project, plan, {
+    expectedProjectDigest: project.digest,
+    testCases: [testCases[0]],
+    capabilities: ["component"],
+    executors: {
+      component: async () => ({
+        status: "failed",
+        summary: "Expected component failure",
+        reason: "Assertion did not match"
+      })
+    }
+  });
+  const original = result.smartTestReport;
+
+  const extraField = structuredClone(original);
+  extraField.results[0].unexpected = true;
+
+  const malformedError = structuredClone(original);
+  malformedError.results[0].error.extra = "not allowed";
+
+  const oversizedErrorField = structuredClone(original);
+  oversizedErrorField.results[0].error.name = "x".repeat(121);
+
+  const missingError = structuredClone(original);
+  missingError.results[0].error = null;
+
+  for (const invalid of [extraField, malformedError, oversizedErrorField, missingError]) {
+    assert.throws(
+      () => assertProjectSmartTestReport(project, plan, resignSmartReport(invalid)),
+      { code: "QX_SMART_TEST_REPORT_INVALID" }
+    );
+  }
 });
