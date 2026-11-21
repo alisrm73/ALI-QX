@@ -177,7 +177,8 @@ export function assertProjectDeliveryPackage(project, plan, testReport, packageV
 
 export async function createProjectDeliveryPackage(workspace, project, plan, testReport, {
   expectedProjectDigest,
-  deliverables
+  deliverables,
+  blockReasons = []
 } = {}) {
   assertProjectApproved(project, { expectedDigest: expectedProjectDigest });
   assertBuildPlanForProject(project, plan);
@@ -186,6 +187,12 @@ export async function createProjectDeliveryPackage(workspace, project, plan, tes
       deliverables.length > MAX_DELIVERABLES ||
       !deliverables.some(item => item && item.required === true)) {
     fail("QX_DELIVERY_INVALID", "deliverables must contain between 1 and " + MAX_DELIVERABLES + " entries and at least one required file");
+  }
+
+  if (!Array.isArray(blockReasons) || blockReasons.length > 20 ||
+      blockReasons.some(reason => typeof reason !== "string" ||
+        reason.trim().length === 0 || reason.length > 1000)) {
+    fail("QX_DELIVERY_INVALID", "blockReasons must contain at most 20 non-empty strings of at most 1000 characters");
   }
 
   const seen = new Set();
@@ -257,6 +264,14 @@ export async function createProjectDeliveryPackage(workspace, project, plan, tes
         });
       }
     }
+  }
+
+  for (const reason of blockReasons) {
+    issues.push({
+      code: "QX_DELIVERY_ADDITIONAL_BLOCKER",
+      path: null,
+      message: reason.trim()
+    });
   }
 
   if (testReport.status !== "passed" || testReport.summary.failed > 0 ||
