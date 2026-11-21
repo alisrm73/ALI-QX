@@ -98,7 +98,7 @@ export function createProjectRepairProposal({
     "code", "message", "errorName"], "diagnostic");
 
   if (diagnostic.schemaVersion !== "1.0.0" ||
-      typeof diagnostic.id !== "string" || !/^qxdiag:sha256:[a-f0-9]{64}$/.test(diagnostic.id) ||
+      typeof diagnostic.id !== "string" || !/^qxdiag:[a-f0-9]{64}$/.test(diagnostic.id) ||
       !["confirmed", "potential"].includes(diagnostic.certainty) ||
       !["error", "warning"].includes(diagnostic.severity)) {
     fail("diagnostic must be a supported actionable diagnostic; insufficient information cannot produce a repair proposal");
