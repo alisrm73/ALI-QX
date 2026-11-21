@@ -1,4 +1,5 @@
-import { constants as fsConstants, createHash, randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
+import { constants as fsConstants } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { assertProjectApproved, QXProjectError } from "./project-model.js";
