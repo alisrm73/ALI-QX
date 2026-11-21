@@ -146,7 +146,6 @@ export async function runProjectSmartTestRunner(project, plan, {
   const externalSignal = normalizeSignal(signal);
   const normalizedDigests = normalizeFileDigests(fileDigests);
   const measured = new Map();
-  let wasCancelled = externalSignal?.aborted === true;
 
   const executeTest = async context => {
     const { testCase } = context;
@@ -163,7 +162,6 @@ export async function runProjectSmartTestRunner(project, plan, {
     };
 
     if (externalSignal?.aborted) {
-      wasCancelled = true;
       return record("cancelled", "Test was not started because cancellation was requested",
         "The host AbortSignal was already aborted");
     }
@@ -194,7 +192,6 @@ export async function runProjectSmartTestRunner(project, plan, {
       }, timeoutMs);
       if (externalSignal) {
         abortHandler = () => {
-          wasCancelled = true;
           controller.abort(externalSignal.reason);
           reject(Object.assign(new Error("Test was cancelled by the host"), {
             code: "QX_SMART_TEST_CANCELLED"
@@ -294,7 +291,7 @@ export async function runProjectSmartTestRunner(project, plan, {
     ).length
   };
   const status = summary.failed > 0 ? "failed" :
-    wasCancelled || summary.cancelled > 0 ? "cancelled" :
+    summary.cancelled > 0 ? "cancelled" :
     summary.requiredUnsuccessful > 0 ? "incomplete" : "passed";
   const content = {
     schemaVersion: "1.0.0",
@@ -311,6 +308,21 @@ export async function runProjectSmartTestRunner(project, plan, {
   };
   const report = freezeDeep({ ...content, digest: digest(content) });
   return Object.freeze({ testReport, smartTestReport: report });
+}
+
+export function assertProjectSmartTestRunnerConfig({
+  capabilities = [],
+  executors = {},
+  timeoutMs = 30000,
+  signal
+} = {}) {
+  normalizeCapabilities(capabilities);
+  normalizeExecutors(executors);
+  normalizeSignal(signal);
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > MAX_TIMEOUT_MS) {
+    fail("QX_SMART_TEST_TIMEOUT_INVALID", "timeoutMs must be an integer between 1 and " + MAX_TIMEOUT_MS);
+  }
+  return true;
 }
 
 export function assertProjectSmartTestReport(project, plan, report) {
