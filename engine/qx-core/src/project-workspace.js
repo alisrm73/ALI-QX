@@ -555,6 +555,11 @@ async function writeProjectFileUnlocked(workspace, options = {}) {
   return Object.freeze(changeLogWarning ? { ...result, changeLogWarning } : result);
 }
 
+function writeFailureCode(error) {
+  return typeof error?.code === "string" && /^[A-Z0-9_]{1,96}$/.test(error.code)
+    ? error.code : "QX_WORKSPACE_WRITE_FAILED";
+}
+
 export async function writeProjectFile(workspace, options = {}) {
   const { project, expectedProjectDigest, relativePath, permission } = options;
   assertWorkspace(workspace);
@@ -567,12 +572,38 @@ export async function writeProjectFile(workspace, options = {}) {
     event: "write_started", relativePath: resolved.relativePath,
     projectDigest: project.digest, operation: permission.mode
   });
-  const releaseLock = await acquireWriteLock(workspace, resolved.relativePath, permission.mode);
+
+  let releaseLock = null;
+  let stage = "lock";
+  let result;
   try {
-    return await writeProjectFileUnlocked(workspace, options);
-  } finally {
-    await releaseLock();
+    releaseLock = await acquireWriteLock(workspace, resolved.relativePath, permission.mode);
+    stage = "write";
+    result = await writeProjectFileUnlocked(workspace, options);
+  } catch (error) {
+    if (releaseLock) {
+      try {
+        await releaseLock();
+      } catch {
+        // Preserve the original operation error.
+      }
+    }
+    try {
+      await appendChangeLog(workspace, {
+        event: "write_failed",
+        relativePath: resolved.relativePath,
+        projectDigest: project.digest,
+        stage,
+        errorCode: writeFailureCode(error)
+      });
+    } catch {
+      // Failure logging must never replace the original write error.
+    }
+    throw error;
   }
+
+  await releaseLock();
+  return result;
 }
 
 
@@ -670,6 +701,9 @@ function isValidChangeLogEntry(entry) {
     write_completed: typeof entry.contentDigest === "string" && digest.test(entry.contentDigest) &&
       (entry.backupId === null || (typeof entry.backupId === "string" && uuid.test(entry.backupId)))
       ? ["timestamp", "event", "relativePath", "projectDigest", "contentDigest", "backupId"] : null,
+    write_failed: (entry.stage === "lock" || entry.stage === "write") &&
+      typeof entry.errorCode === "string" && /^[A-Z0-9_]{1,96}$/.test(entry.errorCode)
+      ? ["timestamp", "event", "relativePath", "projectDigest", "stage", "errorCode"] : null,
     restore_started: typeof entry.backupId === "string" && uuid.test(entry.backupId)
       ? ["timestamp", "event", "relativePath", "projectDigest", "backupId"] : null,
     restore_completed: typeof entry.contentDigest === "string" && digest.test(entry.contentDigest) &&
