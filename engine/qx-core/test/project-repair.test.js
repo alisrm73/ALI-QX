@@ -38,7 +38,7 @@ function input(overrides = {}) {
 
 test("creates an immutable review-only proposal tied to diagnostic and project digests", () => {
   const proposal = createProjectRepairProposal(input());
-  assert.match(proposal.id, /^qxrepair:sha256:[a-f0-9]{64}$/);
+  assert.match(proposal.id, /^qxrepair:[a-f0-9]{64}$/);
   assert.equal(proposal.diagnosticId, diagnostic().id);
   assert.equal(proposal.projectDigest, projectDigest);
   assert.equal(proposal.status, "proposed");
