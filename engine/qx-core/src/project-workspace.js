@@ -195,8 +195,12 @@ async function acquireWriteLock(workspace, relativePath, operation = null) {
   } catch (error) {
     if (error.code === "EEXIST") {
       if (operation === "create") {
-        fail("QX_WORKSPACE_FILE_EXISTS",
-          "Another create operation has already claimed this project file path");
+        const { target } = await resolveTarget(workspace, relativePath);
+        const current = await inspectRegularTarget(target);
+        if (current) {
+          fail("QX_WORKSPACE_FILE_EXISTS",
+            "Create permission cannot overwrite an existing file");
+        }
       }
       fail("QX_WORKSPACE_CONCURRENT_CHANGE",
         "Another workspace mutation holds this file lock; stale locks require manual inspection");
