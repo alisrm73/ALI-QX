@@ -255,6 +255,41 @@ test("requires an exact current-content digest for conditional replacement", asy
   assert.equal(await fs.readFile(target, "utf8"), "after");
 });
 
+test("documents that an external writer can race after the final digest check", async t => {
+  const { project, workspace, projectRoot } = await fixture(t);
+  const target = path.join(projectRoot, "src/app.js");
+  await fs.writeFile(target, "approved-before");
+
+  const originalRename = fs.rename;
+  const originalWriteFile = fs.writeFile;
+  let externalWriteInjected = false;
+  fs.rename = async (source, destination) => {
+    if (destination === target && !externalWriteInjected) {
+      externalWriteInjected = true;
+      await originalWriteFile(target, "external-race");
+    }
+    return originalRename(source, destination);
+  };
+
+  try {
+    await writeProjectFile(workspace, {
+      project,
+      expectedProjectDigest: project.digest,
+      relativePath: "src/app.js",
+      content: "approved-after",
+      expectedContentDigest: testDigest("approved-before"),
+      permission: permission(project, "write", "src/app.js", { mode: "replace" })
+    });
+  } finally {
+    fs.rename = originalRename;
+  }
+
+  assert.equal(externalWriteInjected, true);
+  // This intentionally records the threat-model boundary: an external writer
+  // bypassing Workspace can race between the final digest check and rename.
+  assert.equal(await fs.readFile(target, "utf8"), "approved-after");
+});
+
 test("conditional create must explicitly expect an absent target", async t => {
   const { project, workspace, projectRoot } = await fixture(t);
   const target = path.join(projectRoot, "src/new.js");
