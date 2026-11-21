@@ -95,7 +95,8 @@ export async function executeProjectRepair({
         relativePath: result.relativePath,
         contentDigest: result.contentDigest,
         backupId: result.backupId,
-        changeLogWarning: result.changeLogWarning ?? null
+        changeLogWarning: result.changeLogWarning ?? null,
+        lockReleaseWarning: result.lockReleaseWarning ?? null
       }));
     } catch (error) {
       evidence.contentMatch = error?.code === "QX_WORKSPACE_CONTENT_STALE"
