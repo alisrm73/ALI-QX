@@ -2,7 +2,9 @@ export { createProjectDiagnostic, createProjectDiagnostics, PROJECT_DIAGNOSTIC_P
 export { createProjectRepairProposal, PROJECT_REPAIR_RISKS } from "./project-repair.js";
 export {
   authorizeProjectRepair,
-  createProjectRepairChangeSetDigest
+  createProjectRepairApprovalChallenge,
+  createProjectRepairChangeSetDigest,
+  serializeProjectRepairApprovalChallenge
 } from "./project-repair-authorization.js";
 export { executeProjectRepair } from "./project-repair-execution.js";
 export { Lexer, QXLexError, tokenize } from "./lexer.js";
