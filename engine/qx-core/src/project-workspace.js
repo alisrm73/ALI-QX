@@ -134,8 +134,16 @@ async function appendChangeLog(workspace, event) {
   await assertDirectoryNoSymlink(projectDir, workspace.root);
   const info = await inspectRegularTarget(logPath);
   if (info === null) {
-    const handle = await fs.open(logPath, "wx", 0o600);
-    await handle.close();
+    try {
+      const handle = await fs.open(logPath, "wx", 0o600);
+      await handle.close();
+    } catch (error) {
+      if (error.code !== "EEXIST") throw error;
+      // Another writer may have created the log after our initial inspection.
+      // Re-inspect it before appending so symlinks and non-files remain rejected.
+      const racedInfo = await inspectRegularTarget(logPath);
+      if (racedInfo === null) throw error;
+    }
   }
   await fs.appendFile(logPath, JSON.stringify({ timestamp: new Date().toISOString(), ...event }) + "\n", { encoding: "utf8" });
 }
@@ -154,6 +162,30 @@ async function writeAtomic(target, data) {
   } catch (error) {
     await fs.rm(temporary, { force: true }).catch(() => {});
     throw error;
+  }
+}
+
+async function writeAtomicCreate(target, data) {
+  const temporary = path.join(path.dirname(target), ".qx-tmp-" + randomUUID());
+  try {
+    const handle = await fs.open(temporary, "wx", 0o600);
+    try {
+      await handle.writeFile(data);
+      await handle.sync();
+    } finally {
+      await handle.close();
+    }
+    try {
+      // Hard-link publication is atomic and fails if the destination already exists.
+      await fs.link(temporary, target);
+    } catch (error) {
+      if (error.code === "EEXIST") {
+        fail("QX_WORKSPACE_FILE_EXISTS", "Create permission cannot overwrite an existing file");
+      }
+      throw error;
+    }
+  } finally {
+    await fs.rm(temporary, { force: true }).catch(() => {});
   }
 }
 
@@ -243,6 +275,9 @@ export async function readProjectFile(workspace, { project, expectedProjectDiges
     }
     const content = await handle.readFile();
     const finalInfo = await handle.stat();
+    if (content.length > MAX_FILE_BYTES) {
+      fail("QX_WORKSPACE_CONTENT_INVALID", "File exceeds the 10 MiB workspace read limit");
+    }
     if (content.length !== finalInfo.size) {
       fail("QX_WORKSPACE_CONCURRENT_CHANGE", "Target changed while it was being read");
     }
@@ -312,7 +347,11 @@ export async function writeProjectFile(workspace, {
       (current !== null && (!rechecked || current.dev !== rechecked.dev || current.ino !== rechecked.ino))) {
     fail("QX_WORKSPACE_CONCURRENT_CHANGE", "Target changed while the write was being prepared");
   }
-  await writeAtomic(resolved.target, bytes);
+  if (permission.mode === "create") {
+    await writeAtomicCreate(resolved.target, bytes);
+  } else {
+    await writeAtomic(resolved.target, bytes);
+  }
   const result = {
     relativePath: resolved.relativePath,
     contentDigest: hash(bytes),
