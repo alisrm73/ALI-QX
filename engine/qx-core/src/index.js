@@ -4,7 +4,8 @@ export {
   authorizeProjectRepair,
   createProjectRepairApprovalChallenge,
   createProjectRepairChangeSetDigest,
-  serializeProjectRepairApprovalChallenge
+  serializeProjectRepairApprovalChallenge,
+  requestProjectRepairApproval
 } from "./project-repair-authorization.js";
 export { executeProjectRepair } from "./project-repair-execution.js";
 export { Lexer, QXLexError, tokenize } from "./lexer.js";
