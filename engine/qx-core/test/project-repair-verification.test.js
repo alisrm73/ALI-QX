@@ -125,7 +125,7 @@ test("reports verified only after the complete required test suite passes agains
       expectedProjectDigest: fixture.project.digest,
       relativePath: "src/app.js"
     });
-    assert.equal(persisted.content, fixture.after);
+    assert.equal(persisted.content.toString("utf8"), fixture.after);
     return { status: "passed", summary: "Persisted readiness is true" };
   }));
   assert.equal(result.status, "verified");
