@@ -279,6 +279,10 @@ export async function writeProjectFile(workspace, {
   if (bytes.length > MAX_FILE_BYTES) fail("QX_WORKSPACE_CONTENT_INVALID", "File exceeds the 10 MiB workspace limit");
 
   const current = await inspectRegularTarget(resolved.target);
+  if (current && current.size > MAX_FILE_BYTES) {
+    fail("QX_WORKSPACE_CONTENT_INVALID",
+      "Existing file exceeds the 10 MiB workspace backup and restore limit");
+  }
   if (permission.mode === "create" && current) {
     fail("QX_WORKSPACE_FILE_EXISTS", "Create permission cannot overwrite an existing file");
   }
@@ -297,6 +301,10 @@ export async function writeProjectFile(workspace, {
   let backupId = null;
   if (current) {
     const existing = await fs.readFile(resolved.target);
+    if (existing.length > MAX_FILE_BYTES) {
+      fail("QX_WORKSPACE_CONTENT_INVALID",
+        "Existing file exceeds the 10 MiB workspace backup and restore limit");
+    }
     backupId = await saveBackup(workspace, resolved.relativePath, existing, "before_replace");
   }
   const rechecked = await inspectRegularTarget(resolved.target);
