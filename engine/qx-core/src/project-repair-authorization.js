@@ -326,6 +326,74 @@ export function authorizeProjectRepair({
   return token;
 }
 
+/**
+ * Requests approval through a trusted host callback. The callback contract is
+ * to present the exact proposal and complete file contents to the user, obtain
+ * an explicit human decision, and return a signature only after confirmation.
+ * qx-core cannot prove that a UI click occurred; the host callback is a trusted
+ * boundary and must not auto-approve or sign unattended.
+ */
+export async function requestProjectRepairApproval({
+  project,
+  expectedProjectDigest,
+  proposal,
+  changes,
+  requestExplicitUserApproval,
+  expiresInMs = MAX_APPROVAL_CHALLENGE_LIFETIME_MS
+} = {}) {
+  if (typeof requestExplicitUserApproval !== "function") {
+    fail("QX_PROJECT_REPAIR_APPROVAL_REQUIRED",
+      "A trusted host explicit-user-approval callback is required");
+  }
+
+  const challenge = createProjectRepairApprovalChallenge({
+    project,
+    expectedProjectDigest,
+    proposal,
+    changes,
+    expiresInMs
+  });
+  const normalizedChanges = normalizeChanges(changes);
+  const request = Object.freeze({
+    schemaVersion: "1.0.0",
+    action: "project_repair",
+    challenge,
+    serializedChallenge: serializeProjectRepairApprovalChallenge(challenge),
+    proposal,
+    changes: normalizedChanges
+  });
+
+  let response;
+  try {
+    response = await requestExplicitUserApproval(request);
+  } catch {
+    PENDING_APPROVAL_CHALLENGES.delete(challenge.challengeId);
+    fail("QX_PROJECT_REPAIR_APPROVAL_FAILED",
+      "The host approval request failed; no repair authorization was issued");
+  }
+
+  if (!plainObject(response) ||
+      Object.keys(response).some(key => !["approved", "signature"].includes(key)) ||
+      (response.approved !== true && response.approved !== false)) {
+    PENDING_APPROVAL_CHALLENGES.delete(challenge.challengeId);
+    fail("QX_PROJECT_REPAIR_APPROVAL_REQUIRED",
+      "The host must return an explicit approval or denial decision");
+  }
+  if (response.approved !== true) {
+    PENDING_APPROVAL_CHALLENGES.delete(challenge.challengeId);
+    fail("QX_PROJECT_REPAIR_APPROVAL_DENIED",
+      "The user did not approve the proposed repair");
+  }
+  if (typeof response.signature !== "string" ||
+      !/^[A-Za-z0-9_-]{86}$/.test(response.signature)) {
+    PENDING_APPROVAL_CHALLENGES.delete(challenge.challengeId);
+    fail("QX_PROJECT_REPAIR_APPROVAL_REQUIRED",
+      "The host must sign the exact challenge after explicit user approval");
+  }
+
+  return Object.freeze({ challenge, signature: response.signature });
+}
+
 /** Internal capability consumption; deliberately not re-exported by index.js. */
 export function consumeProjectRepairAuthorization(token, project, expectedProjectDigest) {
   const state = token && typeof token === "object" ? AUTHORIZATIONS.get(token) : null;
