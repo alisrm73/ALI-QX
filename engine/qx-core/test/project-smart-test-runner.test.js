@@ -153,3 +153,20 @@ test("rejects malformed capabilities, timeout values, and modified report digest
     status: "failed"
   }), { code: "QX_SMART_TEST_REPORT_INVALID" });
 });
+
+
+test("an affected scope that selects no tests is incomplete, not a pass", async () => {
+  const { project, plan, testCases } = fixture();
+  const optionalCases = testCases.map(item => ({ ...item, required: false }));
+  const result = await runProjectSmartTestRunner(project, plan, {
+    expectedProjectDigest: project.digest,
+    testCases: optionalCases,
+    scope: "affected",
+    changedArtifactIds: ["source"],
+    capabilities: [],
+    executors: {}
+  });
+  assert.equal(result.testReport.status, "passed");
+  assert.equal(result.smartTestReport.summary.selected, 0);
+  assert.equal(result.smartTestReport.status, "incomplete");
+});
