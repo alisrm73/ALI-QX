@@ -13,7 +13,8 @@ import {
   authorizeProjectRepair,
   createProjectRepairApprovalChallenge,
   createProjectRepairChangeSetDigest,
-  serializeProjectRepairApprovalChallenge
+  serializeProjectRepairApprovalChallenge,
+  requestProjectRepairApproval
 } from "../src/project-repair-authorization.js";
 import { executeProjectRepair } from "../src/project-repair-execution.js";
 import { openProjectWorkspace } from "../src/project-workspace.js";
@@ -103,6 +104,98 @@ function authorize(project, proposal, changes, options = {}) {
     approval
   });
 }
+
+test("requires a trusted host callback to return an explicit human approval and exact challenge signature", async t => {
+  const { project } = await fixture(t);
+  const proposal = proposalFor(project, ["src/app.js"]);
+  const changes = [{
+    relativePath: "src/app.js",
+    mode: "replace",
+    content: "after",
+    expectedContentDigest: sha("before")
+  }];
+
+  await assert.rejects(requestProjectRepairApproval({
+    project,
+    expectedProjectDigest: project.digest,
+    proposal,
+    changes
+  }), { code: "QX_PROJECT_REPAIR_APPROVAL_REQUIRED" });
+
+  await assert.rejects(requestProjectRepairApproval({
+    project,
+    expectedProjectDigest: project.digest,
+    proposal,
+    changes,
+    requestExplicitUserApproval: async () => ({ approved: false })
+  }), { code: "QX_PROJECT_REPAIR_APPROVAL_DENIED" });
+
+  let presented;
+  const approval = await requestProjectRepairApproval({
+    project,
+    expectedProjectDigest: project.digest,
+    proposal,
+    changes,
+    requestExplicitUserApproval: async request => {
+      presented = request;
+      assert.equal(Object.isFrozen(request), true);
+      assert.equal(request.action, "project_repair");
+      assert.equal(request.proposal.id, proposal.id);
+      assert.deepEqual(request.changes, [{
+        relativePath: "src/app.js",
+        mode: "replace",
+        content: "after",
+        expectedContentDigest: sha("before"),
+        contentDigest: sha("after")
+      }]);
+      return {
+        approved: true,
+        signature: sign(
+          null,
+          Buffer.from(request.serializedChallenge, "utf8"),
+          approvalKeys.privateKey
+        ).toString("base64url")
+      };
+    }
+  });
+
+  assert.ok(presented.challenge.challengeId);
+  const authorization = authorizeProjectRepair({
+    project,
+    expectedProjectDigest: project.digest,
+    proposal,
+    changes,
+    approval
+  });
+  assert.ok(authorization);
+});
+
+test("does not issue approval when the host callback fails or omits an explicit decision", async t => {
+  const { project } = await fixture(t);
+  const proposal = proposalFor(project, ["src/app.js"]);
+  const changes = [{
+    relativePath: "src/app.js",
+    mode: "replace",
+    content: "after",
+    expectedContentDigest: sha("before")
+  }];
+
+  await assert.rejects(requestProjectRepairApproval({
+    project,
+    expectedProjectDigest: project.digest,
+    proposal,
+    changes,
+    requestExplicitUserApproval: async () => { throw new Error("private host error"); }
+  }), { code: "QX_PROJECT_REPAIR_APPROVAL_FAILED" });
+
+  await assert.rejects(requestProjectRepairApproval({
+    project,
+    expectedProjectDigest: project.digest,
+    proposal,
+    changes,
+    requestExplicitUserApproval: async () => ({ signature: "A".repeat(86) })
+  }), { code: "QX_PROJECT_REPAIR_APPROVAL_REQUIRED" });
+});
 
 test("requires a valid Ed25519 host signature bound to the exact proposal and change digest", async t => {
   const { project } = await fixture(t);
