@@ -1,4 +1,5 @@
 import test from "node:test";
+import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -281,6 +282,52 @@ test("rejects restoring over an oversized current file before creating a safety 
 });
 
 
+test("classifies a held create lock as FILE_EXISTS only when the target exists", async t => {
+  const { project, workspace, projectRoot } = await fixture(t);
+  const relativePath = "src/locked-existing.js";
+  const target = path.join(projectRoot, relativePath);
+  await fs.writeFile(target, "existing");
+  const seedPath = "src/metadata-seed.js";
+  await writeProjectFile(workspace, {
+    project, expectedProjectDigest: project.digest, relativePath: seedPath,
+    content: "seed",
+    permission: permission(project, "write", seedPath, { mode: "create" })
+  });
+  const lockDir = path.join(projectRoot, ".qx-workspace", "locks");
+  const lockKey = createHash("sha256").update(relativePath, "utf8").digest("hex");
+  const lockPath = path.join(lockDir, lockKey + ".lock");
+  await fs.writeFile(lockPath, "held", { flag: "wx" });
+
+  await assert.rejects(writeProjectFile(workspace, {
+    project, expectedProjectDigest: project.digest, relativePath,
+    content: "replacement",
+    permission: permission(project, "write", relativePath, { mode: "create" })
+  }), { code: "QX_WORKSPACE_FILE_EXISTS" });
+  assert.equal(await fs.readFile(target, "utf8"), "existing");
+});
+
+test("classifies a held create lock without a target as CONCURRENT_CHANGE", async t => {
+  const { project, workspace, projectRoot } = await fixture(t);
+  const relativePath = "src/locked-missing.js";
+  const seedPath = "src/metadata-seed.js";
+  await writeProjectFile(workspace, {
+    project, expectedProjectDigest: project.digest, relativePath: seedPath,
+    content: "seed",
+    permission: permission(project, "write", seedPath, { mode: "create" })
+  });
+  const lockDir = path.join(projectRoot, ".qx-workspace", "locks");
+  const lockKey = createHash("sha256").update(relativePath, "utf8").digest("hex");
+  const lockPath = path.join(lockDir, lockKey + ".lock");
+  await fs.writeFile(lockPath, "held", { flag: "wx" });
+
+  await assert.rejects(writeProjectFile(workspace, {
+    project, expectedProjectDigest: project.digest, relativePath,
+    content: "new",
+    permission: permission(project, "write", relativePath, { mode: "create" })
+  }), { code: "QX_WORKSPACE_CONCURRENT_CHANGE" });
+  await assert.rejects(fs.lstat(path.join(projectRoot, relativePath)), { code: "ENOENT" });
+});
+
 test("allows only one of two concurrent create writes to publish the target", async t => {
   const { project, workspace, projectRoot } = await fixture(t);
   const relativePath = "src/concurrent-create.js";
@@ -292,7 +339,7 @@ test("allows only one of two concurrent create writes to publish the target", as
   const results = await Promise.allSettled(writes);
   assert.equal(results.filter(result => result.status === "fulfilled").length, 1);
   const rejected = results.find(result => result.status === "rejected");
-  assert.equal(rejected.reason.code, "QX_WORKSPACE_FILE_EXISTS");
+  assert.ok(["QX_WORKSPACE_FILE_EXISTS", "QX_WORKSPACE_CONCURRENT_CHANGE"].includes(rejected.reason.code));
   assert.ok(["first", "second"].includes(
     await fs.readFile(path.join(projectRoot, relativePath), "utf8")
   ));
@@ -303,7 +350,7 @@ test("allows only one of two concurrent create writes to publish the target", as
   const failures = log.filter(entry => entry.event === "write_failed");
   assert.equal(failures.length, 1);
   assert.equal(failures[0].stage, "lock");
-  assert.equal(failures[0].errorCode, "QX_WORKSPACE_FILE_EXISTS");
+  assert.equal(failures[0].errorCode, rejected.reason.code);
 });
 
 test("bounds change-log reads to the configured limit when the file grows during reading", async t => {
