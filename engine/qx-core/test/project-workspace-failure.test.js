@@ -309,22 +309,28 @@ test("bounds change-log reads to the configured limit when the file grows during
   assert.ok((await fs.stat(logPath)).size > requestedBytes);
 });
 
-test("rejects a file that grows beyond the read limit while it is being read", async t => {
+test("bounds reads and rejects a project file that grows beyond the limit during reading", async t => {
   const { project, workspace, projectRoot } = await fixture(t);
   const target = path.join(projectRoot, "src/growing-during-read.bin");
   await fs.writeFile(target, "small");
   const originalOpen = fs.open;
   const originalAppendFile = fs.appendFile;
+  let requestedBytes = 0;
+  let grew = false;
 
   fs.open = async (...args) => {
     const handle = await originalOpen(...args);
     if (args[0] !== target) return handle;
     return new Proxy(handle, {
       get(fileHandle, property) {
-        if (property === "readFile") {
-          return async (...readArgs) => {
-            await originalAppendFile(target, Buffer.alloc(10 * 1024 * 1024 + 1));
-            return fileHandle.readFile(...readArgs);
+        if (property === "read") {
+          return async (buffer, offset, length, position) => {
+            requestedBytes += length;
+            if (!grew) {
+              grew = true;
+              await originalAppendFile(target, Buffer.alloc(10 * 1024 * 1024 + 1));
+            }
+            return fileHandle.read(buffer, offset, length, position);
           };
         }
         const value = Reflect.get(fileHandle, property, fileHandle);
@@ -341,5 +347,112 @@ test("rejects a file that grows beyond the read limit while it is being read", a
     fs.open = originalOpen;
   }
 
+  assert.equal(requestedBytes, 10 * 1024 * 1024 + 1);
   assert.ok((await fs.stat(target)).size > 10 * 1024 * 1024);
+});
+
+
+test("rejects null and non-object backup JSON records without changing the target", async t => {
+  const { project, workspace, projectRoot, target, backupId } = await createBackupFixture(t);
+  const metadataRoot = path.join(projectRoot, ".qx-workspace");
+  const projectDir = (await fs.readdir(metadataRoot))[0];
+  const backupPath = path.join(metadataRoot, projectDir, "backups", backupId + ".json");
+
+  for (const invalidRecord of ["null", "17", "[]", "\"record\""]) {
+    await fs.writeFile(backupPath, invalidRecord, "utf8");
+    await assert.rejects(restoreProjectFile(workspace, {
+      project, expectedProjectDigest: project.digest, backupId,
+      relativePath: "src/app.js",
+      permission: permission(project, "restore", "src/app.js", { backupId })
+    }), { code: "QX_WORKSPACE_BACKUP_INVALID" });
+  }
+  assert.equal(await fs.readFile(target, "utf8"), "after");
+});
+
+test("rejects oversized backup JSON before reading its contents", async t => {
+  const { project, workspace, projectRoot, target, backupId } = await createBackupFixture(t);
+  const metadataRoot = path.join(projectRoot, ".qx-workspace");
+  const projectDir = (await fs.readdir(metadataRoot))[0];
+  const backupPath = path.join(metadataRoot, projectDir, "backups", backupId + ".json");
+  const maxBackupRecordBytes = Math.ceil((10 * 1024 * 1024) / 3) * 4 + 16 * 1024;
+  await fs.truncate(backupPath, maxBackupRecordBytes + 1);
+
+  const originalOpen = fs.open;
+  let readCalls = 0;
+  fs.open = async (...args) => {
+    const handle = await originalOpen(...args);
+    if (args[0] !== backupPath) return handle;
+    return new Proxy(handle, {
+      get(fileHandle, property) {
+        if (property === "read") {
+          return async (...readArgs) => {
+            readCalls += 1;
+            return fileHandle.read(...readArgs);
+          };
+        }
+        const value = Reflect.get(fileHandle, property, fileHandle);
+        return typeof value === "function" ? value.bind(fileHandle) : value;
+      }
+    });
+  };
+
+  try {
+    await assert.rejects(restoreProjectFile(workspace, {
+      project, expectedProjectDigest: project.digest, backupId,
+      relativePath: "src/app.js",
+      permission: permission(project, "restore", "src/app.js", { backupId })
+    }), { code: "QX_WORKSPACE_BACKUP_INVALID" });
+  } finally {
+    fs.open = originalOpen;
+  }
+
+  assert.equal(readCalls, 0);
+  assert.equal(await fs.readFile(target, "utf8"), "after");
+});
+
+test("bounds backup reads and rejects a backup that grows beyond its limit during reading", async t => {
+  const { project, workspace, projectRoot, target, backupId } = await createBackupFixture(t);
+  const metadataRoot = path.join(projectRoot, ".qx-workspace");
+  const projectDir = (await fs.readdir(metadataRoot))[0];
+  const backupPath = path.join(metadataRoot, projectDir, "backups", backupId + ".json");
+  const maxBackupRecordBytes = Math.ceil((10 * 1024 * 1024) / 3) * 4 + 16 * 1024;
+  const originalOpen = fs.open;
+  const originalAppendFile = fs.appendFile;
+  let requestedBytes = 0;
+  let grew = false;
+
+  fs.open = async (...args) => {
+    const handle = await originalOpen(...args);
+    if (args[0] !== backupPath) return handle;
+    return new Proxy(handle, {
+      get(fileHandle, property) {
+        if (property === "read") {
+          return async (buffer, offset, length, position) => {
+            requestedBytes += length;
+            if (!grew) {
+              grew = true;
+              await originalAppendFile(backupPath, Buffer.alloc(maxBackupRecordBytes + 1));
+            }
+            return fileHandle.read(buffer, offset, length, position);
+          };
+        }
+        const value = Reflect.get(fileHandle, property, fileHandle);
+        return typeof value === "function" ? value.bind(fileHandle) : value;
+      }
+    });
+  };
+
+  try {
+    await assert.rejects(restoreProjectFile(workspace, {
+      project, expectedProjectDigest: project.digest, backupId,
+      relativePath: "src/app.js",
+      permission: permission(project, "restore", "src/app.js", { backupId })
+    }), { code: "QX_WORKSPACE_BACKUP_INVALID" });
+  } finally {
+    fs.open = originalOpen;
+  }
+
+  assert.equal(requestedBytes, maxBackupRecordBytes + 1);
+  assert.ok((await fs.stat(backupPath)).size > maxBackupRecordBytes);
+  assert.equal(await fs.readFile(target, "utf8"), "after");
 });
