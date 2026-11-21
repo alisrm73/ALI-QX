@@ -524,19 +524,3 @@ export async function readProjectChangeLog(workspace) {
   }
   return Object.freeze(entries.map(entry => Object.freeze(entry)));
 }
-  assertWorkspace(workspace);
-  const projectDir = path.join(workspace.root, METADATA_DIR, projectKey(workspace.projectId));
-  const logPath = path.join(projectDir, "changes.jsonl");
-  try {
-    await assertDirectoryNoSymlink(path.join(workspace.root, METADATA_DIR), workspace.root);
-    await assertDirectoryNoSymlink(projectDir, workspace.root);
-  } catch (error) {
-    if (error.code === "QX_WORKSPACE_PARENT_MISSING") return Object.freeze([]);
-    throw error;
-  }
-  const info = await inspectRegularTarget(logPath);
-  if (!info) return Object.freeze([]);
-  const content = await fs.readFile(logPath, "utf8");
-  const entries = content.split("\n").filter(Boolean).map(line => JSON.parse(line));
-  return Object.freeze(entries.map(entry => Object.freeze(entry)));
-}
