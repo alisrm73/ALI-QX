@@ -1,6 +1,6 @@
 # 7.8 — Integrated Approved Project Build Workflow
 
-**Status:** Implemented and verified on head `6581963403750f916360990d676bc1a327e753e5`; all five compatibility workflows passed. The implementation was merged into `main` through PR #27 (`c683ff476a0b8290c0d8c144374f114c5edb495f`). Subsequent generator hardening and supported-divider changes were merged through PRs #54 (`6830bc9ff2e79d28ba1b3417de0c44d57ee161a1`) and #55 (`182be800eb629d64e1e6b0d1bd7deafb048c6025`). This is the verified initial static-Web workflow, not closure of all phase-7 requirements.
+**Status:** Implemented and verified on head `6581963403750f916360990d676bc1a327e753e5`; all five compatibility workflows passed. The implementation was merged into `main` through PR #27 (`c683ff476a0b8290c0d8c144374f114c5edb495f`). Subsequent generator hardening and supported-divider changes were merged through PRs #54 (`6830bc9ff2e79d28ba1b3417de0c44d57ee161a1`) and #55 (`182be800eb629d64e1e6b0d1bd7deafb048c6025`). This specification documents the bounded static-Web workflow slice. Phase 7 was subsequently closed through PR #29 after the integrated project/browser acceptance gate passed; see `PHASE-7-PROJECT-BUILD-TEST-DELIVERY.md` for the final closure evidence and explicit scope limitations.
 **Parent:** Phase 7 / PR #27 (closed and merged).
 
 ## 1. Goal

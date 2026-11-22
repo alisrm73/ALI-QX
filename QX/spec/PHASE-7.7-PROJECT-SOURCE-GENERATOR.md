@@ -1,6 +1,6 @@
 # 7.7 — Deterministic Project-to-QX Source Generator
 
-**Status:** The bounded static generator and its supported-UI expansion, including `UI.CONTAINER@1.1.0` and `UI.DIVIDER@1.0.0`, are merged into `main`. PR #27 established the initial phase-7 implementation; PR #54 hardened manifest inputs; PR #55 added the divider and focused regression/browser-renderer assertions. The generator remains intentionally limited to static Web UI, and phase 7 is not closed.
+**Status:** The bounded static generator and its supported-UI expansion, including `UI.CONTAINER@1.1.0` and `UI.DIVIDER@1.0.0`, are merged into `main`. PR #27 established the initial phase-7 implementation; PR #54 hardened manifest inputs; PR #55 added the divider and focused regression/browser-renderer assertions. The generator remains intentionally limited to static Web UI. Phase 7 was subsequently closed through PR #29; the final integrated acceptance evidence and scope limitations are recorded in `PHASE-7-PROJECT-BUILD-TEST-DELIVERY.md`.
 **Current branch:** `main` (the implementation is merged; the former feature branch is historical, not the active target).
 **Parent work:** PR #27 is closed and merged as `c683ff476a0b8290c0d8c144374f114c5edb495f`.
 
