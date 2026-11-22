@@ -1,20 +1,7 @@
 name: QX phase 7 project workflow validation
 
 on:
-  pull_request:
-    branches:
-      - "main"
-    paths:
-      - "engine/qx-core/**"
-      - "QX/spec/PHASE-7-*.md"
-      - ".github/workflows/phase7-project-validation.yml"
-  push:
-    branches:
-      - "main"
-    paths:
-      - "engine/qx-core/**"
-      - "QX/spec/PHASE-7-*.md"
-      - ".github/workflows/phase7-project-validation.yml"
+  workflow_dispatch:
 
 permissions:
   contents: read
