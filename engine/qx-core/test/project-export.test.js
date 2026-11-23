@@ -14,6 +14,7 @@ import { createProjectDeliveryPackage } from "../src/project-delivery.js";
 import {
   exportProjectDeliveryPackage, PROJECT_EXPORT_LIMITS
 } from "../src/project-export.js";
+import { createProjectDeliveryPackage } from "../src/project-delivery.js";
 
 function sha(bytes) {
   return "sha256:" + createHash("sha256").update(bytes).digest("hex");
@@ -68,7 +69,7 @@ async function fixture(t) {
     packageDigest: delivery.package.digest,
     mode: "create"
   };
-  return { temp, output, project, plan, testReport, delivery, destinationPath, permission };
+  return { temp, root, output, workspace, project, plan, testReport, delivery, destinationPath, permission };
 }
 
 test("exports a verified package and confirms the written bytes and digest", async t => {
@@ -108,12 +109,15 @@ test("never overwrites an existing destination", async t => {
 
 test("rejects blocked delivery, unsafe paths, and symbolic-link parents", async t => {
   const f = await fixture(t);
+  const blocked = await createProjectDeliveryPackage(f.workspace, f.project, f.plan, f.testReport, {
+    expectedProjectDigest: f.project.digest,
+    deliverables: [{ path: "dist/not-present.html", required: true }]
+  });
   await assert.rejects(exportProjectDeliveryPackage({
     project: f.project, plan: f.plan, testReport: f.testReport,
-    deliveryReport: { ...f.delivery.report, status: "blocked" },
-    packageValue: f.delivery.package,
+    deliveryReport: blocked.report, packageValue: f.delivery.package,
     destinationPath: f.destinationPath, permission: f.permission
-  }));
+  }), { code: "QX_EXPORT_BLOCKED" });
   await assert.rejects(exportProjectDeliveryPackage({
     project: f.project, plan: f.plan, testReport: f.testReport,
     deliveryReport: f.delivery.report, packageValue: f.delivery.package,
