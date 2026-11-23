@@ -10,7 +10,7 @@ This specification describes the implemented local export path in `engine/qx-cor
 - The package schema version is `1.0.0`.
 - The package includes `projectId`, `projectRevision`, `projectDigest`, `buildPlanDigest`, `testReportDigest`, `files`, and a package `digest`.
 - Each file entry includes its normalized relative `path`, `size` in bytes, `contentDigest` (SHA-256), and `contentBase64`.
-- The package digest is computed from canonical JSON with object keys sorted. The export result also returns the absolute destination, byte size, file SHA-256, project digest, and package digest.
+- The package digest is computed from canonical JSON with object keys sorted. The export result returns the absolute destination, byte size, file SHA-256, project digest, build-plan digest, test-report digest, delivery-report digest, and package digest.
 - This is not a ZIP archive. No ZIP compatibility or archive extraction behavior is claimed.
 
 ## Limits
@@ -35,8 +35,8 @@ This specification describes the implemented local export path in `engine/qx-cor
 - Export is local filesystem output only. It does not provide cloud storage, external distribution, ZIP, or APK generation.
 - The destination parent must exist; the exporter does not create directories.
 - The delivery package is JSON with Base64 file content, so it is larger than the raw files.
-- The current implementation validates the package against the approved project, build plan, test report, and delivery report before writing. The serialized package carries the project, build-plan, and test-report digests; the export operation's returned receipt carries the package and file digests.
-- Workspace's exclusive-create fallback prevents overwriting but is not atomic publication. On filesystems where hard links are unavailable, a concurrent reader may observe a partially written file. This limitation belongs to Workspace file creation, not to the exporter's final create-and-verify protocol.
+- The current implementation validates the package against the approved project, build plan, test report, and delivery report before writing. The serialized package carries the project, build-plan, and test-report digests; the returned export receipt links the delivery-report digest, package digest, and written-file digest to the project and build evidence.
+- Both the exporter and Workspace's exclusive-create fallback prevent overwriting but are not atomic publication. For either path, a concurrent reader may observe a partially written file before the write and sync complete. The exporter's read-back check detects mismatches after the write; it does not prevent intermediate reads.
 - Passing unit tests does not itself prove an export to a user's real destination. Closure requires an actual authorized export followed by read-back verification, with the command, output, and resulting file evidence recorded.
 
 ## Verification commands
