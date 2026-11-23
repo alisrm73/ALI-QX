@@ -113,3 +113,5 @@ export {
   createBuildBlueprint,
   assertBuildBlueprintForProject
 } from "./build-blueprint.js";
+
+export { exportProjectDeliveryPackage, PROJECT_EXPORT_LIMITS } from "./project-export.js";
