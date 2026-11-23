@@ -194,12 +194,13 @@ export async function exportProjectDeliveryPackage({
         // Only clean up through the same verified parent directory; never follow
         // a parent that was swapped for a symlink during the export.
         const parentNow = await assertSafeParent(destinationPath);
-        if (parentNow.info.dev !== parentBefore.info.dev ||
-            parentNow.info.ino !== parentBefore.info.ino) return;
-        const current = await fs.lstat(destinationPath);
-        if (current.isFile() && !current.isSymbolicLink() &&
-            current.dev === createdInfo.dev && current.ino === createdInfo.ino) {
-          await fs.unlink(destinationPath);
+        if (parentNow.info.dev === parentBefore.info.dev &&
+            parentNow.info.ino === parentBefore.info.ino) {
+          const current = await fs.lstat(destinationPath);
+          if (current.isFile() && !current.isSymbolicLink() &&
+              current.dev === createdInfo.dev && current.ino === createdInfo.ino) {
+            await fs.unlink(destinationPath);
+          }
         }
       } catch {
         // Preserve the original export error; never remove a different file.
