@@ -117,7 +117,7 @@ test("rejects blocked delivery, unsafe paths, and symbolic-link parents", async 
   await assert.rejects(exportProjectDeliveryPackage({
     project: f.project, plan: f.plan, testReport: f.testReport,
     deliveryReport: f.delivery.report, packageValue: f.delivery.package,
-    destinationPath: path.join(f.output, "..", "escape.json"), permission: f.permission
+    destinationPath: f.output + "/../escape.json", permission: f.permission
   }), { code: "QX_EXPORT_PATH_INVALID" });
   const link = path.join(f.temp, "output-link");
   await fs.symlink(f.output, link, "dir");
