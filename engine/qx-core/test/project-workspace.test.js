@@ -396,3 +396,26 @@ test("cleans up its own incomplete exclusive-create file after a write failure",
 
   await assert.rejects(fs.lstat(target), { code: "ENOENT" });
 });
+
+test("reads legacy write completion records without publicationMode", async t => {
+  const { project, workspace, projectRoot } = await fixture(t);
+  await writeProjectFile(workspace, {
+    project, expectedProjectDigest: project.digest,
+    relativePath: "src/legacy.js", content: "legacy",
+    permission: permission(project, "write", "src/legacy.js", { mode: "create" })
+  });
+  const metadataRoot = path.join(projectRoot, ".qx-workspace");
+  const projectDir = path.join(metadataRoot, (await fs.readdir(metadataRoot))[0]);
+  const logPath = path.join(projectDir, "changes.jsonl");
+  const legacyEntry = {
+    timestamp: "2026-11-22T10:00:00.000Z",
+    event: "write_completed",
+    relativePath: "src/legacy.js",
+    projectDigest: project.digest,
+    contentDigest: testDigest("legacy"),
+    backupId: null
+  };
+  await fs.writeFile(logPath, JSON.stringify(legacyEntry) + "\n");
+  const entries = await readProjectChangeLog(workspace);
+  assert.deepEqual(entries, [legacyEntry]);
+});
