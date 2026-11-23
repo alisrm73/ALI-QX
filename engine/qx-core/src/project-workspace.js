@@ -779,8 +779,10 @@ function isValidChangeLogEntry(entry) {
       ? ["timestamp", "event", "relativePath", "projectDigest", "operation"] : null,
     write_completed: typeof entry.contentDigest === "string" && digest.test(entry.contentDigest) &&
       (entry.backupId === null || (typeof entry.backupId === "string" && uuid.test(entry.backupId))) &&
-      ["atomic-hard-link", "exclusive-create", "atomic-rename"].includes(entry.publicationMode)
-      ? ["timestamp", "event", "relativePath", "projectDigest", "contentDigest", "backupId", "publicationMode"] : null,
+      (!Object.hasOwn(entry, "publicationMode") ||
+        ["atomic-hard-link", "exclusive-create", "atomic-rename"].includes(entry.publicationMode))
+      ? ["timestamp", "event", "relativePath", "projectDigest", "contentDigest", "backupId",
+        ...(Object.hasOwn(entry, "publicationMode") ? ["publicationMode"] : [])] : null,
     write_failed: (entry.stage === "lock" || entry.stage === "write") &&
       typeof entry.errorCode === "string" && /^[A-Z0-9_]{1,96}$/.test(entry.errorCode)
       ? ["timestamp", "event", "relativePath", "projectDigest", "stage", "errorCode"] : null,

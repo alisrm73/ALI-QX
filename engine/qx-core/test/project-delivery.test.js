@@ -195,3 +195,29 @@ test("delivery report digest rejects modification and mismatched test report", a
   const otherReport = { ...testReport, digest: "sha256:" + "0".repeat(64) };
   assert.throws(() => assertProjectDeliveryReport(project, plan, otherReport, result.report));
 });
+
+
+test("rejects an oversized deliverable before creating a delivery package", async t => {
+  const { project, plan, workspace } = await fixture(t);
+  const relativePath = "dist/oversized.bin";
+  const oversized = Buffer.alloc(10 * 1024 * 1024 + 1, 0x61);
+  await fs.writeFile(path.join(workspace.root, relativePath), oversized);
+
+  const testReport = await runProjectTestSuite(project, plan, {
+    expectedProjectDigest: project.digest,
+    fileDigests: { [relativePath]: sha(oversized) },
+    testCases: [{
+      id: "project.oversized-smoke",
+      level: "project",
+      title: "Oversized deliverable guard",
+      required: true,
+      artifactIds: ["site"]
+    }],
+    executeTest: async () => ({ status: "passed", summary: "Test passed" })
+  });
+
+  await assert.rejects(createProjectDeliveryPackage(workspace, project, plan, testReport, {
+    expectedProjectDigest: project.digest,
+    deliverables: [{ path: relativePath, required: true }]
+  }), { code: "QX_WORKSPACE_CONTENT_INVALID" });
+});
