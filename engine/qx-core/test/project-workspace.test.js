@@ -418,4 +418,13 @@ test("reads legacy write completion records without publicationMode", async t =>
   await fs.writeFile(logPath, JSON.stringify(legacyEntry) + "\n");
   const entries = await readProjectChangeLog(workspace);
   assert.deepEqual(entries, [legacyEntry]);
+
+  const invalidCurrentEntry = {
+    ...legacyEntry,
+    publicationMode: "unknown-mode"
+  };
+  await fs.writeFile(logPath, JSON.stringify(invalidCurrentEntry) + "\n");
+  await assert.rejects(readProjectChangeLog(workspace), {
+    code: "QX_WORKSPACE_CHANGE_LOG_INVALID"
+  });
 });
