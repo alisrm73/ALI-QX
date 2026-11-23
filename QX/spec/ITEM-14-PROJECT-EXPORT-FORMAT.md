@@ -27,7 +27,7 @@ This specification describes the implemented local export path in `engine/qx-cor
 - The parent directory must be a real directory and must not be a symbolic link.
 - The caller must provide an explicit permission object matching the exact destination path, approved project digest, package digest, operation `export`, and mode `create`.
 - The file is created exclusively with mode `0600`; an existing destination is never overwritten.
-- After writing and syncing, the exporter reopens the file, checks file identity and size, compares the bytes and SHA-256 digest, parses JSON, and validates the delivery package and its embedded file digests.
+- The target is created directly with exclusive-create semantics; it is not an atomic rename publication, so a concurrent reader may observe a partially written file before the write and sync complete. After writing and syncing, the exporter reopens the file, checks file identity and size, compares the bytes and SHA-256 digest, parses JSON, and validates the delivery package and its embedded file digests.
 - If verification fails, cleanup is limited to the exact file inode created by this operation and only while the original parent directory identity still matches.
 
 ## Known limitations
