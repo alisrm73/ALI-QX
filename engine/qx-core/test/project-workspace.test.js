@@ -325,3 +325,74 @@ test("serializes workspace mutations with a per-file lock and fails closed on a 
   }), { code: "QX_WORKSPACE_CONCURRENT_CHANGE" });
   assert.equal(await fs.readFile(target, "utf8"), "seed");
 });
+
+
+test("falls back to exclusive create when the filesystem denies hard links", async t => {
+  const { project, workspace, projectRoot } = await fixture(t);
+  const relativePath = "src/hard-link-fallback.js";
+  const target = path.join(projectRoot, relativePath);
+  const originalLink = fs.link;
+  fs.link = async () => {
+    throw Object.assign(new Error("hard links are unavailable"), { code: "EACCES" });
+  };
+
+  let result;
+  try {
+    result = await writeProjectFile(workspace, {
+      project, expectedProjectDigest: project.digest, relativePath,
+      content: "complete-content",
+      permission: permission(project, "write", relativePath, { mode: "create" })
+    });
+  } finally {
+    fs.link = originalLink;
+  }
+
+  assert.equal(result.publicationMode, "exclusive-create");
+  assert.equal(await fs.readFile(target, "utf8"), "complete-content");
+  await assert.rejects(writeProjectFile(workspace, {
+    project, expectedProjectDigest: project.digest, relativePath,
+    content: "must-not-replace",
+    permission: permission(project, "write", relativePath, { mode: "create" })
+  }), { code: "QX_WORKSPACE_FILE_EXISTS" });
+  assert.equal(await fs.readFile(target, "utf8"), "complete-content");
+});
+
+test("cleans up its own incomplete exclusive-create file after a write failure", async t => {
+  const { project, workspace, projectRoot } = await fixture(t);
+  const relativePath = "src/fallback-write-failure.js";
+  const target = path.join(projectRoot, relativePath);
+  const originalLink = fs.link;
+  const originalOpen = fs.open;
+  fs.link = async () => {
+    throw Object.assign(new Error("hard links are unavailable"), { code: "EACCES" });
+  };
+  fs.open = async (...args) => {
+    const handle = await originalOpen(...args);
+    if (args[0] !== target) return handle;
+    return new Proxy(handle, {
+      get(fileHandle, property) {
+        if (property === "writeFile") {
+          return async () => {
+            await fileHandle.writeFile("partial");
+            throw Object.assign(new Error("simulated interrupted write"), { code: "EIO" });
+          };
+        }
+        const value = Reflect.get(fileHandle, property, fileHandle);
+        return typeof value === "function" ? value.bind(fileHandle) : value;
+      }
+    });
+  };
+
+  try {
+    await assert.rejects(writeProjectFile(workspace, {
+      project, expectedProjectDigest: project.digest, relativePath,
+      content: "complete-content",
+      permission: permission(project, "write", relativePath, { mode: "create" })
+    }), { code: "EIO" });
+  } finally {
+    fs.link = originalLink;
+    fs.open = originalOpen;
+  }
+
+  await assert.rejects(fs.lstat(target), { code: "ENOENT" });
+});

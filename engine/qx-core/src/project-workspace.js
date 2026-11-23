@@ -274,6 +274,45 @@ async function writeAtomic(target, data) {
   }
 }
 
+const HARD_LINK_UNSUPPORTED_CODES = new Set([
+  "EACCES", "EPERM", "ENOSYS", "EOPNOTSUPP", "ENOTSUP"
+]);
+
+async function writeExclusiveCreate(target, data) {
+  let handle = null;
+  let createdIdentity = null;
+  try {
+    // O_EXCL semantics prevent replacing a target that appeared after preflight.
+    // Unlike hard-link publication, bytes become visible while this write is in progress.
+    handle = await fs.open(target, "wx", 0o600);
+    createdIdentity = await handle.stat();
+    await handle.writeFile(data);
+    await handle.sync();
+    await handle.close();
+    handle = null;
+    return "exclusive-create";
+  } catch (error) {
+    await handle?.close().catch(() => {});
+    if (createdIdentity) {
+      try {
+        const current = await fs.lstat(target);
+        if (current.isFile() && !current.isSymbolicLink() &&
+            current.dev === createdIdentity.dev && current.ino === createdIdentity.ino) {
+          await fs.rm(target);
+        }
+      } catch (cleanupError) {
+        if (cleanupError.code !== "ENOENT") {
+          // Preserve the original write error; never remove a replacement inode.
+        }
+      }
+    }
+    if (error.code === "EEXIST") {
+      fail("QX_WORKSPACE_FILE_EXISTS", "Create permission cannot overwrite an existing file");
+    }
+    throw error;
+  }
+}
+
 async function writeAtomicCreate(target, data) {
   const temporary = path.join(path.dirname(target), ".qx-tmp-" + randomUUID());
   try {
@@ -287,11 +326,16 @@ async function writeAtomicCreate(target, data) {
     try {
       // Hard-link publication is atomic and fails if the destination already exists.
       await fs.link(temporary, target);
+      return "atomic-hard-link";
     } catch (error) {
       if (error.code === "EEXIST") {
         fail("QX_WORKSPACE_FILE_EXISTS", "Create permission cannot overwrite an existing file");
       }
-      throw error;
+      if (!HARD_LINK_UNSUPPORTED_CODES.has(error.code)) throw error;
+      // Some filesystems (including this Termux environment) deny hard links.
+      // Fall back to exclusive creation: no overwrite is possible, but publication
+      // is not atomic and readers may observe bytes while the file is being written.
+      return await writeExclusiveCreate(target, data);
     }
   } finally {
     await fs.rm(temporary, { force: true }).catch(() => {});
@@ -553,15 +597,17 @@ async function writeProjectFileUnlocked(workspace, options = {}) {
         "Current file content changed after the approved content was checked");
     }
   }
+  let publicationMode = "atomic-rename";
   if (permission.mode === "create") {
-    await writeAtomicCreate(resolved.target, bytes);
+    publicationMode = await writeAtomicCreate(resolved.target, bytes);
   } else {
     await writeAtomic(resolved.target, bytes);
   }
   const result = {
     relativePath: resolved.relativePath,
     contentDigest: hash(bytes),
-    backupId
+    backupId,
+    publicationMode
   };
   let changeLogWarning = null;
   try {
