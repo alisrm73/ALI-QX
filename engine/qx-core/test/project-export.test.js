@@ -80,6 +80,9 @@ test("exports a verified package and confirms the written bytes and digest", asy
   });
   assert.equal(result.status, "exported");
   assert.equal(result.packageDigest, f.delivery.package.digest);
+  assert.equal(result.buildPlanDigest, f.plan.digest);
+  assert.equal(result.testReportDigest, f.testReport.digest);
+  assert.equal(result.deliveryReportDigest, f.delivery.report.digest);
   assert.equal(result.fileDigest, sha(await fs.readFile(f.destinationPath)));
   assert.equal(JSON.parse(await fs.readFile(f.destinationPath, "utf8")).digest, f.delivery.package.digest);
   assert.equal(result.size, (await fs.stat(f.destinationPath)).size);
