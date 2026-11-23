@@ -9,8 +9,6 @@ import {
 import { QXProjectError } from "./project-model.js";
 
 const MAX_EXPORT_BYTES = 70 * 1024 * 1024;
-const DIGEST_PATTERN = /^sha256:[a-f0-9]{64}$/;
-
 function fail(code, message) {
   throw new QXProjectError(code, message);
 }

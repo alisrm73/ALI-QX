@@ -10,7 +10,6 @@ import {
 import { createBuildPlan } from "../src/build-plan.js";
 import { openProjectWorkspace, writeProjectFile } from "../src/project-workspace.js";
 import { runProjectTestSuite } from "../src/project-test-suite.js";
-import { createProjectDeliveryPackage } from "../src/project-delivery.js";
 import {
   exportProjectDeliveryPackage, PROJECT_EXPORT_LIMITS
 } from "../src/project-export.js";
