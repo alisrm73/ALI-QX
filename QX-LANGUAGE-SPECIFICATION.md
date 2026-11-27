@@ -1,5 +1,5 @@
 # الدستور الهندسي للغة QX
-# QX — Geometric Language Specification
+# QX Geometric Language Specification
 
 **المعرّف المرجعي | Canonical specification**  
 **اسم الملف | File:** `QX-LANGUAGE-SPECIFICATION.md`  
