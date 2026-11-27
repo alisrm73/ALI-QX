@@ -1,6 +1,6 @@
 # QX Core — Lexer, Parser, Semantic Analysis, and QIR
 
-This directory contains the first executable QX V1 language-core slice, implemented as dependency-free JavaScript ES modules.
+This directory contains the current executable QX Core V1 language slice, implemented as dependency-free JavaScript ES modules. Its source syntax uses the existing domain-command form; it does not yet tokenize or parse the approved 72-symbol geometric vocabulary. The canonical vocabulary is documented in the repository-root QX geometric specification, and the compatibility boundary is tracked in `../../QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md`.
 
 ## Requirements
 
