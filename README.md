@@ -68,7 +68,8 @@
 
 ## وثائق المشروع
 
-- [الدستور الهندسي للغة QX — QX Geometric Language Specification](<الدستور الهندسي للغة QX — QX Geometric Language Specification.md>).\n- [مصفوفة التوافق والتكامل بين الأبجدية الهندسية والمحرك](QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md).
+- [الدستور الهندسي للغة QX — QX Geometric Language Specification](<الدستور الهندسي للغة QX — QX Geometric Language Specification.md>).
+- [مصفوفة التوافق والتكامل بين الأبجدية الهندسية والمحرك](QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md).
 - [المخطط المعماري وخطة التنفيذ والتسليم](QX/spec/ALI-QX-16-ITEM-IMPLEMENTATION-PLAN.md).
 - [نواة QX البرمجية — Lexer/Parser](engine/qx-core/README.md).
 - [مرجع الرموز الرياضية المستقل](Mathematics/README.md).
@@ -127,7 +128,8 @@
 
 ## 15. مراحل التطوير المقترحة
 
-1. تثبيت الهوية التقنية للرموز الهندسية الـ72 واختبار Unicode وحدود token.\n2. اعتماد قواعد تركيب الأبجدية الهندسية قبل تنفيذ Grammar؛ لا تُخترع القواعد دون موافقة صاحب المشروع.
+1. تثبيت الهوية التقنية للرموز الهندسية الـ72 واختبار Unicode وحدود token.
+2. اعتماد قواعد تركيب الأبجدية الهندسية قبل تنفيذ Grammar؛ لا تُخترع القواعد دون موافقة صاحب المشروع.
 2. بناء AST والتحليل الدلالي وتشخيص الأخطاء واختبارات المطابقة.
 3. تصميم QIR التفصيلي وتنفيذ مسار تحويله.
 4. تنفيذ VM واختبارات التنفيذ والمعاينة.
