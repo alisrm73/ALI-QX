@@ -207,8 +207,8 @@
 
 ## الفصل عن لغة QX
 
-- مواصفات اللغة الحالية موجودة في [QX-LANGUAGE-SPECIFICATION.md](<../الدستور الهندسي للغة QX — QX Geometric Language Specification.md>).
-- لا توجد نسخة أرشيفية من مواصفات QX داخل هذا المجلد؛ المرجع التفصيلي الحالي للغة هو [QX-LANGUAGE-SPECIFICATION.md](<../الدستور الهندسي للغة QX — QX Geometric Language Specification.md>).
+- مواصفات اللغة الحالية موجودة في [الدستور الهندسي للغة QX — QX Geometric Language Specification](<../الدستور الهندسي للغة QX — QX Geometric Language Specification.md>).
+- لا توجد نسخة أرشيفية من مواصفات QX داخل هذا المجلد؛ المرجع التفصيلي الحالي للغة هو [الدستور الهندسي للغة QX — QX Geometric Language Specification](<../الدستور الهندسي للغة QX — QX Geometric Language Specification.md>).
 
 - هذه المجموعة مرجع رياضي مستقل وليست جزءاً من صياغة QX.
 - لغة QX ستُصمم لها قواعد ورموز خاصة بها بصورة مستقلة.
