@@ -234,3 +234,12 @@ This document approves the symbol vocabulary and stated meanings only. The follo
 **سجل القرار:** اعتمد صاحب المشروع المجموعات الاثنتي عشرة تباعاً في محادثة بتاريخ 2026-11-28. لا يعني ذلك اعتماد قواعد تركيب اللغة أو إثبات تنفيذ الرموز داخل المحرك.
 
 **Decision record:** The project owner approved all twelve groups sequentially in the conversation dated 2026-11-28. This does not constitute approval of the language composition grammar or proof that the symbols are implemented in the engine.
+
+
+## 8. العلاقة مع المحرك الحالي | Relationship to the current engine
+
+الدستور هو المرجع الوحيد لشكل الرموز الـ72 وأسمائها ووظائفها. توجد في المستودع شريحة تنفيذية حالية باسم QX Core V1 تستخدم صياغة أوامر نطاقية، وقد بُنيت حولها طبقات Lexer/Parser والتحليل الدلالي وQIR وVM وWeb Backend. وجود هذه الطبقات لا يعني أنها تقرأ الأبجدية الهندسية أو تنفذها.
+
+صيغة `DOMAIN.COMMAND(values)` هي صيغة الشريحة التنفيذية الحالية فقط، وليست الصياغة الهندسية النهائية. لا يجوز تحويل الرموز إلى هذه الأوامر أو اعتبارها مرادفات لها دون قواعد mapping معتمدة.
+
+تُحدد حالة كل طبقة والبوابات اللازمة لربط الأبجدية بالمحرك في [مصفوفة التوافق والتكامل](QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md). لا تُعد قواعد التركيب معتمدة حتى يوافق عليها صاحب المشروع، ولا يُعلن دعم رمز تنفيذياً قبل اجتياز اختبارات السلسلة الكاملة من الرمز إلى AST وQIR ونتيجة التنفيذ.
