@@ -183,7 +183,7 @@
 
 تم تنفيذ DATA.ADD وDATA.REMOVE واختبارهما في PR #6. تبقى العناصر التالية قبل إعلان المرحلة السادسة مغلقة:
 - UI.TEXT وUI.SHOW منفذان؛ المكونات التفاعلية المركبة غير معتمدة في هذه الدفعة وتحتاج عقوداً منفصلة قبل إضافتها.
-- PROCESS.ADD محسوم ومنفذ وفق مواصفة `QX/README.md`.
+- PROCESS.ADD محسوم ومنفذ وفق العقد الموثق في `QX/spec/ALI-QX-V1-CONTRACTS.md`.
 - التحقق من عقد INTEGRATION.REQUEST وامتداد QIR 1.3 وVM غير المتزامن، ومراجعة broker وحدود الأمان في PR #9؛ لا يُسمح بفتح شبكة عامة مباشرة من VM أو Web Runtime.
 - تحديد حدود شجرة الواجهة وأحداثها وخصائص المكونات وإمكانية الوصول.
 - اعتماد موصل إنتاجي وواجهة موافقة موثوقة ومزود أسرار وقائمة وجهات محددة ومراجعة SSRF لكل خدمة قبل أي اتصال خارجي؛ لا يوجد موصل إنتاجي في التنفيذ الحالي.
@@ -194,7 +194,7 @@
 ## 9. ما تم وما لم يتم
 
 - تم تنفيذ `DATA.ADD` و`DATA.REMOVE` في Registry وSemantic Analyzer وQIR 1.1 وVM وWeb Runtime، مع اختبارات قبول ناجحة في PR #6.
-- تم تنفيذ `PROCESS.ADD` وفق العقد الموجود في `QX/README.md`، باستخدام تعليمات QIR 1.0 الحالية واختبارات VM وWeb Runtime.
+- تم تنفيذ `PROCESS.ADD` وفق العقد الموجود في `QX/spec/ALI-QX-V1-CONTRACTS.md`، باستخدام تعليمات QIR 1.0 الحالية واختبارات VM وWeb Runtime.
 - بقيت `DATA.GET` معطلة ومؤجلة.
 - تم تنفيذ UI.TEXT وUI.SHOW في Registry وSemantic Analyzer وQIR 1.2 وVM وWeb Runtime؛ لا تزال المكونات التفاعلية المركبة خارج النطاق.
 - تم تنفيذ INTEGRATION.REQUEST في Registry وSemantic Analyzer وQIR 1.3 وVM غير المتزامن عبر broker مضيف؛ لم يُضف موصل إنتاجي أو اتصال شبكي مباشر.
