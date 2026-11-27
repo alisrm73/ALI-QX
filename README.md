@@ -73,7 +73,7 @@
 - [نواة QX البرمجية — Lexer/Parser](engine/qx-core/README.md).
 - [مرجع الرموز الرياضية المستقل](Mathematics/README.md).
 - [قرارات وملاحظات المشروع](docs/قرارات وملاحظات المشروع.md).
-لا توجد نسخة أرشيفية من مواصفات QX ضمن مجلد Mathematics؛ المرجع التفصيلي الحالي هو [QX-LANGUAGE-SPECIFICATION.md](<الدستور الهندسي للغة QX — QX Geometric Language Specification.md>).
+لا توجد نسخة أرشيفية من مواصفات QX ضمن مجلد Mathematics؛ المرجع التفصيلي الحالي هو [الدستور الهندسي للغة QX — QX Geometric Language Specification](<الدستور الهندسي للغة QX — QX Geometric Language Specification.md>).
 
 ## 4. الدستور الهندسي للغة QX
 
