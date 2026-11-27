@@ -2,7 +2,7 @@
 # QX Geometric Language Specification
 
 **المعرّف المرجعي | Canonical specification**  
-**اسم الملف | File:** `QX-LANGUAGE-SPECIFICATION.md`  
+**اسم الملف | File:** `الدستور الهندسي للغة QX — QX Geometric Language Specification.md`  
 **الحالة | Status:** مرجع الرموز الهندسية المعتمدة تصميمياً | Design-approved geometric symbol vocabulary  
 **تاريخ التثبيت | Recorded:** 2026-11-28  
 **الإصدار | Edition:** 0.1 — Symbol groups baseline
