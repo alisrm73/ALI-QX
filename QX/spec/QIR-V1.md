@@ -3,8 +3,8 @@
 
 - الحالة: المواصفة المعتمدة لـ QIR V1، والتنفيذ البرمجي متاح في `engine/qx-core/src/qir.js` مع اختبارات القبول في `engine/qx-core/test/qir.test.js`.
 - النطاق: المرحلة الثالثة من ALI-QX.
-- مرجع اللغة: QX V1. مرجع Unicode: 18.0.0.
-- الملفات المرجعية التي تمت مراجعتها: QX/README.md وlexer.js وparser.js وsemantic-analyzer.js وcommand-registry.js على main.
+- نطاق المصدر: صياغة QX Core V1 التنفيذية الحالية كما يحددها Lexer/Parser وسجل الأوامر. هذا لا يعني أن الأبجدية الهندسية المعتمدة في الدستور مدعومة في هذا الإصدار. مرجع Unicode: 18.0.0.
+- الملفات المرجعية التي تمت مراجعتها: الدستور الهندسي للغة QX (مرجع الرموز فقط)، وengine/qx-core/src/lexer.js وparser.js وsemantic-analyzer.js وcommand-registry.js. مصفوفة التوافق: QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md.
 
 ## 1. الهدف والحدود
 
