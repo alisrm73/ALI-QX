@@ -16,13 +16,13 @@ export class Parser {
   fail(code, message) { throw new QXParseError(code, message, this.peek()); }
   newlines() { while (this.match("NEWLINE")) {} }
   loc(value) { return value.location ?? { line: value.line, column: value.column, offset: value.offset }; }
-  boundary() { if (!this.check("NEWLINE") && !this.check("EOF")) this.fail("QX2003", "Each statement must occupy its own line"); }
+  boundary() { if (!this.check("NEWLINE") && !this.check("EOF") && !this.check("RBRACE")) this.fail("QX2003", "Each statement must occupy its own line"); }
   headerBreak(name) { if (!this.match("NEWLINE")) this.fail("QX2010", name + " header must end before its block starts"); }
 
   parse() {
     const body = []; this.newlines();
     while (!this.check("EOF")) {
-      if (this.check("END") || this.check("ELSE")) this.fail("QX2002", "Unexpected block keyword outside a matching block");
+      if (this.check("END") || this.check("ELSE") || this.check("RBRACE")) this.fail("QX2002", "Unexpected block terminator outside a matching block");
       body.push(this.statement()); this.boundary(); this.newlines();
     }
     return { type: "Program", body, location: { line: 1, column: 1, offset: 0 } };
@@ -33,12 +33,38 @@ export class Parser {
       case "WHILE": return this.whileStatement();
       case "FUNCTION": return this.functionDeclaration();
       case "RETURN": return this.returnStatement();
+      case "GEOMETRIC_SYMBOL": return this.geometricStatement();
       case "IDENTIFIER":
         if (this.peek(1).type === "DOT") return this.commandStatement();
         if (this.peek(1).type === "LPAREN") { const expression = this.expression(); return { type: "ExpressionStatement", expression, location: this.loc(expression) }; }
         this.fail("QX2004", "Expected a domain command or function call");
       default: this.fail("QX2005", "Unexpected token at the start of a statement: " + this.peek().type);
     }
+  }
+  geometricStatement() {
+    const symbol = this.consume("GEOMETRIC_SYMBOL");
+    const args = this.args();
+    const body = this.match("LBRACE") ? this.geometricBlock() : null;
+    return {
+      type: "GeometricStatement",
+      symbol: symbol.value,
+      glyph: symbol.glyph,
+      group: symbol.group,
+      args,
+      body,
+      location: this.loc(symbol)
+    };
+  }
+  geometricBlock() {
+    const body = [];
+    this.newlines();
+    while (!this.check("RBRACE") && !this.check("EOF")) {
+      body.push(this.statement());
+      this.boundary();
+      this.newlines();
+    }
+    this.consume("RBRACE", "Expected '}' to close geometric block");
+    return body;
   }
   commandStatement() {
     const domain = this.consume("IDENTIFIER", "Expected command domain");
@@ -114,6 +140,16 @@ export class Parser {
   }
   prefix() {
     const token = this.peek();
+    if (this.match("GEOMETRIC_SYMBOL")) {
+      return {
+        type: "GeometricCallExpression",
+        symbol: token.value,
+        glyph: token.glyph,
+        group: token.group,
+        args: this.args(),
+        location: this.loc(token)
+      };
+    }
     if (this.match("NUMBER")) return { type: "NumberLiteral", value: token.value, location: this.loc(token) };
     if (this.match("STRING")) return { type: "StringLiteral", value: token.value, location: this.loc(token) };
     if (this.match("TRUE")) return { type: "BooleanLiteral", value: true, location: this.loc(token) };
