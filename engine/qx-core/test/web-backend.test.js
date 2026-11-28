@@ -60,3 +60,9 @@ test("builds validated web assets from Group 2 geometric bindings", () => {
   assert.match(project.files["app.js"], /"opcode":"MAKE_LIST"/);
   assert.match(project.files["index.html"], /Content-Security-Policy/);
 });
+
+test("builds web assets for QIR 1.5 immutable VALUE bindings", () => {
+  const project = buildWebProject("⊙(fixed, 7)");
+  assert.match(project.files["app.js"], /"version":"1.5"/);
+  assert.match(project.files["app.js"], /"mutable":false/);
+});
