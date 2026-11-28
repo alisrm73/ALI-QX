@@ -41,7 +41,7 @@ export class Lexer {
   loc() { return { line: this.line, column: this.column, offset: this.i }; }
   add(type, value, start, raw = value, extra = {}) { this.tokens.push({ type, value, raw, line: start.line, column: start.column, offset: start.offset, endLine: this.line, endColumn: this.column, endOffset: this.i, ...extra }); }
   geometricSymbol() {
-    const symbol = GEOMETRIC_SYMBOLS.find(item => this.source.startsWith(item.glyph, this.i));
+    const symbol = [...GEOMETRIC_SYMBOLS].sort((a, b) => b.glyph.length - a.glyph.length).find(item => this.source.startsWith(item.glyph, this.i));
     if (!symbol) return false;
     const start = this.loc();
     for (const _ of symbol.glyph) this.take();
