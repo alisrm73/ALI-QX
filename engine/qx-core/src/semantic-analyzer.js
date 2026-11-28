@@ -360,12 +360,51 @@ export function analyze(program) {
     node.args.forEach(a => expression(a, scope));
   }
 
-  function block(body, scope, fn = null) {
+  let uiScreenCount = 0;
+  const uiIds = new Set();
+
+  function block(body, scope, fn = null, uiParent = null) {
     let guaranteedReturn = false;
     for (const node of body) {
+      if (uiParent && !(node.type === "GeometricStatement" && node.group === "INTERFACE_DESIGN")) {
+        report("QX3070", "Only PANEL and BLOCK declarations are allowed inside a static UI tree", node);
+        continue;
+      }
       // Geometric statements without approved semantic contracts are rejected
       // uniformly, regardless of whether the adapter specialized their AST type.
       if (node.type === "GeometricStatement" || node.syntaxType === "GeometricStatement") {
+        if (node.group === "INTERFACE_DESIGN") {
+          const args = Array.isArray(node.args) ? node.args : [];
+          const hasBody = Array.isArray(node.body);
+          if (node.alternate) report("QX3070", "Interface symbols do not allow alternate branches", node);
+          if (node.symbol === "SCREEN") {
+            if (fn || scope !== moduleScope || uiParent) report("QX3070", "SCREEN is allowed only at module level", node);
+            if (++uiScreenCount > 1) report("QX3070", "A module may declare only one SCREEN", node);
+            if (args.length !== 0) report("QX3070", "SCREEN expects no arguments", node);
+            if (!hasBody) report("QX3070", "SCREEN requires a body", node);
+            if (hasBody) block(node.body, scope, fn, "SCREEN");
+          } else if (node.symbol === "PANEL") {
+            if (!uiParent || !["SCREEN", "PANEL"].includes(uiParent)) report("QX3070", "PANEL is allowed only inside SCREEN or PANEL", node);
+            if (args.length !== 1 || args[0]?.type !== "Identifier") report("QX3070", "PANEL expects exactly one Identifier id", node);
+            else if (uiIds.has(args[0].name)) report("QX3071", "Duplicate UI node id: " + args[0].name, args[0]);
+            else uiIds.add(args[0].name);
+            if (!hasBody) report("QX3070", "PANEL requires a body", node);
+            if (hasBody) block(node.body, scope, fn, "PANEL");
+          } else if (node.symbol === "BLOCK") {
+            if (!uiParent || !["SCREEN", "PANEL"].includes(uiParent)) report("QX3070", "BLOCK is allowed only inside SCREEN or PANEL", node);
+            if (args.length !== 2 || args[0]?.type !== "Identifier") {
+              report("QX3070", "BLOCK expects an Identifier id and a TXT expression", node);
+            } else {
+              if (uiIds.has(args[0].name)) report("QX3071", "Duplicate UI node id: " + args[0].name, args[0]);
+              else uiIds.add(args[0].name);
+              constrain(expression(args[1], scope), ["TXT"], args[1], "QX3072", "BLOCK content must be TXT");
+            }
+            if (hasBody) report("QX3070", "BLOCK does not allow a body", node);
+          } else {
+            report("QX3073", "Geometric UI symbol " + node.symbol + " is deferred and unavailable in this release", node);
+          }
+          continue;
+        }
         if (node.group === "DATA_STORAGE") {
           const hasBody = node.body !== null && node.body !== undefined;
           if (hasBody) {
