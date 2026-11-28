@@ -558,7 +558,14 @@ export function validateQIR(module) {
         if (inst.opcode === "DECLARE") {
           const { variable, declared_type: type, storage } = inst.operands ?? {};
           if (!variable || !VALUE_TYPES.has(type) || !["local", "global"].includes(storage) || module.version === "1.5" && typeof inst.operands?.mutable !== "boolean" || module.version !== "1.5" && Object.hasOwn(inst.operands ?? {}, "mutable")) report("QIR_E_DECLARE", "Invalid DECLARE", inst.source);
-          else { variableTypes.set(variable, type); definedVariables.add(variable); }
+          else {
+            variableTypes.set(variable, type); definedVariables.add(variable);
+            if (storage === "global" && module.version === "1.5") {
+              const descriptor = (module.globals ?? []).find(item => item.id === variable);
+              if (!descriptor || descriptor.mutable !== inst.operands.mutable)
+                report("QIR_E_IMMUTABLE_SCHEMA", "Global DECLARE mutability differs from its module descriptor", inst.source);
+            }
+          }
         }
         if (inst.opcode === "BRANCH") {
           const { true_target, false_target } = inst.operands ?? {};
