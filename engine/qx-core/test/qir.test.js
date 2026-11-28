@@ -576,10 +576,11 @@ test("lowers dynamic static UI trees through QIR 1.7 MAKE_UI_TREE", () => {
 test("QIR 1.7 rejects non-TXT UI tree references and duplicate component ids", () => {
   const module = compile([
     '◉(title, "Hello")',
+    "◉(count, 1)",
     "△() { ▱(main) { ▰(heading, ◌(title)) } }"
   ].join("\n"));
   const makeTree = module.initializer.blocks[0].instructions.find(item => item.opcode === "MAKE_UI_TREE");
-  makeTree.operands.tree.children[0].children[0].children[0].valueRef = "v_0";
+  makeTree.operands.tree.children[0].children[0].children[0].valueRef = "v_1";
   assert.ok(validateQIR(module).some(item => item.code === "QIR_E_UI_TREE_TEXT"));
   makeTree.operands.tree.children[0].children[0].id = "main";
   assert.ok(validateQIR(module).some(item => item.code === "QIR_E_UI_TREE_SCHEMA"));
