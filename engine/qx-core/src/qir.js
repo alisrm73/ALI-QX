@@ -468,7 +468,7 @@ class ModuleLowerer {
     const containsRecordLiteral = node => Array.isArray(node) ? node.some(containsRecordLiteral) : !!node && typeof node === "object" && (node.type === "RecordLiteral" || Object.values(node).some(containsRecordLiteral));
     this.usesRecord = containsSymbol(program, ["RECORD"]) || containsRecordLiteral(program);
     this.usesStaticUI = containsSymbol(program, ["SCREEN"]);
-    this.usesImmutable = this.usesRecord || containsSymbol(program, ["VALUE"]);
+    this.usesImmutable = this.usesRecord || this.usesStaticUI || containsSymbol(program, ["VALUE"]);
     this.collectFunctions();
     this.collectGlobals();
   }
