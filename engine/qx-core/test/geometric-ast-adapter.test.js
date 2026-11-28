@@ -143,7 +143,7 @@ test("rejects unresolved geometric symbols uniformly in statement and expression
 test("continues rejecting unresolved geometric symbols nested in geometric blocks", () => {
   const result = analyze(parse([
     '⬡("app") {',
-    '  ⊚(record, [])',
+    '  ⬣("component")',
     '}'
   ].join("\n")));
 
@@ -158,7 +158,7 @@ test("enforces approved usage positions for the six Group 2 symbols", () => {
     DATA: "◉(item, 1)",
     STORE: "◉(item, 1)\n◍(item, 2)",
     VALUE: "⊙(item, 1)",
-    RECORD: "⊚(item, [])",
+    RECORD: '⊚(item, {})',
     COLLECTION: "⊛(items)"
   };
 
@@ -195,7 +195,7 @@ test("enforces exact Group 2 geometric argument counts and AST node types", () =
     ["DATA", '◉(name, 1)', true],
     ["STORE", '◉(target, 1)\n◍(target, 2)', true],
     ["VALUE", '⊙(name, 1)', false],
-    ["RECORD", '⊚(record, [])', false],
+    ["RECORD", '⊚(record, {})', true],
     ["COLLECTION", '⊛(items)', true]
   ];
 
@@ -220,6 +220,7 @@ test("rejects Group 2 geometric calls with incorrect argument arity or AST node 
     ["STORE", "◍(target)", "expects exactly 2 argument(s), received 1"],
     ["VALUE", "⊙(1, 2)", "argument 1 must be Identifier"],
     ["RECORD", "⊚(record, 1, 2)", "expects exactly 2 argument(s), received 3"],
+    ["RECORD", "⊚(record, [])", "argument 2 must be RecordLiteral"],
     ["COLLECTION", "⊛(1)", "argument 1 must be Identifier"]
   ];
 
