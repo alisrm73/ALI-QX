@@ -497,13 +497,21 @@ test("QIR 1.5 retains command features introduced by QIR 1.1 through 1.4", () =>
   assert.deepEqual(validateQIR(module), []);
 });
 
-test("refuses QIR lowering for a syntactically valid but semantically deferred RECORD", () => {
-  const ast = parse('⊚(profile, ["name", "Ali"])');
-  const semantic = analyze(ast);
-  assert.equal(semantic.valid, false);
-  assert.ok(semantic.diagnostics.some(item => item.code === "QX3028"));
-  assert.throws(
-    () => lowerToQIR(ast, semantic),
-    error => error.name === "QIRDiagnostic" && error.code === "QIR_E_SEMANTIC_ERRORS"
-  );
+test("lowers RECORD declarations into immutable QIR 1.6 values", () => {
+  const module = compile('⊚(profile, { name: "Ali", age: 53, active: TRUE, nested: { city: "Tartous" } })');
+  assert.equal(module.version, "1.6");
+  assert.equal(module.globals[0].type, "RECORD");
+  assert.equal(module.globals[0].mutable, false);
+  const instructions = module.initializer.blocks.flatMap(block => block.instructions);
+  const makeRecord = instructions.filter(item => item.opcode === "MAKE_RECORD");
+  assert.equal(makeRecord.length, 2);
+  assert.deepEqual(makeRecord[0].operands.fields.map(field => field.name), ["name", "age", "active"]);
+  assert.deepEqual(validateQIR(module), []);
+  assert.deepEqual(parseQIR(serializeQIR(module)), module);
+});
+
+test("rejects RECORD values in QIR versions before 1.6", () => {
+  const module = compile('⊚(profile, { name: "Ali" })');
+  module.version = "1.5";
+  assert.ok(validateQIR(module).some(item => item.code === "QIR_E_SCHEMA"));
 });
