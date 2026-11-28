@@ -184,6 +184,23 @@ export class Parser {
       this.consume("RPAREN", "Expected ')' after expression");
       return { type: "GroupExpression", expression, location: this.loc(token) };
     }
+    if (this.match("LBRACE")) {
+      const fields = [];
+      const names = new Set();
+      this.newlines();
+      while (!this.check("RBRACE") && !this.check("EOF")) {
+        const key = this.consume("IDENTIFIER", "Expected record field name");
+        this.consume("COLON", "Expected ':' after record field name");
+        const value = this.expression();
+        fields.push({ name: key.value, value, location: this.loc(key) });
+        names.add(key.value);
+        this.newlines();
+        if (!this.match("COMMA")) break;
+        this.newlines();
+      }
+      this.consume("RBRACE", "Expected '}' after record fields");
+      return { type: "RecordLiteral", fields, location: this.loc(token) };
+    }
     if (this.match("LBRACKET")) {
       const elements = []; this.newlines();
       if (!this.check("RBRACKET")) {
