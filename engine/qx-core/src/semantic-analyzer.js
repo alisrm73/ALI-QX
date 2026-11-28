@@ -85,7 +85,7 @@ export function analyze(program) {
 
       // Identifier-designator positions are syntax-only here. Resolving their
       // names would add a declaration/existence rule not included in this contract.
-      if (expected !== "Identifier" || (!valid && GEOMETRIC_EXPRESSION_TYPES.has(arg?.type))) {
+      if (expected === "Expression" || (expected === "RecordLiteral" && !valid) || (!valid && GEOMETRIC_EXPRESSION_TYPES.has(arg?.type))) {
         expression(arg, scope);
       }
     });
