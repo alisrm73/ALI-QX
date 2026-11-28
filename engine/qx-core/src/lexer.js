@@ -12,7 +12,8 @@ const KEYWORDS = new Map([
   ["NULL", "NULL"], ["فارغ", "NULL"], ["AND", "AND"], ["و", "AND"],
   ["OR", "OR"], ["أو", "OR"], ["NOT", "NOT"], ["ليس", "NOT"]
 ]);
-const PUNCT = new Map(Object.entries({ "(": "LPAREN", ")": "RPAREN", "[": "LBRACKET", "]": "RBRACKET", ",": "COMMA", ".": "DOT", "+": "PLUS", "-": "MINUS", "*": "STAR", "/": "SLASH", "%": "PERCENT", ">": "GT", "<": "LT" }));
+const PUNCT = new Map(Object.entries({ "(": "LPAREN", ")": "RPAREN", "{": "LBRACE", "}": "RBRACE", "[": "LBRACKET", "]": "RBRACKET", ",": "COMMA", ".": "DOT", "+": "PLUS", "-": "MINUS", "*": "STAR", "/": "SLASH", "%": "PERCENT", ">": "GT", "<": "LT" }));
+const GEOMETRIC_SYMBOLS_LONGEST_FIRST = [...GEOMETRIC_SYMBOLS].sort((a, b) => b.glyph.length - a.glyph.length);
 const PAIRS = new Map([["==", "EQ_EQ"], ["!=", "BANG_EQ"], [">=", "GT_EQ"], ["<=", "LT_EQ"]]);
 
 export class QXLexError extends Error {
@@ -41,7 +42,7 @@ export class Lexer {
   loc() { return { line: this.line, column: this.column, offset: this.i }; }
   add(type, value, start, raw = value, extra = {}) { this.tokens.push({ type, value, raw, line: start.line, column: start.column, offset: start.offset, endLine: this.line, endColumn: this.column, endOffset: this.i, ...extra }); }
   geometricSymbol() {
-    const symbol = [...GEOMETRIC_SYMBOLS].sort((a, b) => b.glyph.length - a.glyph.length).find(item => this.source.startsWith(item.glyph, this.i));
+    const symbol = GEOMETRIC_SYMBOLS_LONGEST_FIRST.find(item => this.source.startsWith(item.glyph, this.i));
     if (!symbol) return false;
     const start = this.loc();
     for (const _ of symbol.glyph) this.take();
