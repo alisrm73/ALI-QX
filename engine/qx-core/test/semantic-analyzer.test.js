@@ -429,7 +429,7 @@ test("accepts immutable RECORD declarations with unique typed fields", () => {
   const result = check([
     '⊚(profile, { name: "Ali", age: 53, active: TRUE, tags: ["qx", "engine"], nested: { city: "Tartous" } })',
     'FUNCTION echo(value)\nRETURN value\nEND',
-    'echo(⧬(profile))'
+    'echo(◌(profile))'
   ].join("\n"));
   assert.equal(result.valid, true, JSON.stringify(result.diagnostics));
   assert.deepEqual(result.symbols.map(item => [item.name, item.type, item.kind]), [
