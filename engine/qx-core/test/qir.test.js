@@ -479,3 +479,20 @@ test("requires immutable globals to be declared before their single initializati
   block.instructions.splice(block.instructions.indexOf(declaration), 0, store);
   assert.ok(validateQIR(storeBeforeDeclaration).some(item => item.code === "QIR_E_IMMUTABLE_DECLARE_ORDER"));
 });
+
+test("QIR 1.5 retains command features introduced by QIR 1.1 through 1.4", () => {
+  const module = compile([
+    "⊙(fixed, 7)",
+    "DATA.CREATE(items, [1])",
+    "DATA.CREATE(added, DATA.ADD(items, 2))",
+    'UI.TEXT("ready")',
+    'UI.TREE("{}")',
+    'DATA.CREATE(response, INTEGRATION.REQUEST("demo", "lookup", "{}"))'
+  ].join("\n"));
+  assert.equal(module.version, "1.5");
+  const commands = module.initializer.blocks.flatMap(block => block.instructions)
+    .filter(item => item.opcode === "COMMAND_CALL")
+    .map(item => item.operands.command);
+  assert.deepEqual(commands, ["DATA.ADD", "UI.TEXT", "UI.TREE", "INTEGRATION.REQUEST"]);
+  assert.deepEqual(validateQIR(module), []);
+});
