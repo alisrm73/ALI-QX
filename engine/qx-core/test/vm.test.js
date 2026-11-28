@@ -322,3 +322,13 @@ test("executes local VALUE bindings in QIR 1.5 functions", () => {
   ].join("\n"));
   assert.equal(runQIR(module).globals.result, 11);
 });
+
+test("rejects QIR 1.5 immutable global initialization without DECLARE", () => {
+  const module = compile("⊙(fixed, 7)");
+  const instructions = module.initializer.blocks[0].instructions;
+  const declarationIndex = instructions.findIndex(item => item.opcode === "DECLARE" && item.operands.mutable === false);
+  instructions.splice(declarationIndex, 1);
+  assert.throws(() => runQIR(module), error =>
+    error.name === "QIRValidationError" &&
+    error.diagnostics.some(item => item.code === "QIR_E_IMMUTABLE_DECLARE"));
+});
