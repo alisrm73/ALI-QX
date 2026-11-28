@@ -1,7 +1,7 @@
 # قواعد التركيب الهندسي للغة QX
 # QX Geometric Language Grammar — V1 Baseline
 
-**الحالة | Status:** أساس تركيبي تنفيذي أولي — لا يغيّر اعتماد الرموز أو وظائفها.
+**الحالة | Status:** معتمد من صاحب المشروع كأساس تركيبي تنفيذي V1 — لا يغيّر اعتماد الرموز أو وظائفها، ولا يحدد العقود الدلالية الخاصة بكل رمز.
 **المرجع الأعلى | Canonical vocabulary:** `الدستور الهندسي للغة QX — QX Geometric Language Specification.md`
 **النطاق | Scope:** Unicode tokenization, symbol invocation, expressions, statements, and structural blocks.
 
