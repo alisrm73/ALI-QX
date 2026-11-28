@@ -1,0 +1,4739 @@
+{
+  "schema": "QX.GEOMETRIC_SYMBOL_CONTRACTS",
+  "version": "1.0-draft",
+  "status": "DRAFT",
+  "generatedFrom": {
+    "constitutionBlobSha": "65422713de06b36f0c292e4fc847b02c35eb5b6a",
+    "registryBlobSha": "52ab0f9341e5cb2105c528c157b4b7faa5c32e86",
+    "branch": "audit/geometric-language-alignment"
+  },
+  "idScheme": "QX.Gnn.Snn is a stable internal registry key only; it does not replace the constitutional glyph/name/function.",
+  "statuses": [
+    "APPROVED",
+    "ARCHITECTURALLY_APPROVED",
+    "GRAMMAR-DEFINED",
+    "PROPOSED",
+    "IMPLEMENTED",
+    "VERIFIED",
+    "BLOCKED",
+    "UNSPECIFIED"
+  ],
+  "contractFieldCount": 24,
+  "symbols": [
+    {
+      "symbolId": "QX.G01.S01",
+      "glyph": "⬡",
+      "constitutionalName": "ORIGIN",
+      "internalName": "ORIGIN",
+      "group": {
+        "number": 1,
+        "id": "CREATION_DEFINITION",
+        "label": "الإنشاء والتعريف | Group 1: Creation & Definition"
+      },
+      "constitutionalFunction": "إنشاء عنصر جديد — Create a new element",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": {
+        "status": "ARCHITECTURALLY_APPROVED",
+        "parent": "DefinitionDeclaration",
+        "nodeType": "OriginDeclaration",
+        "remainingShape": "UNSPECIFIED"
+      },
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "APPROVED_NOT_IMPLEMENTED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+2B21"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G01.S02",
+      "glyph": "⬢",
+      "constitutionalName": "FORM",
+      "internalName": "FORM",
+      "group": {
+        "number": 1,
+        "id": "CREATION_DEFINITION",
+        "label": "الإنشاء والتعريف | Group 1: Creation & Definition"
+      },
+      "constitutionalFunction": "تعريف بنية عنصر — Define an element structure",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": {
+        "status": "ARCHITECTURALLY_APPROVED",
+        "parent": "DefinitionDeclaration",
+        "nodeType": "FormDefinition",
+        "remainingShape": "UNSPECIFIED"
+      },
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "APPROVED_NOT_IMPLEMENTED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+2B22"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G01.S03",
+      "glyph": "◈",
+      "constitutionalName": "CORE",
+      "internalName": "CORE",
+      "group": {
+        "number": 1,
+        "id": "CREATION_DEFINITION",
+        "label": "الإنشاء والتعريف | Group 1: Creation & Definition"
+      },
+      "constitutionalFunction": "تعريف كيان أساسي — Define a core entity",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": {
+        "status": "ARCHITECTURALLY_APPROVED",
+        "parent": "DefinitionDeclaration",
+        "nodeType": "CoreEntityDeclaration",
+        "remainingShape": "UNSPECIFIED"
+      },
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "APPROVED_NOT_IMPLEMENTED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+25C8"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G01.S04",
+      "glyph": "⬣",
+      "constitutionalName": "SEED",
+      "internalName": "SEED",
+      "group": {
+        "number": 1,
+        "id": "CREATION_DEFINITION",
+        "label": "الإنشاء والتعريف | Group 1: Creation & Definition"
+      },
+      "constitutionalFunction": "إنشاء مكوّن جديد — Create a new component",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": {
+        "status": "ARCHITECTURALLY_APPROVED",
+        "parent": "DefinitionDeclaration",
+        "nodeType": "ComponentDeclaration",
+        "remainingShape": "UNSPECIFIED"
+      },
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "APPROVED_NOT_IMPLEMENTED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+2B23"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G01.S05",
+      "glyph": "⬠",
+      "constitutionalName": "ROOT",
+      "internalName": "ROOT",
+      "group": {
+        "number": 1,
+        "id": "CREATION_DEFINITION",
+        "label": "الإنشاء والتعريف | Group 1: Creation & Definition"
+      },
+      "constitutionalFunction": "تحديد العنصر الرئيسي — Set the root element",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": {
+        "status": "ARCHITECTURALLY_APPROVED",
+        "parent": "DefinitionDeclaration",
+        "nodeType": "RootSelectionDeclaration",
+        "remainingShape": "UNSPECIFIED"
+      },
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "APPROVED_NOT_IMPLEMENTED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+2B20"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G01.S06",
+      "glyph": "⟐",
+      "constitutionalName": "IDENTITY",
+      "internalName": "IDENTITY",
+      "group": {
+        "number": 1,
+        "id": "CREATION_DEFINITION",
+        "label": "الإنشاء والتعريف | Group 1: Creation & Definition"
+      },
+      "constitutionalFunction": "تعريف هوية العنصر — Define an element identity",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": {
+        "status": "ARCHITECTURALLY_APPROVED",
+        "parent": "DefinitionDeclaration",
+        "nodeType": "IdentityDeclaration",
+        "remainingShape": "UNSPECIFIED"
+      },
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "APPROVED_NOT_IMPLEMENTED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+27D0"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G02.S01",
+      "glyph": "◉",
+      "constitutionalName": "DATA",
+      "internalName": "DATA",
+      "group": {
+        "number": 2,
+        "id": "DATA_STORAGE",
+        "label": "البيانات والتخزين | Group 2: Data & Storage"
+      },
+      "constitutionalFunction": "تعريف البيانات — Define data",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+25C9"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G02.S02",
+      "glyph": "◍",
+      "constitutionalName": "STORE",
+      "internalName": "STORE",
+      "group": {
+        "number": 2,
+        "id": "DATA_STORAGE",
+        "label": "البيانات والتخزين | Group 2: Data & Storage"
+      },
+      "constitutionalFunction": "تخزين البيانات — Store data",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+25CD"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G02.S03",
+      "glyph": "◌",
+      "constitutionalName": "FETCH",
+      "internalName": "FETCH",
+      "group": {
+        "number": 2,
+        "id": "DATA_STORAGE",
+        "label": "البيانات والتخزين | Group 2: Data & Storage"
+      },
+      "constitutionalFunction": "جلب البيانات — Fetch data",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+25CC"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G02.S04",
+      "glyph": "⊙",
+      "constitutionalName": "VALUE",
+      "internalName": "VALUE",
+      "group": {
+        "number": 2,
+        "id": "DATA_STORAGE",
+        "label": "البيانات والتخزين | Group 2: Data & Storage"
+      },
+      "constitutionalFunction": "تحديد قيمة — Define a value",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+2299"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G02.S05",
+      "glyph": "⊚",
+      "constitutionalName": "RECORD",
+      "internalName": "RECORD",
+      "group": {
+        "number": 2,
+        "id": "DATA_STORAGE",
+        "label": "البيانات والتخزين | Group 2: Data & Storage"
+      },
+      "constitutionalFunction": "إنشاء سجل — Create a record",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+229A"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G02.S06",
+      "glyph": "⊛",
+      "constitutionalName": "COLLECTION",
+      "internalName": "COLLECTION",
+      "group": {
+        "number": 2,
+        "id": "DATA_STORAGE",
+        "label": "البيانات والتخزين | Group 2: Data & Storage"
+      },
+      "constitutionalFunction": "إنشاء مجموعة بيانات — Create a data collection",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+229B"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G03.S01",
+      "glyph": "△",
+      "constitutionalName": "SCREEN",
+      "internalName": "SCREEN",
+      "group": {
+        "number": 3,
+        "id": "INTERFACE_DESIGN",
+        "label": "الواجهات والتصميم | Group 3: Interface & Design"
+      },
+      "constitutionalFunction": "إنشاء شاشة — Create a screen",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+25B3"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G03.S02",
+      "glyph": "▱",
+      "constitutionalName": "PANEL",
+      "internalName": "PANEL",
+      "group": {
+        "number": 3,
+        "id": "INTERFACE_DESIGN",
+        "label": "الواجهات والتصميم | Group 3: Interface & Design"
+      },
+      "constitutionalFunction": "إنشاء لوحة — Create a panel",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+25B1"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G03.S03",
+      "glyph": "▰",
+      "constitutionalName": "BLOCK",
+      "internalName": "BLOCK",
+      "group": {
+        "number": 3,
+        "id": "INTERFACE_DESIGN",
+        "label": "الواجهات والتصميم | Group 3: Interface & Design"
+      },
+      "constitutionalFunction": "إنشاء كتلة واجهة — Create a UI block",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+25B0"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G03.S04",
+      "glyph": "◫",
+      "constitutionalName": "WINDOW",
+      "internalName": "WINDOW",
+      "group": {
+        "number": 3,
+        "id": "INTERFACE_DESIGN",
+        "label": "الواجهات والتصميم | Group 3: Interface & Design"
+      },
+      "constitutionalFunction": "إنشاء نافذة — Create a window",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+25EB"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G03.S05",
+      "glyph": "⌑",
+      "constitutionalName": "BUTTON",
+      "internalName": "BUTTON",
+      "group": {
+        "number": 3,
+        "id": "INTERFACE_DESIGN",
+        "label": "الواجهات والتصميم | Group 3: Interface & Design"
+      },
+      "constitutionalFunction": "إنشاء زر — Create a button",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+2311"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G03.S06",
+      "glyph": "▤",
+      "constitutionalName": "LAYOUT",
+      "internalName": "LAYOUT",
+      "group": {
+        "number": 3,
+        "id": "INTERFACE_DESIGN",
+        "label": "الواجهات والتصميم | Group 3: Interface & Design"
+      },
+      "constitutionalFunction": "تحديد تخطيط العناصر — Define element layout",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+25A4"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G04.S01",
+      "glyph": "⟁",
+      "constitutionalName": "EXECUTE",
+      "internalName": "EXECUTE",
+      "group": {
+        "number": 4,
+        "id": "EXECUTION_PROCESSING",
+        "label": "التنفيذ والمعالجة | Group 4: Execution & Processing"
+      },
+      "constitutionalFunction": "تنفيذ أمر — Execute a command",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+27C1"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G04.S02",
+      "glyph": "⧫",
+      "constitutionalName": "PROCESS",
+      "internalName": "PROCESS",
+      "group": {
+        "number": 4,
+        "id": "EXECUTION_PROCESSING",
+        "label": "التنفيذ والمعالجة | Group 4: Execution & Processing"
+      },
+      "constitutionalFunction": "معالجة البيانات — Process data",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+29EB"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G04.S03",
+      "glyph": "⧬",
+      "constitutionalName": "COMPUTE",
+      "internalName": "COMPUTE",
+      "group": {
+        "number": 4,
+        "id": "EXECUTION_PROCESSING",
+        "label": "التنفيذ والمعالجة | Group 4: Execution & Processing"
+      },
+      "constitutionalFunction": "إجراء عملية حسابية — Perform a computation",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+29EC"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G04.S04",
+      "glyph": "⧭",
+      "constitutionalName": "TRANSFORM",
+      "internalName": "TRANSFORM",
+      "group": {
+        "number": 4,
+        "id": "EXECUTION_PROCESSING",
+        "label": "التنفيذ والمعالجة | Group 4: Execution & Processing"
+      },
+      "constitutionalFunction": "تحويل البيانات — Transform data",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+29ED"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G04.S05",
+      "glyph": "⧮",
+      "constitutionalName": "ACTION",
+      "internalName": "ACTION",
+      "group": {
+        "number": 4,
+        "id": "EXECUTION_PROCESSING",
+        "label": "التنفيذ والمعالجة | Group 4: Execution & Processing"
+      },
+      "constitutionalFunction": "تنفيذ إجراء — Perform an action",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+29EE"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G04.S06",
+      "glyph": "⧯",
+      "constitutionalName": "FINISH",
+      "internalName": "FINISH",
+      "group": {
+        "number": 4,
+        "id": "EXECUTION_PROCESSING",
+        "label": "التنفيذ والمعالجة | Group 4: Execution & Processing"
+      },
+      "constitutionalFunction": "إنهاء عملية — Finish an operation",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+29EF"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G05.S01",
+      "glyph": "⟡",
+      "constitutionalName": "IF",
+      "internalName": "IF",
+      "group": {
+        "number": 5,
+        "id": "CONDITIONS_DECISIONS",
+        "label": "الشروط والقرارات | Group 5: Conditions & Decisions"
+      },
+      "constitutionalFunction": "بدء شرط — Begin a condition",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+27E1"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G05.S02",
+      "glyph": "⟢",
+      "constitutionalName": "ELSE",
+      "internalName": "ELSE",
+      "group": {
+        "number": 5,
+        "id": "CONDITIONS_DECISIONS",
+        "label": "الشروط والقرارات | Group 5: Conditions & Decisions"
+      },
+      "constitutionalFunction": "مسار بديل — Alternative branch",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+27E2"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G05.S03",
+      "glyph": "⟣",
+      "constitutionalName": "ELSE-IF",
+      "internalName": "ELSE_IF",
+      "group": {
+        "number": 5,
+        "id": "CONDITIONS_DECISIONS",
+        "label": "الشروط والقرارات | Group 5: Conditions & Decisions"
+      },
+      "constitutionalFunction": "شرط بديل — Alternative condition",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+27E3"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G05.S04",
+      "glyph": "⟤",
+      "constitutionalName": "EQUAL",
+      "internalName": "EQUAL",
+      "group": {
+        "number": 5,
+        "id": "CONDITIONS_DECISIONS",
+        "label": "الشروط والقرارات | Group 5: Conditions & Decisions"
+      },
+      "constitutionalFunction": "مقارنة التساوي — Equality comparison",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+27E4"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G05.S05",
+      "glyph": "⟥",
+      "constitutionalName": "GREATER",
+      "internalName": "GREATER",
+      "group": {
+        "number": 5,
+        "id": "CONDITIONS_DECISIONS",
+        "label": "الشروط والقرارات | Group 5: Conditions & Decisions"
+      },
+      "constitutionalFunction": "مقارنة الأكبر — Greater-than comparison",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+27E5"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G05.S06",
+      "glyph": "⟦",
+      "constitutionalName": "LESS",
+      "internalName": "LESS",
+      "group": {
+        "number": 5,
+        "id": "CONDITIONS_DECISIONS",
+        "label": "الشروط والقرارات | Group 5: Conditions & Decisions"
+      },
+      "constitutionalFunction": "مقارنة الأصغر — Less-than comparison",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+27E6"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G06.S01",
+      "glyph": "⟳",
+      "constitutionalName": "LOOP",
+      "internalName": "LOOP",
+      "group": {
+        "number": 6,
+        "id": "LOOPS_FLOW",
+        "label": "التكرار والتحكم بالتدفق | Group 6: Loops & Flow Control"
+      },
+      "constitutionalFunction": "بدء التكرار — Begin a loop",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+27F3"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G06.S02",
+      "glyph": "⟲",
+      "constitutionalName": "REPEAT",
+      "internalName": "REPEAT",
+      "group": {
+        "number": 6,
+        "id": "LOOPS_FLOW",
+        "label": "التكرار والتحكم بالتدفق | Group 6: Loops & Flow Control"
+      },
+      "constitutionalFunction": "إعادة تنفيذ — Repeat execution",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+27F2"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G06.S03",
+      "glyph": "⤴",
+      "constitutionalName": "BREAK",
+      "internalName": "BREAK",
+      "group": {
+        "number": 6,
+        "id": "LOOPS_FLOW",
+        "label": "التكرار والتحكم بالتدفق | Group 6: Loops & Flow Control"
+      },
+      "constitutionalFunction": "إيقاف التكرار — Break a loop",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+2934"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G06.S04",
+      "glyph": "⤵",
+      "constitutionalName": "CONTINUE",
+      "internalName": "CONTINUE",
+      "group": {
+        "number": 6,
+        "id": "LOOPS_FLOW",
+        "label": "التكرار والتحكم بالتدفق | Group 6: Loops & Flow Control"
+      },
+      "constitutionalFunction": "الانتقال للدورة التالية — Continue to the next iteration",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+2935"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G06.S05",
+      "glyph": "⤷",
+      "constitutionalName": "RETURN",
+      "internalName": "RETURN",
+      "group": {
+        "number": 6,
+        "id": "LOOPS_FLOW",
+        "label": "التكرار والتحكم بالتدفق | Group 6: Loops & Flow Control"
+      },
+      "constitutionalFunction": "إرجاع نتيجة — Return a result",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+2937"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G06.S06",
+      "glyph": "⤶",
+      "constitutionalName": "EXIT",
+      "internalName": "EXIT",
+      "group": {
+        "number": 6,
+        "id": "LOOPS_FLOW",
+        "label": "التكرار والتحكم بالتدفق | Group 6: Loops & Flow Control"
+      },
+      "constitutionalFunction": "الخروج من التنفيذ — Exit execution",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+2936"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G07.S01",
+      "glyph": "⛓",
+      "constitutionalName": "CONNECT",
+      "internalName": "CONNECT",
+      "group": {
+        "number": 7,
+        "id": "LINKING_COMMUNICATION",
+        "label": "الربط والاتصال | Group 7: Linking & Communication"
+      },
+      "constitutionalFunction": "إنشاء اتصال — Establish a connection",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+26D3"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G07.S02",
+      "glyph": "⧉",
+      "constitutionalName": "LINK",
+      "internalName": "LINK",
+      "group": {
+        "number": 7,
+        "id": "LINKING_COMMUNICATION",
+        "label": "الربط والاتصال | Group 7: Linking & Communication"
+      },
+      "constitutionalFunction": "ربط عنصرين — Link two elements",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+29C9"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G07.S03",
+      "glyph": "⧊",
+      "constitutionalName": "BIND",
+      "internalName": "BIND",
+      "group": {
+        "number": 7,
+        "id": "LINKING_COMMUNICATION",
+        "label": "الربط والاتصال | Group 7: Linking & Communication"
+      },
+      "constitutionalFunction": "ربط مكوّن ببيانات — Bind a component to data",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+29CA"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G07.S04",
+      "glyph": "⧋",
+      "constitutionalName": "IMPORT",
+      "internalName": "IMPORT",
+      "group": {
+        "number": 7,
+        "id": "LINKING_COMMUNICATION",
+        "label": "الربط والاتصال | Group 7: Linking & Communication"
+      },
+      "constitutionalFunction": "استيراد مكوّن — Import a component",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+29CB"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G07.S05",
+      "glyph": "⧌",
+      "constitutionalName": "EXPORT",
+      "internalName": "EXPORT",
+      "group": {
+        "number": 7,
+        "id": "LINKING_COMMUNICATION",
+        "label": "الربط والاتصال | Group 7: Linking & Communication"
+      },
+      "constitutionalFunction": "تصدير مكوّن — Export a component",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+29CC"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G07.S06",
+      "glyph": "⧍",
+      "constitutionalName": "API",
+      "internalName": "API",
+      "group": {
+        "number": 7,
+        "id": "LINKING_COMMUNICATION",
+        "label": "الربط والاتصال | Group 7: Linking & Communication"
+      },
+      "constitutionalFunction": "الاتصال بواجهة برمجية — Connect to an API",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+29CD"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G08.S01",
+      "glyph": "⛨",
+      "constitutionalName": "SECURITY",
+      "internalName": "SECURITY",
+      "group": {
+        "number": 8,
+        "id": "SECURITY_PERMISSIONS",
+        "label": "الحماية والصلاحيات | Group 8: Security & Permissions"
+      },
+      "constitutionalFunction": "تفعيل الحماية — Enable security",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+26E8"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G08.S02",
+      "glyph": "⛉",
+      "constitutionalName": "AUTH",
+      "internalName": "AUTH",
+      "group": {
+        "number": 8,
+        "id": "SECURITY_PERMISSIONS",
+        "label": "الحماية والصلاحيات | Group 8: Security & Permissions"
+      },
+      "constitutionalFunction": "التحقق من الهوية — Authenticate identity",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+26C9"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G08.S03",
+      "glyph": "⛊",
+      "constitutionalName": "PERMISSION",
+      "internalName": "PERMISSION",
+      "group": {
+        "number": 8,
+        "id": "SECURITY_PERMISSIONS",
+        "label": "الحماية والصلاحيات | Group 8: Security & Permissions"
+      },
+      "constitutionalFunction": "تحديد الصلاحيات — Define permissions",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+26CA"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G08.S04",
+      "glyph": "⛋",
+      "constitutionalName": "ACCESS",
+      "internalName": "ACCESS",
+      "group": {
+        "number": 8,
+        "id": "SECURITY_PERMISSIONS",
+        "label": "الحماية والصلاحيات | Group 8: Security & Permissions"
+      },
+      "constitutionalFunction": "التحكم بالوصول — Control access",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+26CB"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G08.S05",
+      "glyph": "⛌",
+      "constitutionalName": "ENCRYPT",
+      "internalName": "ENCRYPT",
+      "group": {
+        "number": 8,
+        "id": "SECURITY_PERMISSIONS",
+        "label": "الحماية والصلاحيات | Group 8: Security & Permissions"
+      },
+      "constitutionalFunction": "تشفير البيانات — Encrypt data",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+26CC"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G08.S06",
+      "glyph": "⛍",
+      "constitutionalName": "VALIDATE",
+      "internalName": "VALIDATE",
+      "group": {
+        "number": 8,
+        "id": "SECURITY_PERMISSIONS",
+        "label": "الحماية والصلاحيات | Group 8: Security & Permissions"
+      },
+      "constitutionalFunction": "التحقق من صحة البيانات — Validate data",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+26CD"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G09.S01",
+      "glyph": "⊞",
+      "constitutionalName": "INPUT",
+      "internalName": "INPUT",
+      "group": {
+        "number": 9,
+        "id": "INPUT_OUTPUT",
+        "label": "الإدخال والإخراج | Group 9: Input & Output"
+      },
+      "constitutionalFunction": "استقبال البيانات — Accept input data",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+229E"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G09.S02",
+      "glyph": "⊟",
+      "constitutionalName": "OUTPUT",
+      "internalName": "OUTPUT",
+      "group": {
+        "number": 9,
+        "id": "INPUT_OUTPUT",
+        "label": "الإدخال والإخراج | Group 9: Input & Output"
+      },
+      "constitutionalFunction": "إخراج البيانات — Produce output data",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+229F"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G09.S03",
+      "glyph": "⊠",
+      "constitutionalName": "READ",
+      "internalName": "READ",
+      "group": {
+        "number": 9,
+        "id": "INPUT_OUTPUT",
+        "label": "الإدخال والإخراج | Group 9: Input & Output"
+      },
+      "constitutionalFunction": "قراءة البيانات — Read data",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+22A0"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G09.S04",
+      "glyph": "⊡",
+      "constitutionalName": "WRITE",
+      "internalName": "WRITE",
+      "group": {
+        "number": 9,
+        "id": "INPUT_OUTPUT",
+        "label": "الإدخال والإخراج | Group 9: Input & Output"
+      },
+      "constitutionalFunction": "كتابة البيانات — Write data",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+22A1"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G09.S05",
+      "glyph": "⊢",
+      "constitutionalName": "DISPLAY",
+      "internalName": "DISPLAY",
+      "group": {
+        "number": 9,
+        "id": "INPUT_OUTPUT",
+        "label": "الإدخال والإخراج | Group 9: Input & Output"
+      },
+      "constitutionalFunction": "عرض المحتوى — Display content",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+22A2"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G09.S06",
+      "glyph": "⊣",
+      "constitutionalName": "RECEIVE",
+      "internalName": "RECEIVE",
+      "group": {
+        "number": 9,
+        "id": "INPUT_OUTPUT",
+        "label": "الإدخال والإخراج | Group 9: Input & Output"
+      },
+      "constitutionalFunction": "استقبال المعلومات — Receive information",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+22A3"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G10.S01",
+      "glyph": "⌘",
+      "constitutionalName": "CALL",
+      "internalName": "CALL",
+      "group": {
+        "number": 10,
+        "id": "CALLS_COMPONENTS",
+        "label": "الاستدعاء والمكونات | Group 10: Calls & Components"
+      },
+      "constitutionalFunction": "استدعاء وظيفة — Call a function",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+2318"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G10.S02",
+      "glyph": "⌬",
+      "constitutionalName": "MODULE",
+      "internalName": "MODULE",
+      "group": {
+        "number": 10,
+        "id": "CALLS_COMPONENTS",
+        "label": "الاستدعاء والمكونات | Group 10: Calls & Components"
+      },
+      "constitutionalFunction": "تعريف وحدة برمجية — Define a module",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+232C"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G10.S03",
+      "glyph": "⌭",
+      "constitutionalName": "COMPONENT",
+      "internalName": "COMPONENT",
+      "group": {
+        "number": 10,
+        "id": "CALLS_COMPONENTS",
+        "label": "الاستدعاء والمكونات | Group 10: Calls & Components"
+      },
+      "constitutionalFunction": "تعريف مكوّن — Define a component",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+232D"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G10.S04",
+      "glyph": "⌮",
+      "constitutionalName": "FUNCTION",
+      "internalName": "FUNCTION",
+      "group": {
+        "number": 10,
+        "id": "CALLS_COMPONENTS",
+        "label": "الاستدعاء والمكونات | Group 10: Calls & Components"
+      },
+      "constitutionalFunction": "تعريف دالة — Define a function",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+232E"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G10.S05",
+      "glyph": "⌯",
+      "constitutionalName": "EVENT",
+      "internalName": "EVENT",
+      "group": {
+        "number": 10,
+        "id": "CALLS_COMPONENTS",
+        "label": "الاستدعاء والمكونات | Group 10: Calls & Components"
+      },
+      "constitutionalFunction": "تعريف حدث — Define an event",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+232F"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G10.S06",
+      "glyph": "⌰",
+      "constitutionalName": "TRIGGER",
+      "internalName": "TRIGGER",
+      "group": {
+        "number": 10,
+        "id": "CALLS_COMPONENTS",
+        "label": "الاستدعاء والمكونات | Group 10: Calls & Components"
+      },
+      "constitutionalFunction": "تشغيل حدث تلقائياً — Trigger an event automatically",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+2330"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G11.S01",
+      "glyph": "⚠",
+      "constitutionalName": "WARNING",
+      "internalName": "WARNING",
+      "group": {
+        "number": 11,
+        "id": "ERRORS_DIAGNOSTICS",
+        "label": "الأخطاء والتشخيص | Group 11: Errors & Diagnostics"
+      },
+      "constitutionalFunction": "تحذير — Warning",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+26A0"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G11.S02",
+      "glyph": "⛔",
+      "constitutionalName": "ERROR",
+      "internalName": "ERROR",
+      "group": {
+        "number": 11,
+        "id": "ERRORS_DIAGNOSTICS",
+        "label": "الأخطاء والتشخيص | Group 11: Errors & Diagnostics"
+      },
+      "constitutionalFunction": "خطأ — Error",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+26D4"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G11.S03",
+      "glyph": "⛑",
+      "constitutionalName": "RECOVER",
+      "internalName": "RECOVER",
+      "group": {
+        "number": 11,
+        "id": "ERRORS_DIAGNOSTICS",
+        "label": "الأخطاء والتشخيص | Group 11: Errors & Diagnostics"
+      },
+      "constitutionalFunction": "استعادة بعد الخطأ — Recover after an error",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+26D1"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G11.S04",
+      "glyph": "⛒",
+      "constitutionalName": "DEBUG",
+      "internalName": "DEBUG",
+      "group": {
+        "number": 11,
+        "id": "ERRORS_DIAGNOSTICS",
+        "label": "الأخطاء والتشخيص | Group 11: Errors & Diagnostics"
+      },
+      "constitutionalFunction": "فحص الأخطاء — Debug",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+26D2"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G11.S05",
+      "glyph": "⛓️‍💥",
+      "constitutionalName": "EXCEPTION",
+      "internalName": "EXCEPTION",
+      "group": {
+        "number": 11,
+        "id": "ERRORS_DIAGNOSTICS",
+        "label": "الأخطاء والتشخيص | Group 11: Errors & Diagnostics"
+      },
+      "constitutionalFunction": "استثناء برمجي — Software exception",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+26D3",
+        "U+FE0F",
+        "U+200D",
+        "U+1F4A5"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G11.S06",
+      "glyph": "⛕",
+      "constitutionalName": "LOG",
+      "internalName": "LOG",
+      "group": {
+        "number": 11,
+        "id": "ERRORS_DIAGNOSTICS",
+        "label": "الأخطاء والتشخيص | Group 11: Errors & Diagnostics"
+      },
+      "constitutionalFunction": "تسجيل الأحداث — Log events",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+26D5"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G12.S01",
+      "glyph": "⬟",
+      "constitutionalName": "BUILD",
+      "internalName": "BUILD",
+      "group": {
+        "number": 12,
+        "id": "BUILD_RUNTIME",
+        "label": "البناء والتشغيل | Group 12: Build & Runtime"
+      },
+      "constitutionalFunction": "بناء المشروع — Build the project",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+2B1F"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G12.S02",
+      "glyph": "⬢⃝",
+      "constitutionalName": "COMPILE",
+      "internalName": "COMPILE",
+      "group": {
+        "number": 12,
+        "id": "BUILD_RUNTIME",
+        "label": "البناء والتشغيل | Group 12: Build & Runtime"
+      },
+      "constitutionalFunction": "ترجمة اللغة — Compile the language",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+2B22",
+        "U+20DD"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G12.S03",
+      "glyph": "⬣⃝",
+      "constitutionalName": "PACKAGE",
+      "internalName": "PACKAGE",
+      "group": {
+        "number": 12,
+        "id": "BUILD_RUNTIME",
+        "label": "البناء والتشغيل | Group 12: Build & Runtime"
+      },
+      "constitutionalFunction": "تجميع المشروع — Package the project",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+2B23",
+        "U+20DD"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G12.S04",
+      "glyph": "⬤",
+      "constitutionalName": "RUN",
+      "internalName": "RUN",
+      "group": {
+        "number": 12,
+        "id": "BUILD_RUNTIME",
+        "label": "البناء والتشغيل | Group 12: Build & Runtime"
+      },
+      "constitutionalFunction": "تشغيل المشروع — Run the project",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+2B24"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G12.S05",
+      "glyph": "⬥",
+      "constitutionalName": "DEPLOY",
+      "internalName": "DEPLOY",
+      "group": {
+        "number": 12,
+        "id": "BUILD_RUNTIME",
+        "label": "البناء والتشغيل | Group 12: Build & Runtime"
+      },
+      "constitutionalFunction": "نشر المشروع — Deploy the project",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+2B25"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    },
+    {
+      "symbolId": "QX.G12.S06",
+      "glyph": "⬦",
+      "constitutionalName": "VERSION",
+      "internalName": "VERSION",
+      "group": {
+        "number": 12,
+        "id": "BUILD_RUNTIME",
+        "label": "البناء والتشغيل | Group 12: Build & Runtime"
+      },
+      "constitutionalFunction": "تحديد إصدار المشروع — Define the project version",
+      "semanticRole": "UNSPECIFIED",
+      "usagePosition": "UNSPECIFIED",
+      "acceptsArguments": "UNSPECIFIED",
+      "argumentSchema": "UNSPECIFIED",
+      "inputTypes": "UNSPECIFIED",
+      "outputType": "UNSPECIFIED",
+      "allowsBody": "UNSPECIFIED",
+      "allowedContexts": "UNSPECIFIED",
+      "preconditions": "UNSPECIFIED",
+      "validationRules": "UNSPECIFIED",
+      "relations": "UNSPECIFIED",
+      "astEffect": "UNSPECIFIED",
+      "qirLowering": "UNSPECIFIED",
+      "vmRequirements": "UNSPECIFIED",
+      "backendRequirements": "UNSPECIFIED",
+      "possibleErrors": "UNSPECIFIED",
+      "requiredTests": [
+        "registry identity and Unicode sequence",
+        "Lexer tokenization and source locations",
+        "Grammar V1 valid and invalid forms",
+        "AST preservation and approved semantic node mapping",
+        "positive and negative semantic validation",
+        "QIR lowering and validation",
+        "VM or designated backend execution",
+        "cross-group integration and regression"
+      ],
+      "implementationStatus": {
+        "lexer": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
+        "rawAst": "PRESENT",
+        "specializedAst": "UNSPECIFIED",
+        "semanticAnalyzer": "UNSUPPORTED",
+        "qir": "UNSUPPORTED",
+        "vm": "NOT_REACHED",
+        "backend": "NOT_REACHED",
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+      },
+      "syntacticRecognition": {
+        "grammarV1": "APPROVED",
+        "genericInvocation": "GRAMMAR_DEFINED",
+        "genericArgumentList": "GRAMMAR_DEFINED",
+        "genericOptionalBlock": "GRAMMAR_DEFINED",
+        "note": "These generic syntax permissions do not establish this symbol's semantic argument, body, or usage contract."
+      },
+      "unicodeSequence": [
+        "U+2B26"
+      ],
+      "referenceDocuments": [
+        "الدستور الهندسي للغة QX — QX Geometric Language Specification.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md",
+        "QX/spec/GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md",
+        "QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md"
+      ]
+    }
+  ]
+}
