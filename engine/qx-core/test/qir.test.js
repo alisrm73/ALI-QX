@@ -532,3 +532,11 @@ test("QIR 1.6 retains command features from QIR 1.1 through 1.5", () => {
   assert.deepEqual(commands, ["DATA.ADD", "UI.TEXT", "UI.TREE"]);
   assert.deepEqual(validateQIR(module), []);
 });
+
+test("QIR 1.6 rejects duplicate or malformed RECORD field descriptors", () => {
+  const module = compile('⊚(profile, { name: "Ali", age: 53 })');
+  const makeRecord = module.initializer.blocks.flatMap(block => block.instructions)
+    .find(item => item.opcode === "MAKE_RECORD");
+  makeRecord.operands.fields[1].name = makeRecord.operands.fields[0].name;
+  assert.ok(validateQIR(module).some(item => item.code === "QIR_E_RECORD_FIELD"));
+});
