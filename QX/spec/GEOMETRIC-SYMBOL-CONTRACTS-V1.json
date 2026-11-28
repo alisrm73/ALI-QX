@@ -71,7 +71,7 @@
         "qir": "UNSUPPORTED",
         "vm": "NOT_REACHED",
         "backend": "NOT_REACHED",
-        "tests": "ADAPTER_TESTS_PRESENT_NOT_RUN; LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_QIR_RUNTIME_TESTS_ABSENT"
+        "tests": "ADAPTER_V8_SMOKE_PASSED; NODE_TEST_FILE_NOT_RUN; LEXER_AND_PARSER_TESTS_NOT_RUN; SYMBOL_SPECIFIC_QIR_RUNTIME_TESTS_ABSENT"
       },
       "syntacticRecognition": {
         "grammarV1": "APPROVED",
@@ -141,7 +141,7 @@
         "qir": "UNSUPPORTED",
         "vm": "NOT_REACHED",
         "backend": "NOT_REACHED",
-        "tests": "ADAPTER_TESTS_PRESENT_NOT_RUN; LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_QIR_RUNTIME_TESTS_ABSENT"
+        "tests": "ADAPTER_V8_SMOKE_PASSED; NODE_TEST_FILE_NOT_RUN; LEXER_AND_PARSER_TESTS_NOT_RUN; SYMBOL_SPECIFIC_QIR_RUNTIME_TESTS_ABSENT"
       },
       "syntacticRecognition": {
         "grammarV1": "APPROVED",
@@ -211,7 +211,7 @@
         "qir": "UNSUPPORTED",
         "vm": "NOT_REACHED",
         "backend": "NOT_REACHED",
-        "tests": "ADAPTER_TESTS_PRESENT_NOT_RUN; LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_QIR_RUNTIME_TESTS_ABSENT"
+        "tests": "ADAPTER_V8_SMOKE_PASSED; NODE_TEST_FILE_NOT_RUN; LEXER_AND_PARSER_TESTS_NOT_RUN; SYMBOL_SPECIFIC_QIR_RUNTIME_TESTS_ABSENT"
       },
       "syntacticRecognition": {
         "grammarV1": "APPROVED",
@@ -281,7 +281,7 @@
         "qir": "UNSUPPORTED",
         "vm": "NOT_REACHED",
         "backend": "NOT_REACHED",
-        "tests": "ADAPTER_TESTS_PRESENT_NOT_RUN; LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_QIR_RUNTIME_TESTS_ABSENT"
+        "tests": "ADAPTER_V8_SMOKE_PASSED; NODE_TEST_FILE_NOT_RUN; LEXER_AND_PARSER_TESTS_NOT_RUN; SYMBOL_SPECIFIC_QIR_RUNTIME_TESTS_ABSENT"
       },
       "syntacticRecognition": {
         "grammarV1": "APPROVED",
@@ -351,7 +351,7 @@
         "qir": "UNSUPPORTED",
         "vm": "NOT_REACHED",
         "backend": "NOT_REACHED",
-        "tests": "ADAPTER_TESTS_PRESENT_NOT_RUN; LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_QIR_RUNTIME_TESTS_ABSENT"
+        "tests": "ADAPTER_V8_SMOKE_PASSED; NODE_TEST_FILE_NOT_RUN; LEXER_AND_PARSER_TESTS_NOT_RUN; SYMBOL_SPECIFIC_QIR_RUNTIME_TESTS_ABSENT"
       },
       "syntacticRecognition": {
         "grammarV1": "APPROVED",
@@ -421,7 +421,7 @@
         "qir": "UNSUPPORTED",
         "vm": "NOT_REACHED",
         "backend": "NOT_REACHED",
-        "tests": "ADAPTER_TESTS_PRESENT_NOT_RUN; LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_QIR_RUNTIME_TESTS_ABSENT"
+        "tests": "ADAPTER_V8_SMOKE_PASSED; NODE_TEST_FILE_NOT_RUN; LEXER_AND_PARSER_TESTS_NOT_RUN; SYMBOL_SPECIFIC_QIR_RUNTIME_TESTS_ABSENT"
       },
       "syntacticRecognition": {
         "grammarV1": "APPROVED",
@@ -4740,6 +4740,6 @@
   "implementationNotes": [
     "The six approved Group 1 statement forms are mapped by geometric-ast-adapter.js to their approved specialized AST node types under DefinitionDeclaration. The adapter preserves the original parser AST and all source/syntax fields.",
     "Semantic Analyzer recognizes these six specialized nodes but blocks them with QX3028 while their semantic contracts remain UNSPECIFIED. They are not lowered to QIR.",
-    "The adapter test file exists but has not been executed as of commit f66ccda029338eff586542da35a0ab28bebabc85."
+    "The Node test file exists but has not been executed. The fetched adapter and semantic-analyzer source passed a limited V8 smoke check for all six mappings, raw-AST preservation, and QX3028 semantic blocking; this is not the Node test suite."
   ]
 }
