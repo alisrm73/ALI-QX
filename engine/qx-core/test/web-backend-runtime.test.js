@@ -497,3 +497,33 @@ test("browser runtime executes QIR 1.6 immutable RECORD values", () => {
   assert.match(section.children[1].textContent, /"city": "Tartous"/);
   assert.ok(nodes.get("qx-output").children.some(node => node.className === "qx-ui-text" && node.textContent === "ready"));
 });
+
+test("browser runtime renders dynamic Group 3 UI trees through QIR 1.7", () => {
+  const project = buildWebProject([
+    '◉(title, "Dynamic browser text")',
+    "△() {",
+    "  ▱(main) {",
+    "    ▰(heading, ◌(title))",
+    "  }",
+    "}"
+  ].join("\n"), { uiLock: createDefaultUILock() });
+  assert.equal(project.metadata.qirVersion, "1.7");
+  assert.match(project.files["app.js"], /MAKE_UI_TREE/);
+  const makeNode = (tag = "div") => ({
+    tag, children: [], textContent: "", className: "",
+    append(...items) { this.children.push(...items); }
+  });
+  const nodes = new Map([["qx-output", makeNode()], ["qx-status", makeNode()]]);
+  const document = {
+    getElementById: id => nodes.get(id),
+    createElement: tag => makeNode(tag),
+    createTextNode: value => ({ kind: "text", textContent: value })
+  };
+  vm.runInNewContext(project.files["app.js"], { document });
+  assert.equal(nodes.get("qx-status").textContent, "Execution completed");
+  const container = nodes.get("qx-output").children.find(node => node.className === "qx-ui-container");
+  assert.ok(container);
+  const textBlock = container.children.find(node => node.className === "qx-ui-text-block");
+  assert.ok(textBlock);
+  assert.equal(textBlock.children[0].textContent, "Dynamic browser text");
+});
