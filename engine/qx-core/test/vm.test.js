@@ -378,7 +378,7 @@ test("executes immutable RECORD values and FETCH through QIR 1.6", () => {
     "RETURN value",
     "END",
     "echo(⧬(profile))"
-  ].join("\\n")));
+  ].join("\n")));
   assert.deepEqual(result.globals.profile, {
     name: "Ali", age: 53, active: true, nested: { city: "Tartous" }
   });
