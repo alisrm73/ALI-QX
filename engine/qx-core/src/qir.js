@@ -73,7 +73,7 @@ class FunctionBuilder {
     this.tempCounter = 0;
     for (const param of descriptor.parameters) {
       const variable = this.addVariable(param.name, param.type, "local", true);
-      this.emit("DECLARE", { variable: variable.id, name: param.name, storage: "local", declared_type: param.type, parameter: true }, null, null, param.node);
+      this.emit("DECLARE", { variable: variable.id, name: param.name, storage: "local", declared_type: param.type, parameter: true, ...(owner.usesImmutable ? { mutable: true } : {}) }, null, null, param.node);
     }
   }
   newBlock() {
@@ -101,10 +101,10 @@ class FunctionBuilder {
     this.current = null;
   }
   switchTo(block) { this.current = block; }
-  addVariable(name, type, storage = "local", parameter = false) {
+  addVariable(name, type, storage = "local", parameter = false, mutable = true) {
     const id = storage === "global" ? this.owner.globalsByName.get(name)?.id : "var_" + this.id + "_" + this.variableCounter++;
     if (!id) fail("QIR_E_UNKNOWN_VARIABLE", "Missing global declaration " + name);
-    const value = { id, name, type, storage, parameter };
+    const value = { id, name, type, storage, parameter, mutable };
     this.variables.set(name, value);
     return value;
   }
@@ -316,13 +316,14 @@ class FunctionBuilder {
       case "GeometricStatement": {
         if (node.group !== "DATA_STORAGE") fail("QIR_E_UNSUPPORTED_AST", "Unsupported geometric statement " + node.symbol, node);
         const args = node.args ?? [];
-        if (node.symbol === "DATA" && args.length === 2 && args[0]?.type === "Identifier") {
+        if (["DATA", "VALUE"].includes(node.symbol) && args.length === 2 && args[0]?.type === "Identifier") {
           const value = this.lowerExpression(args[1]);
           if (!VALUE_TYPES.has(value.type) || value.type === "NULL")
             fail("QIR_E_NULL_VARIABLE", "Cannot infer geometric DATA type", args[1]);
           const storage = this.descriptor.kind === "module_initializer" ? "global" : "local";
-          const variable = this.addVariable(args[0].name, value.type, storage);
-          this.emit("DECLARE", { variable: variable.id, name: variable.name, storage, declared_type: value.type }, null, null, node);
+          const mutable = node.symbol !== "VALUE";
+          const variable = this.addVariable(args[0].name, value.type, storage, false, mutable);
+          this.emit("DECLARE", { variable: variable.id, name: variable.name, storage, declared_type: value.type, ...(this.owner.usesImmutable ? { mutable } : {}) }, null, null, node);
           this.store(variable, value.value, node);
           return;
         }
@@ -410,6 +411,8 @@ class ModuleLowerer {
     this.globalsByName = new Map();
     this.functionsByName = new Map();
     this.functionDescriptors = [];
+    const containsValue = node => Array.isArray(node) ? node.some(containsValue) : !!node && typeof node === "object" && (node.type === "GeometricStatement" && node.symbol === "VALUE" || Object.values(node).some(containsValue));
+    this.usesImmutable = containsValue(program);
     this.collectFunctions();
     this.collectGlobals();
   }
@@ -443,7 +446,7 @@ class ModuleLowerer {
         }
       } else if (node.type === "GeometricStatement" && node.group === "DATA_STORAGE") {
         const args = node.args ?? [];
-        if (node.symbol === "DATA" && args.length === 2 && args[0]?.type === "Identifier") {
+        if (["DATA", "VALUE"].includes(node.symbol) && args.length === 2 && args[0]?.type === "Identifier") {
           name = args[0].name;
           type = inferExpression(args[1], variables, functions);
         } else if (node.symbol === "COLLECTION" && args.length === 1 && args[0]?.type === "Identifier") {
@@ -454,7 +457,8 @@ class ModuleLowerer {
       if (name === null) continue;
       if (!VALUE_TYPES.has(type) || type === "NULL") fail("QIR_E_NULL_VARIABLE", "Cannot infer global type", node);
       const id = "var_" + this.globals.length;
-      const item = { id, name, type, storage: "global" };
+      const immutable = this.program.body.some(node => node.type === "GeometricStatement" && node.symbol === "VALUE" && node.args?.[0]?.name === name);
+      const item = { id, name, type, storage: "global", ...(this.usesImmutable ? { mutable: !immutable } : {}) };
       this.globals.push(item); this.globalsByName.set(item.name, item); variables.set(item.name, item);
     }
   }
@@ -480,7 +484,7 @@ class ModuleLowerer {
     const usesListOperations = instructions.some(inst => ["DATA.ADD", "DATA.REMOVE"].includes(inst.operands?.command));
     const usesIntegration = instructions.some(inst => inst.operands?.command === "INTEGRATION.REQUEST");
     return {
-      format: "QIR", version: usesUITree ? "1.4" : usesIntegration ? "1.3" : usesUI ? "1.2" : usesListOperations ? "1.1" : "1.0", module_id: "module_0", unicode_version: "18.0.0",
+      format: "QIR", version: this.usesImmutable ? "1.5" : usesUITree ? "1.4" : usesIntegration ? "1.3" : usesUI ? "1.2" : usesListOperations ? "1.1" : "1.0", module_id: "module_0", unicode_version: "18.0.0",
       globals: this.globals, initializer, functions
     };
   }
@@ -502,13 +506,13 @@ export function validateQIR(module) {
   const diagnostics = [];
   const report = (code, message, location = null, extra = {}) =>
     diagnostics.push({ code, severity: "ERROR", message, location, ...extra });
-  if (!module || module.format !== "QIR" || !["1.0", "1.1", "1.2", "1.3", "1.4"].includes(module.version) || module.unicode_version !== "18.0.0") {
+  if (!module || module.format !== "QIR" || !["1.0", "1.1", "1.2", "1.3", "1.4", "1.5"].includes(module.version) || module.unicode_version !== "18.0.0") {
     report("QIR_E_SCHEMA", "Invalid QIR module header"); return diagnostics;
   }
   const functions = [module.initializer, ...(module.functions ?? [])];
   const functionIds = new Set(), globalIds = new Set(), globalNames = new Set();
   for (const global of module.globals ?? []) {
-    if (!global?.id || globalIds.has(global.id) || globalNames.has(global.name) || !VALUE_TYPES.has(global.type) || global.storage !== "global")
+    if (!global?.id || globalIds.has(global.id) || globalNames.has(global.name) || !VALUE_TYPES.has(global.type) || global.storage !== "global" || module.version === "1.5" && typeof global.mutable !== "boolean" || module.version !== "1.5" && Object.hasOwn(global, "mutable"))
       report("QIR_E_GLOBAL_SCHEMA", "Invalid or duplicate global declaration");
     globalIds.add(global.id); globalNames.add(global.name);
   }
@@ -553,7 +557,7 @@ export function validateQIR(module) {
           report("QIR_E_CONSTANT_TYPE", "CONST_NULL has no operands and produces NULL", inst.source);
         if (inst.opcode === "DECLARE") {
           const { variable, declared_type: type, storage } = inst.operands ?? {};
-          if (!variable || !VALUE_TYPES.has(type) || !["local", "global"].includes(storage)) report("QIR_E_DECLARE", "Invalid DECLARE", inst.source);
+          if (!variable || !VALUE_TYPES.has(type) || !["local", "global"].includes(storage) || module.version === "1.5" && typeof inst.operands?.mutable !== "boolean" || module.version !== "1.5" && Object.hasOwn(inst.operands ?? {}, "mutable")) report("QIR_E_DECLARE", "Invalid DECLARE", inst.source);
           else { variableTypes.set(variable, type); definedVariables.add(variable); }
         }
         if (inst.opcode === "BRANCH") {
