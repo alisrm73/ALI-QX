@@ -552,3 +552,35 @@ test("QIR 1.6 rejects NULL values inside MAKE_RECORD", () => {
   makeRecord.operands.fields[0].value = "v_injected_null";
   assert.ok(validateQIR(module).some(item => item.code === "QIR_E_RECORD_FIELD"));
 });
+
+test("lowers dynamic static UI trees through QIR 1.7 MAKE_UI_TREE", () => {
+  const module = compile([
+    '◉(title, "Hello from QX")',
+    "△() {",
+    "  ▱(main) {",
+    "    ▰(heading, ◌(title))",
+    "  }",
+    "}"
+  ].join("\\n"));
+  assert.equal(module.version, "1.7");
+  const instructions = module.initializer.blocks.flatMap(block => block.instructions);
+  const makeTree = instructions.find(item => item.opcode === "MAKE_UI_TREE");
+  assert.ok(makeTree);
+  assert.equal(makeTree.type, "TXT");
+  assert.equal(makeTree.operands.tree.children[0].children[0].children[0].kind, "text");
+  assert.match(makeTree.operands.tree.children[0].children[0].children[0].valueRef, /^v_\\d+$/);
+  assert.deepEqual(validateQIR(module), []);
+  assert.deepEqual(parseQIR(serializeQIR(module)), module);
+});
+
+test("QIR 1.7 rejects non-TXT UI tree references and duplicate component ids", () => {
+  const module = compile([
+    '◉(title, "Hello")',
+    "△() { ▱(main) { ▰(heading, ◌(title)) } }"
+  ].join("\\n"));
+  const makeTree = module.initializer.blocks[0].instructions.find(item => item.opcode === "MAKE_UI_TREE");
+  makeTree.operands.tree.children[0].children[0].children[0].valueRef = "v_0";
+  assert.ok(validateQIR(module).some(item => item.code === "QIR_E_UI_TREE_TEXT"));
+  makeTree.operands.tree.children[0].children[0].id = "main";
+  assert.ok(validateQIR(module).some(item => item.code === "QIR_E_UI_TREE_SCHEMA"));
+});
