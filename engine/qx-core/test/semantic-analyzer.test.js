@@ -497,7 +497,8 @@ test("rejects duplicate UI ids, invalid nesting, and deferred Group 3 symbols", 
     '△() { ⌑(button) {} }',
     '△() { ▤(layout) {} }',
     "▱(outside) {}",
-    "△() { ▱(معرف) {} }"
+    "△() { ▱(معرف) {} }",
+    ["IF(TRUE)", "△() { ▱(inside) {} }", "END"].join("\n")
   ];
   for (const source of cases) {
     const result = check(source);
