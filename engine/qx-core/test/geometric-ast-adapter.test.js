@@ -87,3 +87,46 @@ test("rejects non-Program input without mutating caller data", () => {
   assert.throws(() => adaptGeometricAst(input), TypeError);
   assert.deepEqual(input, { type: "ExpressionStatement" });
 });
+
+
+test("rejects unresolved geometric symbols uniformly in statement and expression positions", () => {
+  for (const symbol of GEOMETRIC_SYMBOLS) {
+    const statement = analyze(parse(`${symbol.glyph}()`));
+    assert.equal(statement.valid, false, symbol.name);
+    assert.ok(
+      statement.diagnostics.some(item =>
+        item.code === "QX3028" && item.message.includes(symbol.name)
+      ),
+      `statement: ${symbol.name}`
+    );
+    assert.throws(
+      () => lowerToQIR(parse(`${symbol.glyph}()`), statement),
+      error => error.code === "QIR_E_SEMANTIC_ERRORS"
+    );
+
+    const expressionAst = parse(`DATA.CREATE(value, ${symbol.glyph}())`);
+    const expression = analyze(expressionAst);
+    assert.equal(expression.valid, false, `expression: ${symbol.name}`);
+    assert.ok(
+      expression.diagnostics.some(item =>
+        item.code === "QX3028" && item.message.includes(symbol.name)
+      ),
+      `expression: ${symbol.name}`
+    );
+    assert.throws(
+      () => lowerToQIR(expressionAst, expression),
+      error => error.code === "QIR_E_SEMANTIC_ERRORS"
+    );
+  }
+});
+
+test("continues rejecting unresolved geometric symbols nested in geometric blocks", () => {
+  const result = analyze(parse([
+    '⬡("app") {',
+    '  ◉("users")',
+    '}'
+  ].join("\\n")));
+
+  assert.equal(result.valid, false);
+  assert.equal(result.diagnostics.filter(item => item.code === "QX3028").length, 2);
+});
