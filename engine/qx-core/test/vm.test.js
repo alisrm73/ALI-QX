@@ -386,3 +386,20 @@ test("executes immutable RECORD values and FETCH through QIR 1.6", () => {
   });
   assert.deepEqual(result.globals.added, [1, 2]);
 });
+
+test("executes dynamic static UI trees through QIR 1.7 and the host UI lock", () => {
+  const module = compile([
+    '◉(title, "Hello from QX")',
+    "△() {",
+    "  ▱(main) {",
+    "    ▰(heading, ◌(title))",
+    "  }",
+    "}"
+  ].join("\\n"));
+  assert.equal(module.version, "1.7");
+  const result = runQIR(module, { uiLock: createDefaultUILock() });
+  assert.equal(result.outputs.length, 1);
+  assert.equal(result.outputs[0].component, "TREE");
+  assert.equal(result.outputs[0].tree.children[0].id, "main");
+  assert.equal(result.outputs[0].tree.children[0].children[0].children[0].value, "Hello from QX");
+});
