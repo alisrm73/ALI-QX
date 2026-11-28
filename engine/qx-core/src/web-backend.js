@@ -17,7 +17,7 @@ function escapeHTML(value) {
 function browserRun(module, combiningClassEntries, uiLock, uiRegistry) {
   const LIMITS = Object.freeze({ maxInstructions: 100000, maxCallDepth: 128, maxListLength: 10000, maxStringLength: 1000000 });
   const UNINITIALIZED = Symbol("QX_UNINITIALIZED");
-  const clone = value => Array.isArray(value) ? value.map(clone) : value;
+  const clone = value => Array.isArray(value) ? value.map(clone) : value && typeof value === "object" && (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null) ? Object.fromEntries(Object.entries(value).map(([key, item]) => [key, clone(item)])) : value;
   const combiningClasses = new Map(combiningClassEntries);
   const normalize = value => {
     if (typeof value !== "string") throw new TypeError("NFC input must be a string");
@@ -187,19 +187,20 @@ function browserRun(module, combiningClassEntries, uiLock, uiRegistry) {
           case "UNARY": {const v=read(o.value,i);let r;if(o.operator==="NOT")r=!v;else if((o.operator==="+"||o.operator==="-")&&typeof v==="number"&&Number.isFinite(v))r=o.operator==="+"?v:-v;else fail("QX_VM_UNKNOWN_OPERATOR","Invalid unary operation",i,ctx);values.set(i.result,r);break;}
           case "BINARY": values.set(i.result,binary(o.operator,read(o.left,i),read(o.right,i),i,ctx));break;
           case "MAKE_LIST": if(o.elements.length>LIMITS.maxListLength)fail("QX_VM_LIST_LIMIT","List limit exceeded",i,ctx);values.set(i.result,o.elements.map(id=>clone(read(id,i))));break;
+          case "MAKE_RECORD": if(o.fields.length>LIMITS.maxListLength)fail("QX_VM_RECORD_FIELD_LIMIT","Record field limit exceeded",i,ctx);values.set(i.result,Object.fromEntries(o.fields.map(field=>[field.name,clone(read(field.value,i))])));break;
           case "CALL": {const target=functions.get(o.function);if(!target)fail("QX_VM_UNKNOWN_FUNCTION","Unknown function",i,ctx);const r=execute(target,o.arguments.map(id=>clone(read(id,i))),depth+1);if(i.result)values.set(i.result,r);break;}
           case "COMMAND_CALL": {
             const args=o.arguments||[];
             if(o.command==="DATA.COUNT"&&args.length===1){const list=read(args[0],i);if(!Array.isArray(list))fail("QX_VM_COMMAND_ARGUMENT","DATA.COUNT requires LIST",i,ctx);if(i.result)values.set(i.result,list.length);break;}
             if(o.command==="DATA.ADD"&&args.length===2){const list=read(args[0],i),value=read(args[1],i);if(!Array.isArray(list))fail("QX_VM_COMMAND_ARGUMENT","DATA.ADD requires LIST",i,ctx);if(list.length>=LIMITS.maxListLength)fail("QX_VM_LIST_LIMIT","Maximum list length exceeded",i,ctx);values.set(i.result,[...list.map(clone),clone(value)]);break;}
             if(o.command==="DATA.REMOVE"&&args.length===2){const list=read(args[0],i),index=read(args[1],i);if(!Array.isArray(list))fail("QX_VM_COMMAND_ARGUMENT","DATA.REMOVE requires LIST",i,ctx);if(!Number.isSafeInteger(index)||index<0||index>=list.length)fail("QX_VM_LIST_INDEX","DATA.REMOVE index must be a valid zero-based integer within the list",i,ctx);values.set(i.result,list.filter((_,n)=>n!==index).map(clone));break;}
-            if(o.command==="UI.TREE"&&args.length===1&&["1.4","1.5"].includes(module.version)){
+            if(o.command==="UI.TREE"&&args.length===1&&["1.4","1.5","1.6"].includes(module.version)){
               const json=read(args[0],i);
               if(typeof json!=="string"||json.length>LIMITS.maxStringLength)fail("QX_VM_INVALID_TEXT","UI.TREE requires bounded TXT JSON",i,ctx);
               outputs.push({component:"TREE",tree:validateUITree(json,i,ctx),source:i.source});break;
             }
-            if(o.command==="UI.SHOW"&&args.length===1&&["1.2","1.3","1.4","1.5"].includes(module.version)){outputs.push({component:"SHOW",value:clone(read(args[0],i)),source:i.source});break;}
-            if(o.command==="UI.TEXT"&&args.length===1&&["1.2","1.3","1.4","1.5"].includes(module.version)){const value=read(args[0],i);if(typeof value!=="string"||value.length>LIMITS.maxStringLength)fail("QX_VM_INVALID_TEXT","UI.TEXT requires bounded TXT",i,ctx);outputs.push({component:"TEXT",value,source:i.source});break;}
+            if(o.command==="UI.SHOW"&&args.length===1&&["1.2","1.3","1.4","1.5","1.6"].includes(module.version)){outputs.push({component:"SHOW",value:clone(read(args[0],i)),source:i.source});break;}
+            if(o.command==="UI.TEXT"&&args.length===1&&["1.2","1.3","1.4","1.5","1.6"].includes(module.version)){const value=read(args[0],i);if(typeof value!=="string"||value.length>LIMITS.maxStringLength)fail("QX_VM_INVALID_TEXT","UI.TEXT requires bounded TXT",i,ctx);outputs.push({component:"TEXT",value,source:i.source});break;}
             fail("QX_VM_COMMAND_NOT_ALLOWED","Command is not available in this QIR version",i,ctx);break;
           }
           case "BRANCH": {const v=read(o.condition,i);if(typeof v!=="boolean")fail("QX_VM_BRANCH_TYPE","BRANCH requires BOOL",i,ctx);blockId=v?o.true_target:o.false_target;transferred=true;break;}
