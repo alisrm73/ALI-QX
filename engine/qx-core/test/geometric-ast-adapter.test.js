@@ -1,0 +1,89 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { adaptGeometricAst, analyze, lowerToQIR, parse } from "../src/index.js";
+import { GEOMETRIC_SYMBOLS } from "../src/geometric-symbols.js";
+
+const approvedDefinitions = new Map([
+  ["ORIGIN", "OriginDeclaration"],
+  ["FORM", "FormDefinition"],
+  ["CORE", "CoreEntityDeclaration"],
+  ["SEED", "ComponentDeclaration"],
+  ["ROOT", "RootSelectionDeclaration"],
+  ["IDENTITY", "IdentityDeclaration"]
+]);
+
+test("maps the six approved definition statements to their specialized AST types", () => {
+  for (const symbol of GEOMETRIC_SYMBOLS.filter(item => item.group === "CREATION_DEFINITION")) {
+    const raw = parse(`${symbol.glyph}("sample")`);
+    const adapted = adaptGeometricAst(raw);
+    const node = adapted.body[0];
+
+    assert.equal(node.type, approvedDefinitions.get(symbol.name));
+    assert.equal(node.parentType, "DefinitionDeclaration");
+    assert.equal(node.syntaxType, "GeometricStatement");
+    assert.equal(node.symbol, symbol.name);
+    assert.equal(node.glyph, symbol.glyph);
+    assert.equal(node.group, symbol.group);
+    assert.deepEqual(node.args, raw.body[0].args);
+    assert.deepEqual(node.location, raw.body[0].location);
+  }
+});
+
+test("preserves nested statements and every existing geometric node field", () => {
+  const raw = parse([
+    '⬡("app") {',
+    '  ⬢("shape") {',
+    '    ◉(users)',
+    '  }',
+    '}'
+  ].join("\\n"));
+  const adapted = adaptGeometricAst(raw);
+
+  assert.equal(adapted.body[0].type, "OriginDeclaration");
+  assert.equal(adapted.body[0].body[0].type, "FormDefinition");
+  assert.equal(adapted.body[0].body[0].body[0].type, "GeometricStatement");
+  assert.deepEqual(adapted.body[0].body[0].body[0].args, raw.body[0].body[0].body[0].args);
+
+  // The parser's original AST remains untouched and independently inspectable.
+  assert.equal(raw.body[0].type, "GeometricStatement");
+  assert.equal(raw.body[0].body[0].type, "GeometricStatement");
+});
+
+test("does not map expression calls or symbols outside the approved first group", () => {
+  const raw = parse([
+    '⬡(⧬(1 + 2))',
+    '◉("users")'
+  ].join("\\n"));
+  const adapted = adaptGeometricAst(raw);
+
+  assert.equal(adapted.body[0].type, "OriginDeclaration");
+  assert.equal(adapted.body[0].args[0].type, "GeometricCallExpression");
+  assert.equal(adapted.body[1].type, "GeometricStatement");
+  assert.equal(adapted.body[1].symbol, "DATA");
+});
+
+test("semantic analysis recognizes the approved AST types but blocks unresolved contracts", () => {
+  for (const symbol of GEOMETRIC_SYMBOLS.filter(item => item.group === "CREATION_DEFINITION")) {
+    const ast = parse(`${symbol.glyph}()`);
+    const semantic = analyze(ast);
+
+    assert.equal(semantic.valid, false);
+    assert.ok(
+      semantic.diagnostics.some(item =>
+        item.code === "QX3028" &&
+        item.message.includes("has no approved semantic contract")
+      ),
+      symbol.name
+    );
+    assert.throws(
+      () => lowerToQIR(ast, semantic),
+      error => error.code === "QIR_E_SEMANTIC_ERRORS"
+    );
+  }
+});
+
+test("rejects non-Program input without mutating caller data", () => {
+  const input = { type: "ExpressionStatement" };
+  assert.throws(() => adaptGeometricAst(input), TypeError);
+  assert.deepEqual(input, { type: "ExpressionStatement" });
+});

@@ -1,4 +1,5 @@
 import { resolveCommand } from "./command-registry.js";
+import { adaptGeometricAst } from "./geometric-ast-adapter.js";
 
 const TYPES = new Set(["TXT", "NUM", "BOOL", "LIST"]);
 const VALUE_TYPES = [...TYPES];
@@ -22,6 +23,7 @@ class Scope {
 }
 
 export function analyze(program) {
+  const semanticProgram = adaptGeometricAst(program);
   const diagnostics = [], moduleScope = new Scope(), functions = new Map();
   const reported = new Set();
   const report = (code, message, node) => {
@@ -45,7 +47,7 @@ export function analyze(program) {
   };
 
   // Register every function before analyzing bodies, enabling forward and recursive calls.
-  for (const node of program.body) if (node.type === "FunctionDeclaration") {
+  for (const node of semanticProgram.body) if (node.type === "FunctionDeclaration") {
     if (functions.has(node.name)) report("QX3001", "Duplicate function declaration: " + node.name, node);
     else functions.set(node.name, { node, params: node.params.map(p => ({ node: p, cell: new TypeCell(`${node.name}.${p.name}`) })), result: new TypeCell(`${node.name}.return`), returnNodes: [], valueUses: [] });
   }
@@ -252,6 +254,14 @@ export function analyze(program) {
     let guaranteedReturn = false;
     for (const node of body) {
       switch (node.type) {
+        case "OriginDeclaration":
+        case "FormDefinition":
+        case "CoreEntityDeclaration":
+        case "ComponentDeclaration":
+        case "RootSelectionDeclaration":
+        case "IdentityDeclaration":
+          report("QX3028", "Geometric declaration " + node.symbol + " has no approved semantic contract", node);
+          break;
         case "CommandStatement": command(node, scope); break;
         case "IfStatement": {
           constrain(expression(node.test, scope), ["BOOL"], node.test, "QX3026", "IF condition must be BOOL");
@@ -280,7 +290,7 @@ export function analyze(program) {
   }
 
   // Module declarations are analyzed first to establish globals and function contracts.
-  for (const node of program.body) if (node.type !== "FunctionDeclaration") block([node], moduleScope);
+  for (const node of semanticProgram.body) if (node.type !== "FunctionDeclaration") block([node], moduleScope);
   for (const fn of functions.values()) {
     const scope = new Scope(moduleScope, "function"); fn.params.forEach(p => declare(scope, p.node.name, p.cell, p.node, "parameter"));
     const returnsAllPaths = block(fn.node.body, scope, fn);
