@@ -386,6 +386,7 @@ export function analyze(program) {
           } else if (node.symbol === "PANEL") {
             if (!uiParent || !["SCREEN", "PANEL"].includes(uiParent)) report("QX3070", "PANEL is allowed only inside SCREEN or PANEL", node);
             if (args.length !== 1 || args[0]?.type !== "Identifier") report("QX3070", "PANEL expects exactly one Identifier id", node);
+            else if (!/^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/.test(args[0].name)) report("QX3074", "UI node id must match the host component ID format", args[0]);
             else if (uiIds.has(args[0].name)) report("QX3071", "Duplicate UI node id: " + args[0].name, args[0]);
             else uiIds.add(args[0].name);
             if (!hasBody) report("QX3070", "PANEL requires a body", node);
@@ -395,7 +396,8 @@ export function analyze(program) {
             if (args.length !== 2 || args[0]?.type !== "Identifier") {
               report("QX3070", "BLOCK expects an Identifier id and a TXT expression", node);
             } else {
-              if (uiIds.has(args[0].name)) report("QX3071", "Duplicate UI node id: " + args[0].name, args[0]);
+              if (!/^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/.test(args[0].name)) report("QX3074", "UI node id must match the host component ID format", args[0]);
+              else if (uiIds.has(args[0].name)) report("QX3071", "Duplicate UI node id: " + args[0].name, args[0]);
               else uiIds.add(args[0].name);
               constrain(expression(args[1], scope), ["TXT"], args[1], "QX3072", "BLOCK content must be TXT");
             }
