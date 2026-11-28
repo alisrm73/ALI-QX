@@ -257,3 +257,81 @@ test("rejects Group 2 geometric calls with incorrect argument arity or AST node 
   assert.throws(() => lowerToQIR(fetchAst, fetchSemantic),
     error => error.code === "QIR_E_SEMANTIC_ERRORS");
 });
+
+
+test("accepts DATA declarations with initialized supported values and rejects duplicate or NULL bindings", () => {
+  for (const source of ["◉(count, 1)", '◉(name, "QX")', "◉(enabled, TRUE)", "◉(items, [1, \"x\"])"]) {
+    const semantic = analyze(parse(source));
+    assert.equal(semantic.valid, true, source + ": " + JSON.stringify(semantic.diagnostics));
+  }
+
+  for (const [source, code] of [
+    ["◉(count, NULL)", "QX"],
+    ["◉(count, 1)\n◉(count, 2)", "QX3001"]
+  ]) {
+    const semantic = analyze(parse(source));
+    assert.equal(semantic.valid, false, source);
+    if (code === "QX3001") assert.ok(semantic.diagnostics.some(item => item.code === code));
+  }
+});
+
+test("enforces STORE existence, mutability, exact type, and function scope", () => {
+  const valid = analyze(parse("◉(count, 1)\n◍(count, 2)"));
+  assert.equal(valid.valid, true, JSON.stringify(valid.diagnostics));
+
+  const missing = analyze(parse("◍(count, 2)"));
+  assert.ok(missing.diagnostics.some(item => item.code === "QX3003"));
+
+  const mismatch = analyze(parse('◉(count, 1)\n◍(count, "two")'));
+  assert.ok(mismatch.diagnostics.some(item => item.code === "QX3022"));
+
+  const globalWrite = analyze(parse([
+    "◉(count, 1)",
+    "FUNCTION update()",
+    "◍(count, 2)",
+    "END"
+  ].join("\n")));
+  assert.ok(globalWrite.diagnostics.some(item => item.code === "QX3020"));
+});
+
+test("resolves FETCH as a typed expression and rejects missing or unsupported bindings", () => {
+  const valid = analyze(parse("◉(count, 1)\nDATA.CREATE(copy, ◌(count))"));
+  assert.equal(valid.valid, true, JSON.stringify(valid.diagnostics));
+
+  const missing = analyze(parse("DATA.CREATE(copy, ◌(absent))"));
+  assert.ok(missing.diagnostics.some(item => item.code === "QX3003"));
+});
+
+test("creates COLLECTION as an initialized mutable LIST binding", () => {
+  const valid = analyze(parse([
+    "⊛(items)",
+    "DATA.CREATE(count, DATA.COUNT(◌(items)))",
+    "◍(items, [1, \"two\", TRUE])"
+  ].join("\n")));
+  assert.equal(valid.valid, true, JSON.stringify(valid.diagnostics));
+
+  const mismatch = analyze(parse("⊛(items)\n◍(items, 1)"));
+  assert.ok(mismatch.diagnostics.some(item => item.code === "QX3022"));
+});
+
+test("keeps VALUE blocked until immutable QIR and runtime enforcement are implemented", () => {
+  const semantic = analyze(parse("⊙(constant, 1)"));
+  assert.equal(semantic.valid, false);
+  assert.ok(semantic.diagnostics.some(item =>
+    item.code === "QX3028" && item.message.includes("VALUE")
+  ));
+  assert.throws(() => lowerToQIR(parse("⊙(constant, 1)"), semantic),
+    error => error.code === "QIR_E_SEMANTIC_ERRORS");
+});
+
+test("rejects bodies for Group 2 symbols whose contracts forbid blocks", () => {
+  const semantic = analyze(parse([
+    "◉(count, 1) {",
+    "  ◉(nested, 2)",
+    "}"
+  ].join("\n")));
+  assert.equal(semantic.valid, false);
+  assert.ok(semantic.diagnostics.some(item =>
+    item.code === "QX3028" && item.message.includes("body")
+  ));
+});
