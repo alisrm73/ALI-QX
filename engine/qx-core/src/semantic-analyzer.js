@@ -392,7 +392,7 @@ export function analyze(program) {
               declare(scope, args[0].name, value, args[0], "value");
             }
           } else if (node.symbol === "RECORD") {
-            report("QX3028", "RECORD remains deferred pending record type and value representation", node);
+            report("QX3028", "RECORD is not executable: its field-expression shape and independent RECORD type/value representation are not defined", node);
           } else if (node.symbol === "FETCH") {
             report("QX3028", "Geometric symbol FETCH is expression-only and cannot be used as a statement", node);
           } else if (!["DATA", "STORE", "COLLECTION", "VALUE", "RECORD", "FETCH"].includes(node.symbol)) {
