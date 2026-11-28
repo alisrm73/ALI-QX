@@ -1,11 +1,11 @@
 import { resolveCommand } from "./command-registry.js";
 import { adaptGeometricAst } from "./geometric-ast-adapter.js";
 
-const TYPES = new Set(["TXT", "NUM", "BOOL", "LIST"]);
+const TYPES = new Set(["TXT", "NUM", "BOOL", "LIST", "RECORD"]);
 const VALUE_TYPES = [...TYPES];
 const GEOMETRIC_EXPRESSION_TYPES = new Set([
   "NumberLiteral", "StringLiteral", "BooleanLiteral", "NullLiteral", "Identifier",
-  "GroupExpression", "ListLiteral", "UnaryExpression", "BinaryExpression",
+  "GroupExpression", "ListLiteral", "RecordLiteral", "UnaryExpression", "BinaryExpression",
   "CommandCallExpression", "GeometricCallExpression", "CallExpression"
 ]);
 const GEOMETRIC_ARGUMENT_SCHEMAS = Object.freeze({
@@ -13,7 +13,7 @@ const GEOMETRIC_ARGUMENT_SCHEMAS = Object.freeze({
   STORE: ["Identifier", "Expression"],
   FETCH: ["Identifier"],
   VALUE: ["Identifier", "Expression"],
-  RECORD: ["Identifier", "Expression"],
+  RECORD: ["Identifier", "RecordLiteral"],
   COLLECTION: ["Identifier"]
 });
 const loc = node => node?.location ?? { line: 1, column: 1, offset: 0 };
@@ -70,7 +70,9 @@ export function analyze(program) {
 
       const valid = expected === "Identifier"
         ? arg?.type === "Identifier"
-        : GEOMETRIC_EXPRESSION_TYPES.has(arg?.type);
+        : expected === "RecordLiteral"
+          ? arg?.type === "RecordLiteral"
+          : GEOMETRIC_EXPRESSION_TYPES.has(arg?.type);
 
       if (!valid) {
         report(
@@ -83,7 +85,7 @@ export function analyze(program) {
 
       // Identifier-designator positions are syntax-only here. Resolving their
       // names would add a declaration/existence rule not included in this contract.
-      if (expected === "Expression" || (!valid && GEOMETRIC_EXPRESSION_TYPES.has(arg?.type))) {
+      if (expected !== "Identifier" || (!valid && GEOMETRIC_EXPRESSION_TYPES.has(arg?.type))) {
         expression(arg, scope);
       }
     });
@@ -132,6 +134,18 @@ export function analyze(program) {
       }
       case "GroupExpression": out = expression(node.expression, scope, requireValue); break;
       case "ListLiteral": node.elements.forEach(e => expression(e, scope)); out = concrete("LIST"); break;
+      case "RecordLiteral": {
+        const names = new Set();
+        for (const field of node.fields ?? []) {
+          if (names.has(field.name)) report("QX3028", "Duplicate RECORD field: " + field.name, field);
+          names.add(field.name);
+          const fieldType = typeOf(expression(field.value, scope));
+          if (fieldType === "NULL" || fieldType === "ERROR")
+            report("QX3028", "RECORD field values must be non-NULL supported QX values", field.value);
+        }
+        out = concrete("RECORD");
+        break;
+      }
       case "UnaryExpression": {
         const arg = expression(node.argument, scope);
         if (node.operator === "NOT") { constrain(arg, ["BOOL"], node, "QX3004", "NOT requires BOOL"); out = concrete("BOOL"); }
@@ -196,7 +210,7 @@ export function analyze(program) {
             if (!found) {
               report("QX3003", "Undeclared identifier: " + reference.name, reference);
               out = concrete("ERROR");
-            } else if (!["data", "value", "collection"].includes(found.symbol.kind)) {
+            } else if (!["data", "value", "collection", "record"].includes(found.symbol.kind)) {
               report("QX3028", "FETCH cannot read binding kind " + found.symbol.kind + ": " + reference.name, reference);
               out = concrete("ERROR");
             } else {
@@ -391,8 +405,9 @@ export function analyze(program) {
             } else {
               declare(scope, args[0].name, value, args[0], "value");
             }
-          } else if (node.symbol === "RECORD") {
-            report("QX3028", "RECORD is not executable: its field-expression shape and independent RECORD type/value representation are not defined", node);
+          } else if (node.symbol === "RECORD" && args.length === 2 && args[0]?.type === "Identifier" && args[1]?.type === "RecordLiteral") {
+            const value = expression(args[1], scope);
+            if (typeOf(value) === "RECORD") declare(scope, args[0].name, value, args[0], "record");
           } else if (node.symbol === "FETCH") {
             report("QX3028", "Geometric symbol FETCH is expression-only and cannot be used as a statement", node);
           } else if (!["DATA", "STORE", "COLLECTION", "VALUE", "RECORD", "FETCH"].includes(node.symbol)) {
