@@ -118,7 +118,18 @@ GeometricStatement {
 }
 ```
 
-وينتج الاستدعاء الهندسي داخل تعبير عقدة:
+وينتج Record Literal داخل تعبير عقدة:
+
+```text
+RecordLiteral {
+  fields: [{ name: IdentifierName, value: Expression, location: SourceLocation }, ...],
+  location: SourceLocation
+}
+```
+
+ترتيب الحقول في AST يحافظ على ترتيب المصدر. يفرض Semantic Analyzer تفرد الأسماء ونوع القيم وفق عقد RECORD؛ لا يمنح هذا الشكل وحده حق الوصول إلى الحقول أو تعديلها.
+
+ينتج الاستدعاء الهندسي داخل تعبير عقدة:
 
 ```text
 GeometricCallExpression {
