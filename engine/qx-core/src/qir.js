@@ -421,7 +421,8 @@ class ModuleLowerer {
     this.functionsByName = new Map();
     this.functionDescriptors = [];
     const containsSymbol = (node, symbols) => Array.isArray(node) ? node.some(item => containsSymbol(item, symbols)) : !!node && typeof node === "object" && (node.type === "GeometricStatement" && symbols.includes(node.symbol) || Object.values(node).some(value => containsSymbol(value, symbols)));
-    this.usesRecord = containsSymbol(program, ["RECORD"]);
+    const containsRecordLiteral = node => Array.isArray(node) ? node.some(containsRecordLiteral) : !!node && typeof node === "object" && (node.type === "RecordLiteral" || Object.values(node).some(containsRecordLiteral));
+    this.usesRecord = containsSymbol(program, ["RECORD"]) || containsRecordLiteral(program);
     this.usesImmutable = containsSymbol(program, ["VALUE", "RECORD"]);
     this.collectFunctions();
     this.collectGlobals();
@@ -574,7 +575,7 @@ export function validateQIR(module) {
             report("QIR_E_RECORD_SCHEMA", "MAKE_RECORD requires QIR 1.6, a RECORD result, and a bounded fields array", inst.source);
           } else {
             for (const field of fields) {
-              if (!field || typeof field.name !== "string" || !field.name.length || typeof field.value !== "string" || names.has(field.name)) {
+              if (!field || Object.keys(field).sort().join(",") !== "name,value" || typeof field.name !== "string" || !field.name.length || typeof field.value !== "string" || names.has(field.name)) {
                 report("QIR_E_RECORD_FIELD", "MAKE_RECORD fields require unique names and value references", inst.source);
                 continue;
               }
