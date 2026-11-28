@@ -304,3 +304,10 @@ test("executes Group 2 local bindings and FETCH inside functions", () => {
   ].join("\n"))).globals;
   assert.equal(result.result, 12);
 });
+
+test("executes VALUE declarations while preserving immutable metadata", () => {
+  const module = compile("⊙(fixed, 7)");
+  assert.equal(module.version, "1.5");
+  assert.equal(module.globals.fixed, undefined);
+  assert.equal(runQIR(module).globals.fixed, 7);
+});
