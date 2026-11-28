@@ -496,11 +496,11 @@ test("rejects duplicate UI ids, invalid nesting, and deferred Group 3 symbols", 
     "△() { ◫(window) {} }",
     "△() { ⌑(button) {} }",
     "△() { ▤(layout) {} }",
-    "▱(outside) {}"
+    "▱(outside) {}",\n    "△() { ▱(bad-id!) {} }"
   ];
   for (const source of cases) {
     const result = check(source);
     assert.equal(result.valid, false, source);
-    assert.ok(result.diagnostics.some(item => ["QX3070", "QX3071", "QX3073"].includes(item.code)), source);
+    assert.ok(result.diagnostics.some(item => ["QX3070", "QX3071", "QX3073", "QX3074"].includes(item.code)), source);
   }
 });
