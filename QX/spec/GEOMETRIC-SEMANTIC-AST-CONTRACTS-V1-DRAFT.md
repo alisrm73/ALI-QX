@@ -193,7 +193,7 @@ GeometricInvocation (conceptual, not implemented)
 - يحافظ على `symbol` و`glyph` و`group` و`args` و`body` و`alternate` و`location` دون تفسير أو تغيير.
 - التحويل عميق وغير مدمّر؛ يبقى AST الأصلي الذي ينتجه Parser كما هو.
 - لا يحوّل `GeometricCallExpression` ولا أي رمز من المجموعات الأخرى؛ تبقى عقودها غير محسومة.
-- يتعرف Semantic Analyzer على الأنواع الستة، لكنه يرفضها حالياً بتشخيص `QX3028` لأن العقد الدلالي لكل منها ما زال `UNSPECIFIED`. لذلك لا تمر هذه العقد إلى QIR.
+- يطبق Semantic Analyzer حارساً موحداً على الأنواع الستة المتخصصة عبر `syntaxType: GeometricStatement`، ويرفضها بتشخيص `QX3028` لأن عقودها الدلالية ما زالت `UNSPECIFIED`. كما يرفض `GeometricCallExpression` غير المحسوم بالتشخيص نفسه. لذلك لا تمر هذه العقد إلى QIR.
 
 هذا الجسر يطبق قرار أسماء الأنواع وعلاقة التخصص فقط، ولا يضيف دورة حياة أو ترتيباً أو توقيعاً أو صلاحيات أو أثراً تنفيذياً.
 
@@ -212,10 +212,10 @@ GeometricInvocation (conceptual, not implemented)
 
 - سجل الرموز الحالي في `engine/qx-core/src/geometric-symbols.js` يحفظ الاسم الداخلي `ELSE_IF`، وهو متوافق مع قرار المالك بشرط بقاء الاسم الدستوري `ELSE-IF` في الوثائق.
 - Parser ينشئ `GeometricStatement` و`GeometricCallExpression` ولا يطبق بعد مخططات وسائط خاصة بالرموز.
-- Semantic Analyzer الحالي لا يعالج هذين النوعين؛ العقد الهندسية تصل إلى مسار `Unsupported statement node` عند التحليل كتعليمة، ولا يوجد case خاص بها كتعبير.
-- QIR lowering الحالي لا يملك قواعد للعقد الهندسية، ويصدر خطأ AST غير مدعوم عند محاولة خفض نوع غير معروف.
+- Semantic Analyzer يطبق حارساً موحداً على العقد المتخصصة الستة التي تحتفظ بـ`syntaxType: GeometricStatement`، ويصدر `QX3028` لرفضها ما دامت عقودها الدلالية `UNSPECIFIED`. كما يرفض `GeometricCallExpression` غير المحسوم بالتشخيص نفسه. هذا تنفيذ لحاجز الرفض فقط، وليس تنفيذاً لمعاني الرموز.
+- QIR lowering لا يدعم خفض الرموز الهندسية إلى تعليمات تنفيذية؛ وعند وجود تشخيصات دلالية يرفض الخفض بخطأ `QIR_E_SEMANTIC_ERRORS`. لا يوجد دليل على خفض هندسي ناجح أو تشغيل عبر VM/Backend.
 - لا يجوز اعتبار وجود command contracts لأوامر QX التقليدية دليلاً على اعتماد عقد مكافئ لأي رمز هندسي. أي ربط بينهما يحتاج قرار mapping صريحاً.
-- لم تُشغّل اختبارات Node.js أو المتصفح في هذه المراجعة؛ وجود ملفات الاختبار لا يثبت نجاحها.
+- سجل الاختبارات المؤكد على Termux، Node.js `v24.22.3`، والفرع `audit/geometric-language-alignment`، Commit `663cfc76efa216cbdd4c30c0a4ac4cddd2e2c3db`: نجح `node --check test/geometric-ast-adapter.test.js`، ونجح `node --test test/geometric-ast-adapter.test.js` بنتيجة 7/7 (0 فشل). هذه نتيجة ملف الاختبار المحدد فقط، ولا تثبت نجاح مجموعة الاختبارات الكاملة أو اختبارات Lexer/Parser أو نجاح خفض QIR.
 
 ## 8. بوابة اعتماد العقود قبل التنفيذ
 
