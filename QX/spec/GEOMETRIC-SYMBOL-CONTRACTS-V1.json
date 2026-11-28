@@ -716,9 +716,9 @@
       "validationRules": "Infer the binding type from value. The binding cannot be reassigned after declaration. This immutability applies to the binding; nested LIST value semantics remain governed by the existing QX LIST contract.",
       "relations": "FETCH may read VALUE. STORE must reject VALUE as an immutable target. DATA remains the mutable declaration counterpart.",
       "astEffect": "Declare an immutable symbol with inferred type and initialized state in the current scope.",
-      "qirLowering": "BLOCKED_PENDING_IMMUTABILITY_PRESERVING_LOWERING_AND_QIR_VALIDATION",
-      "vmRequirements": "NOT_DEFINED",
-      "backendRequirements": "NOT_DEFINED",
+      "qirLowering": "QIR 1.5: DECLARE mutable=false followed by exactly one initialization STORE; validator rejects missing, duplicate, or out-of-order immutable declarations and repeated writes.",
+      "vmRequirements": "VM tracks immutable declaration and initialization state; permits one initialization after DECLARE and rejects repeated DECLARE or subsequent writes.",
+      "backendRequirements": "Web runtime tracks immutable declaration and initialization state; permits one initialization after DECLARE and rejects repeated DECLARE or subsequent writes.",
       "possibleErrors": "Duplicate declaration; forbidden local shadowing; unsupported value type; invalid initializer; attempted reassignment.",
       "requiredTests": [
         "registry identity and Unicode sequence",
@@ -735,11 +735,11 @@
         "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
         "rawAst": "PRESENT",
         "specializedAst": "UNSPECIFIED",
-        "semanticAnalyzer": "BLOCKED_PENDING_IMMUTABLE_BINDING_ENFORCEMENT_IN_QIR_VM_AND_WEB_RUNTIME",
-        "qir": "BLOCKED_PENDING_IMMUTABILITY_PRESERVING_LOWERING_AND_VALIDATION",
-        "vm": "BLOCKED_PENDING_IMMUTABILITY_ENFORCEMENT",
-        "backend": "BLOCKED_PENDING_IMMUTABILITY_ENFORCEMENT",
-        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED; TERMUX_GROUP2_ARGUMENT_SCHEMA_TESTS_PASSED_11_OF_11; FAILED_PRE_FIX_RUN_10_OF_11_RECORDED"
+        "semanticAnalyzer": "IMPLEMENTED_IMMUTABLE_VALUE_BINDING_DECLARATION_AND_STORE_REJECTION",
+        "qir": "IMPLEMENTED_QIR_1_5_IMMUTABLE_METADATA_AND_VALIDATOR_ENFORCEMENT",
+        "vm": "IMPLEMENTED_IMMUTABLE_DECLARATION_AND_WRITE_ONCE_RUNTIME_GUARDS",
+        "backend": "IMPLEMENTED_WEB_RUNTIME_IMMUTABILITY_GUARDS; ASSET_BUILD_VERIFIED_NOT_BROWSER_EXECUTION",
+        "tests": "TERMUX_FOCUSED_QIR_VM_WEB_TESTS_PASSED_71_OF_71; NODE_VERSION_NOT_CAPTURED; TEST_RUN_COMMIT_NOT_CAPTURED"
       },
       "syntacticRecognition": {
         "grammarV1": "APPROVED",
@@ -4824,7 +4824,7 @@
   "contractFieldCountDefinition": "Counts the 24 semantic/execution contract fields; excludes symbolId, internalName, and referenceDocuments.",
   "implementationNotes": "The six approved Group 1 statement forms are mapped by geometric-ast-adapter.js to their approved specialized AST node types under DefinitionDeclaration. The adapter preserves the original parser AST and all source/syntax fields.,Semantic Analyzer applies a uniform QX3028 guard to specialized geometric statements through their GeometricStatement syntaxType, and to GeometricCallExpression values. This blocks unresolved symbols while their semantic contracts remain UNSPECIFIED; it does not implement their semantic behavior.,The focused Node test file test/geometric-ast-adapter.test.js passed 7/7 on Termux with Node.js v24.22.3 at commit 663cfc76efa216cbdd4c30c0a4ac4cddd2e2c3db. This evidence does not establish a full-suite pass, lexer/parser suite pass, successful QIR lowering, or VM/backend execution.,Owner-approved usage-position decision (2026-11-28): ORIGIN, FORM, CORE, SEED, ROOT, and IDENTITY are valid only in statement position and invalid as expressions. This decision does not specify argument count or types, output, body policy, declaration ordering or relations, or execution semantics. Their semantic contracts remain otherwise UNSPECIFIED and QIR lowering remains blocked.,Follow-up Termux verification reported by the owner on 2026-11-28: node --test test/geometric-ast-adapter.test.js passed 8/8 (0 failed; 620.443307 ms), including the new statement-only Group 1 expression rejection test. The terminal excerpt did not include Node.js version or git HEAD, so neither is asserted here. This remains a focused test-file result, not a full-suite or QIR/VM/backend success.,Follow-up Termux verification reported by the owner on 2026-11-28 for Group 2 usage-position enforcement: node --test test/geometric-ast-adapter.test.js passed 9/9 (0 failed; 759.40573 ms). The two preceding node --check commands for semantic-analyzer.js and geometric-ast-adapter.test.js were chained with && and therefore completed successfully before the test command ran. The supplied terminal excerpt did not include Node.js version or git HEAD, so neither is asserted. This is a focused test-file result, not a full-suite or successful QIR/VM/backend result.,Owner-approved argument-shape decision for Group 2 (2026-11-28): DATA(name: Identifier, initialValue: Expression); STORE(target: Identifier, value: Expression); FETCH(reference: Identifier); VALUE(name: Identifier, value: Expression); RECORD(name: Identifier, fields: Expression); COLLECTION(name: Identifier). All arguments are required and arity is exact. RECORD.fields remains a generic Expression because QX V1 has no approved record-field/map literal shape. This decision does not determine value types, name resolution/existence, mutability, storage scope, persistence, collection element schema, record field semantics, output types, body policy, or QIR lowering; those remain UNSPECIFIED.,Group 2 argument-shape enforcement implementation added on 2026-11-28: semantic-analyzer.js checks exact arity and AST node kinds for DATA, STORE, FETCH, VALUE, RECORD, and COLLECTION. Identifier designator positions are syntax-only and are not name-resolved by this guard; Expression positions are traversed by the existing expression analyzer. This was an intermediate state; see the subsequent semantic implementation note and verification evidence.\n2026-11-28: The assistant selected and recorded a conservative Group 2 semantic design at the user's explicit delegation. DATA is mutable; VALUE is immutable; STORE updates only existing mutable DATA/COLLECTION bindings; FETCH reads initialized supported bindings; COLLECTION creates an empty mutable LIST. RECORD remains explicitly deferred because QX V1 has no record literal or RECORD type; it must not be coerced to LIST. These are contract decisions, not implementation claims. Group 2 remains blocked from QIR until symbol-specific analyzer implementation, QIR lowering, runtime support, and tests are completed.,Group 2 semantic analyzer implementation added on 2026-11-28: DATA declares mutable initialized NUM/TXT/BOOL/LIST bindings; STORE updates only existing mutable DATA/COLLECTION bindings with exact type and prohibits implicit module-binding mutation from functions; FETCH resolves supported bindings as typed expressions; COLLECTION declares an initialized mutable LIST. VALUE remains blocked pending immutable QIR/runtime enforcement; RECORD remains deferred. All Group 2 geometric statements reject bodies/alternate branches. This implementation is analyzer-only: no geometric Group 2 QIR lowering, VM execution, or Web Backend support is claimed.",
   "verificationEvidence": {
-    "scope": "engine/qx-core/test/qir.test.js, engine/qx-core/test/vm.test.js, and engine/qx-core/test/web-backend.test.js; focused Group 2 QIR lowering, VM execution, and Web asset build coverage",
+    "scope": "engine/qx-core/test/qir.test.js, engine/qx-core/test/vm.test.js, and engine/qx-core/test/web-backend.test.js; QIR 1.5 VALUE lowering/validation, VM immutable declaration lifecycle, Web asset generation/runtime guard emission, and QIR 1.1–1.4 feature compatibility",
     "branch": "audit/geometric-language-alignment",
     "commit": "NOT_CAPTURED_IN_USER_OUTPUT",
     "date": "2026-11-28",
@@ -4832,48 +4832,23 @@
     "workingDirectory": "~/ALI-QX-geometric-worktree/engine/qx-core",
     "commands": [
       {
-        "command": "git pull --ff-only origin audit/geometric-language-alignment",
-        "result": "PASS (inferred from successful continuation through &&)"
-      },
-      {
-        "command": "node --check src/semantic-analyzer.js",
-        "result": "PASS (inferred from successful continuation through &&)"
-      },
-      {
-        "command": "node --check src/qir.js",
-        "result": "PASS (inferred from successful continuation through &&)"
-      },
-      {
-        "command": "node --check test/qir.test.js",
-        "result": "PASS (inferred from successful continuation through &&)"
-      },
-      {
-        "command": "node --check test/vm.test.js",
-        "result": "PASS (inferred from successful continuation through &&)"
-      },
-      {
-        "command": "node --check test/web-backend.test.js",
-        "result": "PASS (inferred from successful continuation through &&)"
-      },
-      {
         "command": "node --test test/qir.test.js test/vm.test.js test/web-backend.test.js",
         "result": "PASS",
-        "tests": 60,
-        "passed": 60,
+        "tests": 71,
+        "passed": 71,
         "failed": 0,
         "cancelled": 0,
         "skipped": 0,
         "todo": 0,
-        "durationMs": 819.168615
+        "durationMs": 846.333038
       }
     ],
-    "includedCoverage": "Group 2 DATA, STORE, FETCH, and COLLECTION lower to QIR V1, execute in VM including function-local bindings, and build validated Web assets. VALUE and RECORD remain excluded from this verified implementation scope.",
+    "includedCoverage": "Focused tests passed for QIR 1.5 VALUE immutable metadata and declaration ordering, VM repeated immutable DECLARE rejection, immutable VALUE Web asset generation and rejection of missing immutable DECLARE, and inherited QIR 1.1/1.2/1.3/1.4 command features in QIR 1.5.",
     "limitations": [
       "Three focused test files only; not evidence that the full Node test suite passed.",
-      "The supplied terminal excerpt did not include git rev-parse HEAD or Node.js version.",
-      "VALUE immutability is not implemented or claimed; VALUE remains blocked.",
-      "RECORD remains deferred and unsupported.",
-      "This test run does not verify Group 1 or all 72 geometric symbols."
+      "The supplied terminal excerpt did not include git rev-parse HEAD or Node.js version; no test-run commit SHA or Node version is asserted.",
+      "Web Backend tests verify validated asset generation and emitted runtime guards; they do not establish browser execution of the generated application.",
+      "The result covers VALUE's QIR 1.5 immutable-binding path and does not establish completion of all Group 2 symbols, all 72 geometric symbols, or the full QX implementation."
     ]
   },
   "verificationEvidenceHistory": [
@@ -5062,6 +5037,34 @@
         "VALUE immutability is not implemented or claimed; VALUE remains blocked.",
         "RECORD remains deferred and unsupported.",
         "This test run does not verify Group 1 or all 72 geometric symbols."
+      ]
+    },
+    {
+      "scope": "engine/qx-core/test/qir.test.js, engine/qx-core/test/vm.test.js, and engine/qx-core/test/web-backend.test.js; QIR 1.5 VALUE lowering/validation, VM immutable declaration lifecycle, Web asset generation/runtime guard emission, and QIR 1.1–1.4 feature compatibility",
+      "branch": "audit/geometric-language-alignment",
+      "commit": "NOT_CAPTURED_IN_USER_OUTPUT",
+      "date": "2026-11-28",
+      "environment": "Termux; Node.js version not included in supplied output",
+      "workingDirectory": "~/ALI-QX-geometric-worktree/engine/qx-core",
+      "commands": [
+        {
+          "command": "node --test test/qir.test.js test/vm.test.js test/web-backend.test.js",
+          "result": "PASS",
+          "tests": 71,
+          "passed": 71,
+          "failed": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0,
+          "durationMs": 846.333038
+        }
+      ],
+      "includedCoverage": "Focused tests passed for QIR 1.5 VALUE immutable metadata and declaration ordering, VM repeated immutable DECLARE rejection, immutable VALUE Web asset generation and rejection of missing immutable DECLARE, and inherited QIR 1.1/1.2/1.3/1.4 command features in QIR 1.5.",
+      "limitations": [
+        "Three focused test files only; not evidence that the full Node test suite passed.",
+        "The supplied terminal excerpt did not include git rev-parse HEAD or Node.js version; no test-run commit SHA or Node version is asserted.",
+        "Web Backend tests verify validated asset generation and emitted runtime guards; they do not establish browser execution of the generated application.",
+        "The result covers VALUE's QIR 1.5 immutable-binding path and does not establish completion of all Group 2 symbols, all 72 geometric symbols, or the full QX implementation."
       ]
     }
   ]
