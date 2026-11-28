@@ -21,7 +21,7 @@ test("parses nested geometric calls, expressions, and structural blocks", () => 
     '⬡("app") {',
     '  ◉(users)',
     '  ⊙(total, ⧬(price * quantity))',
-    '  ⟡(age >= 18) {',
+    '  ⟡(⟥(age, 18)) {',
     '    ⊢("Allowed")',
     '  }',
     '}'
@@ -38,4 +38,22 @@ test("rejects an unclosed geometric block", () => {
 
 test("rejects an unmatched geometric block terminator", () => {
   assert.throws(() => parse('}\n'), error => error.code === "QX2002");
+});
+
+test("attaches geometric ELSE_IF and ELSE branches to their IF statement", () => {
+  const ast = parse([
+    "⟡(⟤(status, 1)) {",
+    '  ⊢("one")',
+    "} ",
+    "⟣(⟤(status, 2)) {",
+    '  ⊢("two")',
+    "}",
+    "⟢() {",
+    '  ⊢("other")',
+    "}"
+  ].join("\\n"));
+  const conditional = ast.body[0];
+  assert.equal(conditional.symbol, "IF");
+  assert.equal(conditional.alternate.symbol, "ELSE_IF");
+  assert.equal(conditional.alternate.alternate.symbol, "ELSE");
 });
