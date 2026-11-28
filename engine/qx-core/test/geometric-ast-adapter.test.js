@@ -174,7 +174,7 @@ test("enforces approved usage positions for the six Group 2 symbols", () => {
     }
 
     const statement = analyze(parse(validStatements[symbol.name]));
-    if (["DATA", "STORE", "RECORD", "COLLECTION"].includes(symbol.name)) {
+    if (["DATA", "STORE", "VALUE", "RECORD", "COLLECTION"].includes(symbol.name)) {
       assert.equal(statement.valid, true, symbol.name + ": " + JSON.stringify(statement.diagnostics));
     } else {
       assert.ok(statement.diagnostics.some(item =>
@@ -194,7 +194,7 @@ test("enforces exact Group 2 geometric argument counts and AST node types", () =
   const validStatements = [
     ["DATA", '◉(name, 1)', true],
     ["STORE", '◉(target, 1)\n◍(target, 2)', true],
-    ["VALUE", '⊙(name, 1)', false],
+    ["VALUE", '⊙(name, 1)', true],
     ["RECORD", '⊚(record, {})', true],
     ["COLLECTION", '⊛(items)', true]
   ];
@@ -299,14 +299,13 @@ test("creates COLLECTION as an initialized mutable LIST binding", () => {
   assert.ok(mismatch.diagnostics.some(item => item.code === "QX3022"));
 });
 
-test("keeps VALUE blocked until immutable QIR and runtime enforcement are implemented", () => {
-  const semantic = analyze(parse("⊙(constant, 1)"));
-  assert.equal(semantic.valid, false);
-  assert.ok(semantic.diagnostics.some(item =>
-    item.code === "QX3028" && item.message.includes("VALUE")
-  ));
-  assert.throws(() => lowerToQIR(parse("⊙(constant, 1)"), semantic),
-    error => error.code === "QIR_E_SEMANTIC_ERRORS");
+test("accepts VALUE as an immutable binding through QIR lowering", () => {
+  const ast = parse("⊙(constant, 1)");
+  const semantic = analyze(ast);
+  assert.equal(semantic.valid, true, JSON.stringify(semantic.diagnostics));
+  const qir = lowerToQIR(ast, semantic);
+  assert.equal(qir.version, "1.5");
+  assert.equal(qir.globals[0].mutable, false);
 });
 
 test("rejects bodies for Group 2 symbols whose contracts forbid blocks", () => {
