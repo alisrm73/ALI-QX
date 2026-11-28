@@ -486,7 +486,7 @@
         "qir": "UNSUPPORTED",
         "vm": "NOT_REACHED",
         "backend": "NOT_REACHED",
-        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED"
       },
       "syntacticRecognition": {
         "grammarV1": "APPROVED",
@@ -551,7 +551,7 @@
         "qir": "UNSUPPORTED",
         "vm": "NOT_REACHED",
         "backend": "NOT_REACHED",
-        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED"
       },
       "syntacticRecognition": {
         "grammarV1": "APPROVED",
@@ -616,7 +616,7 @@
         "qir": "UNSUPPORTED",
         "vm": "NOT_REACHED",
         "backend": "NOT_REACHED",
-        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED"
       },
       "syntacticRecognition": {
         "grammarV1": "APPROVED",
@@ -681,7 +681,7 @@
         "qir": "UNSUPPORTED",
         "vm": "NOT_REACHED",
         "backend": "NOT_REACHED",
-        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED"
       },
       "syntacticRecognition": {
         "grammarV1": "APPROVED",
@@ -746,7 +746,7 @@
         "qir": "UNSUPPORTED",
         "vm": "NOT_REACHED",
         "backend": "NOT_REACHED",
-        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED"
       },
       "syntacticRecognition": {
         "grammarV1": "APPROVED",
@@ -811,7 +811,7 @@
         "qir": "UNSUPPORTED",
         "vm": "NOT_REACHED",
         "backend": "NOT_REACHED",
-        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT"
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED"
       },
       "syntacticRecognition": {
         "grammarV1": "APPROVED",
@@ -4742,7 +4742,8 @@
     "Semantic Analyzer applies a uniform QX3028 guard to specialized geometric statements through their GeometricStatement syntaxType, and to GeometricCallExpression values. This blocks unresolved symbols while their semantic contracts remain UNSPECIFIED; it does not implement their semantic behavior.",
     "The focused Node test file test/geometric-ast-adapter.test.js passed 7/7 on Termux with Node.js v24.22.3 at commit 663cfc76efa216cbdd4c30c0a4ac4cddd2e2c3db. This evidence does not establish a full-suite pass, lexer/parser suite pass, successful QIR lowering, or VM/backend execution.",
     "Owner-approved usage-position decision (2026-11-28): ORIGIN, FORM, CORE, SEED, ROOT, and IDENTITY are valid only in statement position and invalid as expressions. This decision does not specify argument count or types, output, body policy, declaration ordering or relations, or execution semantics. Their semantic contracts remain otherwise UNSPECIFIED and QIR lowering remains blocked.",
-    "Follow-up Termux verification reported by the owner on 2026-11-28: node --test test/geometric-ast-adapter.test.js passed 8/8 (0 failed; 620.443307 ms), including the new statement-only Group 1 expression rejection test. The terminal excerpt did not include Node.js version or git HEAD, so neither is asserted here. This remains a focused test-file result, not a full-suite or QIR/VM/backend success."
+    "Follow-up Termux verification reported by the owner on 2026-11-28: node --test test/geometric-ast-adapter.test.js passed 8/8 (0 failed; 620.443307 ms), including the new statement-only Group 1 expression rejection test. The terminal excerpt did not include Node.js version or git HEAD, so neither is asserted here. This remains a focused test-file result, not a full-suite or QIR/VM/backend success.",
+    "Follow-up Termux verification reported by the owner on 2026-11-28 for Group 2 usage-position enforcement: node --test test/geometric-ast-adapter.test.js passed 9/9 (0 failed; 759.40573 ms). The two preceding node --check commands for semantic-analyzer.js and geometric-ast-adapter.test.js were chained with && and therefore completed successfully before the test command ran. The supplied terminal excerpt did not include Node.js version or git HEAD, so neither is asserted. This is a focused test-file result, not a full-suite or successful QIR/VM/backend result."
   ],
   "verificationEvidence": {
     "scope": "engine/qx-core/test/geometric-ast-adapter.test.js only",
@@ -4793,6 +4794,41 @@
       "includedCoverage": "Statement-only expression rejection for all six approved Group 1 symbols",
       "limitations": [
         "Not a full Node test suite result.",
+        "No successful geometric-symbol QIR lowering or VM/backend execution is claimed."
+      ]
+    },
+    {
+      "scope": "engine/qx-core/test/geometric-ast-adapter.test.js only; Group 2 usage-position enforcement",
+      "branch": "audit/geometric-language-alignment",
+      "commit": "NOT_CAPTURED_IN_USER_OUTPUT",
+      "date": "2026-11-28",
+      "environment": "Termux; Node.js version not included in supplied output",
+      "workingDirectory": "~/.../engine/qx-core",
+      "commands": [
+        {
+          "command": "node --check src/semantic-analyzer.js",
+          "result": "PASS (inferred from subsequent command execution through &&)"
+        },
+        {
+          "command": "node --check test/geometric-ast-adapter.test.js",
+          "result": "PASS (inferred from subsequent command execution through &&)"
+        },
+        {
+          "command": "node --test test/geometric-ast-adapter.test.js",
+          "result": "PASS",
+          "tests": 9,
+          "passed": 9,
+          "failed": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0,
+          "durationMs": 759.40573
+        }
+      ],
+      "includedCoverage": "Approved usage positions for DATA, STORE, FETCH, VALUE, RECORD, and COLLECTION; verifies invalid positions are rejected and unresolved semantic contracts remain blocked from QIR.",
+      "limitations": [
+        "Focused test file only; not evidence that the full Node test suite passed.",
+        "The supplied terminal excerpt did not include git rev-parse HEAD or Node.js version.",
         "No successful geometric-symbol QIR lowering or VM/backend execution is claimed."
       ]
     }
