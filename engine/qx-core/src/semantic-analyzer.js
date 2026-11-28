@@ -130,7 +130,11 @@ export function analyze(program) {
         report("QX3012", "This command has no approved value-returning expression contract", node); node.args.forEach(a => expression(a, scope)); out = concrete("ERROR"); break;
       }
       case "GeometricCallExpression": {
-        report("QX3028", "Geometric symbol " + node.symbol + " has no approved semantic contract", node);
+        if (node.group === "CREATION_DEFINITION") {
+          report("QX3028", "Geometric symbol " + node.symbol + " is statement-only and cannot be used as an expression", node);
+        } else {
+          report("QX3028", "Geometric symbol " + node.symbol + " has no approved semantic contract", node);
+        }
         node.args.forEach(arg => expression(arg, scope));
         out = concrete("ERROR");
         break;
