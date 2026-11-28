@@ -268,6 +268,7 @@ export function analyze(program) {
         expression(node.args[1], scope);
         return;
       }
+      if (found.symbol.kind === "value") report("QX3028", "Cannot reassign immutable VALUE binding: " + node.args[0].name, node.args[0]);
       if (cmd.id === "DATA.SET" && scope.kind === "function" && found.scope.kind !== "function")
         report("QX3020", "Use DATA.SET_GLOBAL to update a module variable inside a function", node);
       if (signature.result.scope === "function" && scope.kind !== "function")
@@ -283,6 +284,7 @@ export function analyze(program) {
       const found = scope.lookup(node.args[0].name);
       if (!found) report("QX3003", "Undeclared target: " + node.args[0].name, node.args[0]);
       else {
+        if (found.symbol.kind === "value") report("QX3028", "Cannot modify immutable VALUE binding: " + node.args[0].name, node.args[0]);
         constrain(found.symbol.cell, [required], node.args[0], "QX3024", cmd.id + " target must be " + required);
         if (scope.kind === "function" && found.scope.kind !== "function")
           report("QX3020", "Use DATA.SET_GLOBAL inside a function to update a module variable", node);
