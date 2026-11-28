@@ -271,6 +271,23 @@ function createQIRExecution(module, options = {}) {
             values.set(instruction.result, Object.fromEntries(op.fields.map(field => [field.name, cloneValue(readValue(frame, field.value, instruction))])));
             break;
           }
+          case "MAKE_UI_TREE": {
+            let nodeCount = 0, totalText = 0;
+            const materialize = (node, depth) => {
+              if (++nodeCount > 1000 || depth > 32) throw runtimeError("QX_VM_UI_TREE_LIMIT", "UI tree resource limit exceeded", instruction, context);
+              if (node.kind === "text") {
+                const value = ensureString(readValue(frame, node.valueRef, instruction), instruction, frame);
+                if (value.length > 10000 || (totalText += value.length) > 50000) throw runtimeError("QX_VM_UI_TREE_TEXT_LIMIT", "UI tree text limit exceeded", instruction, context);
+                return { kind: "text", value };
+              }
+              return { kind: "component", id: node.id, type: node.type, version: node.version, props: {}, children: node.children.map(child => materialize(child, depth + 1)) };
+            };
+            const tree = { schema: op.tree.schema, version: op.tree.version, children: op.tree.children.map(child => materialize(child, 1)) };
+            const json = JSON.stringify(tree);
+            if (json.length > limits.maxStringLength) throw runtimeError("QX_VM_INVALID_TEXT", "UI tree JSON exceeds the text limit", instruction, context);
+            values.set(instruction.result, json);
+            break;
+          }
           case "CALL": {
             const target = functions.get(op.function);
             if (!target) throw runtimeError("QX_VM_UNKNOWN_FUNCTION", "Unknown function: " + op.function, instruction, context);
@@ -324,7 +341,7 @@ function createQIRExecution(module, options = {}) {
               values.set(instruction.result, response);
               break;
             }
-            if (op.command === "UI.TREE" && args.length === 1 && ["1.4", "1.5", "1.6"].includes(module.version)) {
+            if (op.command === "UI.TREE" && args.length === 1 && ["1.4", "1.5", "1.6", "1.7"].includes(module.version)) {
               if (!options.uiLock)
                 throw runtimeError("QX_VM_UI_LOCK_REQUIRED", "UI.TREE requires the project's qx.ui-lock.json manifest", instruction, context);
               const treeJson = ensureString(readValue(frame, args[0], instruction), instruction, frame);
@@ -336,7 +353,7 @@ function createQIRExecution(module, options = {}) {
               outputs.push(Object.freeze({ component: "TREE", tree, source: instruction.source }));
               break;
             }
-            if (op.command === "UI.SHOW" && args.length === 1 && ["1.2", "1.3", "1.4", "1.5", "1.6"].includes(module.version)) {
+            if (op.command === "UI.SHOW" && args.length === 1 && ["1.2", "1.3", "1.4", "1.5", "1.6", "1.7"].includes(module.version)) {
               outputs.push(Object.freeze({ component: "SHOW", value: cloneValue(readValue(frame, args[0], instruction)), source: instruction.source }));
               break;
             }
