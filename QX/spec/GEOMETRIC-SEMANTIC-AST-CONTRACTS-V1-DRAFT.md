@@ -243,6 +243,30 @@ GeometricInvocation (conceptual, not implemented)
 
 - تحقق لاحق أرسله المالك من Termux بتاريخ 2026-11-28 للمجموعة الثانية: `node --test test/geometric-ast-adapter.test.js` بنتيجة 9/9 (0 فشل، 759.40573 ms)، وشمل فرض مواضع الاستخدام المعتمدة للرموز الستة `DATA`, `STORE`, `FETCH`, `VALUE`, `RECORD`, `COLLECTION`. سبق الاختبار أمرا `node --check src/semantic-analyzer.js` و`node --check test/geometric-ast-adapter.test.js` ضمن سلسلة `&&`، ووصول التنفيذ للاختبارات يثبت اجتيازهما. لم يتضمن المقتطف المرسل إصدار Node.js أو ناتج `git rev-parse HEAD`؛ لذلك لا يُنسب الاختبار إلى Commit أو إصدار Node محدد. هذه نتيجة ملف الاختبار المحدد فقط، ولا تثبت نجاح مجموعة الاختبارات الكاملة أو خفض QIR أو تشغيل VM/Backend.
 
+### 5.6 مخططات وسائط المجموعة الثانية
+
+**قرار هندسي معتمد — 2026-11-28:** اعتماد مخطط وسائط دقيق لكل رمز من المجموعة الثانية. جميع الوسائط إلزامية، ولا توجد وسائط اختيارية أو زائدة:
+
+| الرمز | الاسم | المخطط |
+|---|---|---|
+| ◉ | DATA | `DATA(name: Identifier, initialValue: Expression)` |
+| ◍ | STORE | `STORE(target: Identifier, value: Expression)` |
+| ◌ | FETCH | `FETCH(reference: Identifier)` |
+| ⊙ | VALUE | `VALUE(name: Identifier, value: Expression)` |
+| ⊚ | RECORD | `RECORD(name: Identifier, fields: Expression)` |
+| ⊛ | COLLECTION | `COLLECTION(name: Identifier)` |
+
+قواعد الشكل المعتمدة:
+1. عدد الوسائط إلزامي ودقيق: وسيطتان لـ DATA وSTORE وVALUE وRECORD؛ ووسيط واحد لـ FETCH وCOLLECTION.
+2. الوسيط الأول في جميع الرموز الستة عقدة `Identifier`.
+3. وسيط القيمة في DATA وSTORE وVALUE هو أي عقدة `Expression` صالحة تركيبياً في QX V1.
+4. وسيط `RECORD.fields` يقبل حالياً عقدة `Expression` عامة فقط؛ شكل الحقول الداخلي غير محسوم لأن QX V1 لا يعرّف literal مخصصاً للسجلات أو الخرائط.
+5. لا يضيف هذا القرار أنواع قيم أو تحويلات ضمنية، ولا يحسم وجود المعرف أو نطاقه أو قابلية تعديله.
+6. لا يحسم مخطط عناصر COLLECTION أو بنية RECORD أو سياسة التخزين الدائم أو المؤقت.
+7. لا يحدد مخرجات الرموز أو آثارها الجانبية أو الكتل أو QIR؛ وتظل هذه الحقول `UNSPECIFIED`.
+8. لا يجيز التنفيذ: تبقى الرموز محجوبة عن QIR إلى حين اكتمال العقود المتبقية.
+
+
 ## 8. بوابة اعتماد العقود قبل التنفيذ
 
 يجب أن يكون لكل رمز عقد يحدد على الأقل: نوع AST الدلالي، موضع الاستخدام، مخطط الوسائط، أنواع الإدخال، نوع المخرج، سياسة الكتلة، السياق والنطاق، الآثار الجانبية، الصلاحيات، وسلوك الخطأ. أي حقل غير محسوم يبقى غير مفعّل في Semantic Analyzer ولا يسمح له بتمرير الرمز إلى QIR.
