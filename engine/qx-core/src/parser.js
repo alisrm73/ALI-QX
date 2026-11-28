@@ -45,6 +45,16 @@ export class Parser {
     const symbol = this.consume("GEOMETRIC_SYMBOL");
     const args = this.args();
     const body = this.match("LBRACE") ? this.geometricBlock() : null;
+    let alternate = null;
+    if (symbol.value === "IF" || symbol.value === "ELSE_IF") {
+      const checkpoint = this.i;
+      this.newlines();
+      if (this.check("GEOMETRIC_SYMBOL") && (this.peek().value === "ELSE_IF" || this.peek().value === "ELSE")) {
+        alternate = this.geometricStatement();
+      } else {
+        this.i = checkpoint;
+      }
+    }
     return {
       type: "GeometricStatement",
       symbol: symbol.value,
@@ -52,6 +62,7 @@ export class Parser {
       group: symbol.group,
       args,
       body,
+      alternate,
       location: this.loc(symbol)
     };
   }
