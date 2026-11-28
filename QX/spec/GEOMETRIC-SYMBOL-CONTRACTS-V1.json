@@ -795,12 +795,12 @@
       "allowsBody": "FORBIDDEN",
       "allowedContexts": "MODULE_SCOPE_OR_FUNCTION_BODY",
       "preconditions": "The name must be unique in the current scope. Record field structure must be defined by a future explicit record-literal/type contract before semantic acceptance.",
-      "validationRules": "Do not infer RECORD as LIST or coerce fields into a list. Reject semantic acceptance until field representation, field-name uniqueness, field access, and record type compatibility are specified.",
+      "validationRules": "Semantic acceptance remains blocked until QX approves a record-literal/field-container representation, field-name uniqueness rules, field access semantics, record type identity and compatibility, and immutable binding/value behavior. The analyzer must not coerce fields into LIST.",
       "relations": "Intended to be readable by FETCH after the record type is implemented. STORE does not reassign RECORD bindings under the current immutable-record design.",
       "astEffect": "Future immutable record declaration; no specialized semantic AST or type implementation is approved yet.",
-      "qirLowering": "UNSUPPORTED_PENDING_RECORD_TYPE_AND_QIR_EXTENSION",
-      "vmRequirements": "UNSUPPORTED_PENDING_RECORD_VALUE_MODEL",
-      "backendRequirements": "UNSUPPORTED_PENDING_RECORD_VALUE_MODEL",
+      "qirLowering": "UNSUPPORTED_PENDING_APPROVED_RECORD_TYPE_AND_QIR_EXTENSION",
+      "vmRequirements": "UNSUPPORTED_PENDING_APPROVED_RECORD_VALUE_MODEL",
+      "backendRequirements": "UNSUPPORTED_PENDING_APPROVED_RECORD_VALUE_MODEL",
       "possibleErrors": "Deferred: record literal shape, duplicate field, invalid field value, and record type diagnostics require a future contract.",
       "requiredTests": [
         "registry identity and Unicode sequence",
@@ -817,11 +817,11 @@
         "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
         "rawAst": "PRESENT",
         "specializedAst": "UNSPECIFIED",
-        "semanticAnalyzer": "DEFERRED_PENDING_RECORD_TYPE_AND_VALUE_MODEL",
-        "qir": "UNSUPPORTED_PENDING_RECORD_TYPE_AND_QIR_EXTENSION",
-        "vm": "UNSUPPORTED_PENDING_RECORD_VALUE_MODEL",
-        "backend": "UNSUPPORTED_PENDING_RECORD_VALUE_MODEL",
-        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED; TERMUX_GROUP2_ARGUMENT_SCHEMA_TESTS_PASSED_11_OF_11; FAILED_PRE_FIX_RUN_10_OF_11_RECORDED"
+        "semanticAnalyzer": "DEFERRED; EXPLICIT QX3028 REJECTION PRESERVED AND DIAGNOSTIC CLARIFIED",
+        "qir": "UNSUPPORTED_PENDING_APPROVED_RECORD_TYPE_AND_QIR_VALUE_MODEL",
+        "vm": "UNSUPPORTED_PENDING_APPROVED_RECORD_VALUE_MODEL",
+        "backend": "UNSUPPORTED_PENDING_APPROVED_RECORD_VALUE_MODEL",
+        "tests": "RECORD_DEFERRED_REJECTION_REGRESSION_TESTS_ADDED_IN_SEMANTIC_ANALYZER_AND_QIR; NOT_YET_RUN_ON_TERMUX"
       },
       "syntacticRecognition": {
         "grammarV1": "APPROVED",
