@@ -765,18 +765,18 @@ export function validateQIR(module) {
           if (op.command === "DATA.COUNT") {
             if (!argumentsMatch || !resultMatches) report("QIR_E_COMMAND_SIGNATURE", "DATA.COUNT requires its registered signature", inst.source);
           } else if (op.command === "DATA.ADD") {
-            if (!["1.1", "1.2", "1.3", "1.4"].includes(module.version) || !argumentsMatch || !resultMatches) report("QIR_E_COMMAND_SIGNATURE", "DATA.ADD requires its registered signature in QIR 1.1 or later", inst.source);
+            if (!["1.1", "1.2", "1.3", "1.4", "1.5"].includes(module.version) || !argumentsMatch || !resultMatches) report("QIR_E_COMMAND_SIGNATURE", "DATA.ADD requires its registered signature in QIR 1.1 or later", inst.source);
           } else if (op.command === "DATA.REMOVE") {
-            if (!["1.1", "1.2", "1.3", "1.4"].includes(module.version) || !argumentsMatch || !resultMatches) report("QIR_E_COMMAND_SIGNATURE", "DATA.REMOVE requires its registered signature in QIR 1.1 or later", inst.source);
+            if (!["1.1", "1.2", "1.3", "1.4", "1.5"].includes(module.version) || !argumentsMatch || !resultMatches) report("QIR_E_COMMAND_SIGNATURE", "DATA.REMOVE requires its registered signature in QIR 1.1 or later", inst.source);
           } else if (op.command === "UI.SHOW") {
-            if (!["1.2", "1.3", "1.4"].includes(module.version) || !argumentsMatch || !resultMatches) report("QIR_E_COMMAND_SIGNATURE", "UI.SHOW requires its registered signature in QIR 1.2 or later", inst.source);
+            if (!["1.2", "1.3", "1.4", "1.5"].includes(module.version) || !argumentsMatch || !resultMatches) report("QIR_E_COMMAND_SIGNATURE", "UI.SHOW requires its registered signature in QIR 1.2 or later", inst.source);
           } else if (op.command === "UI.TEXT") {
-            if (!["1.2", "1.3", "1.4"].includes(module.version) || !argumentsMatch || !resultMatches) report("QIR_E_COMMAND_SIGNATURE", "UI.TEXT requires its registered signature in QIR 1.2 or later", inst.source);
+            if (!["1.2", "1.3", "1.4", "1.5"].includes(module.version) || !argumentsMatch || !resultMatches) report("QIR_E_COMMAND_SIGNATURE", "UI.TEXT requires its registered signature in QIR 1.2 or later", inst.source);
           } else if (op.command === "UI.TREE") {
-            if (module.version !== "1.4" || !argumentsMatch || !resultMatches)
+            if (!["1.4", "1.5"].includes(module.version) || !argumentsMatch || !resultMatches)
               report("QIR_E_COMMAND_SIGNATURE", "UI.TREE requires its registered signature in QIR 1.4", inst.source);
           } else if (op.command === "INTEGRATION.REQUEST") {
-            if (!["1.3", "1.4"].includes(module.version) || !argumentsMatch || !resultMatches)
+            if (!["1.3", "1.4", "1.5"].includes(module.version) || !argumentsMatch || !resultMatches)
               report("QIR_E_COMMAND_SIGNATURE", "INTEGRATION.REQUEST requires its registered signature in QIR 1.3 or later", inst.source);
           } else {
             report("QIR_E_COMMAND_NOT_ALLOWED", "Command is not allowed in QIR", inst.source);
@@ -857,7 +857,7 @@ export function validateQIR(module) {
             report("QIR_E_CALL_RESULT", "Value-returning CALL must capture its result", inst.source);
         }
       }
-      if (inst.opcode === "COMMAND_CALL" && !["DATA.COUNT", ...(["1.1", "1.2", "1.3", "1.4"].includes(module.version) ? ["DATA.ADD", "DATA.REMOVE"] : []), ...(["1.2", "1.3", "1.4"].includes(module.version) ? ["UI.SHOW", "UI.TEXT"] : []), ...(module.version === "1.3" || module.version === "1.4" ? ["INTEGRATION.REQUEST"] : []), ...(module.version === "1.4" ? ["UI.TREE"] : [])].includes(inst.operands?.command))
+      if (inst.opcode === "COMMAND_CALL" && !["DATA.COUNT", ...(["1.1", "1.2", "1.3", "1.4", "1.5"].includes(module.version) ? ["DATA.ADD", "DATA.REMOVE"] : []), ...(["1.2", "1.3", "1.4", "1.5"].includes(module.version) ? ["UI.SHOW", "UI.TEXT"] : []), ...(["1.3", "1.4", "1.5"].includes(module.version) ? ["INTEGRATION.REQUEST"] : []), ...(["1.4", "1.5"].includes(module.version) ? ["UI.TREE"] : [])].includes(inst.operands?.command))
         report("QIR_E_COMMAND_NOT_ALLOWED", "Command is not allowed by this QIR version", inst.source);
     }
   }
