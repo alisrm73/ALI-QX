@@ -592,3 +592,30 @@ node --test test/geometric-symbol-lexer.test.js test/geometric-symbol-parser.tes
 **حدود الإثبات:** اختبار Web Runtime جرى ضمن test harness الخاص بالمشروع؛ لا يعني نشر التطبيق أو اختباره على بيئة إنتاج خارجية. كما لا يثبت هذا اكتمال جميع رموز QX الـ72.
 
 بذلك اكتملت تغطية الاختبارات المركزة لمسار RECORD من Lexer/Parser إلى Semantic Analyzer وQIR 1.6 وVM وWeb asset generation وWeb Runtime ضمن الملفات المذكورة.
+
+
+### 5.16 المجموعة الثالثة — عقود SCREEN وPANEL وBLOCK المعتمدة
+
+اعتمد المستخدم عقود الإصدار الأول التالية:
+
+| الرمز | الموضع | الوسائط | الكتلة | السياق |
+|---|---|---|---|---|
+| `△ SCREEN` | STATEMENT_ONLY | لا شيء | مطلوبة | مستوى الوحدة فقط؛ مرة واحدة كحد أقصى |
+| `▱ PANEL` | STATEMENT_ONLY | Identifier واحد يمثل UI id | مطلوبة | داخل SCREEN أو PANEL |
+| `▰ BLOCK` | STATEMENT_ONLY | Identifier للـid ثم تعبير TXT | ممنوعة | داخل SCREEN أو PANEL |
+
+قواعد البناء:
+- SCREEN ينشئ غلاف `QX.UI.TREE@1.0` ولا ينشئ عقدة مكوّن مستقلة.
+- PANEL ينشئ `UI.CONTAINER@1.0.0` مع `props: {}`.
+- BLOCK ينشئ `UI.TEXT_BLOCK@1.0.0` مع عقدة نص واحدة.
+- اسم Identifier الأول يتحول إلى UI id حرفي، ولا يجري حله كمتغير QX.
+- يجب أن تكون IDs فريدة، وتطابق `^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$`.
+- PANEL وBLOCK يسمح بهما داخل SCREEN أو PANEL فقط. SCREEN لا يتداخل.
+- SCREEN/PANEL يتطلبان كتلة؛ BLOCK يمنع الكتلة.
+- WINDOW وBUTTON وLAYOUT تبقى مؤجلة ومرفوضة دلالياً في هذا الإصدار.
+
+الخفض والتنفيذ:
+- QIR 1.7 `MAKE_UI_TREE` يبني وصفاً بنيوياً آمناً، وعقد النص تشير إلى ValueId من النوع TXT. بعد ذلك يمر JSON عبر أمر `UI.TREE` الحالي وملف `qx.ui-lock.json` وسجل المضيف.
+- VM وWeb Runtime يحلان مراجع TXT إلى قيم نصية، مع حدود العقد والعمق والنص، ثم يستخدمان تحقق UI Tree القائم.
+- لا يضيف العقد HTML أو JavaScript أو CSS أو أحداثاً أو callbacks أو مكونات جديدة.
+- هذا العقد معتمد دلالياً، لكن حالة التنفيذ والاختبارات تظل غير متحققة حتى تشغيل مجموعات الاختبار المخصصة وتسجيل نتائجها الفعلية.
