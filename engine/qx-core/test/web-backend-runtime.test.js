@@ -476,3 +476,18 @@ test("browser build preserves deprecated-but-supported exact pins with a warning
   assert.equal(project.metadata.uiWarnings[0].code, "QX_UI_RELEASE_DEPRECATED");
   assert.equal(project.metadata.uiRegistryReleases[0].lifecycle, "deprecated");
 });
+
+test("browser runtime executes QIR 1.6 immutable RECORD values", () => {
+  const project = buildWebProject('⊚(profile, { name: "Ali", age: 53, active: TRUE, nested: { city: "Tartous" } })');
+  assert.match(project.files["app.js"], /"version":"1.6"/);
+  assert.match(project.files["app.js"], /MAKE_RECORD/);
+  const makeNode = () => ({ children: [], textContent: "", className: "", append(...items) { this.children.push(...items); } });
+  const nodes = new Map([["qx-output", makeNode()], ["qx-status", makeNode()]]);
+  const document = { getElementById: id => nodes.get(id), createElement: () => makeNode() };
+  vm.runInNewContext(project.files["app.js"], { document });
+  assert.equal(nodes.get("qx-status").textContent, "Execution completed");
+  const section = nodes.get("qx-output").children.find(node => node.className === "qx-value");
+  assert.equal(section.children[0].textContent, "profile");
+  assert.match(section.children[1].textContent, /"name": "Ali"/);
+  assert.match(section.children[1].textContent, /"city": "Tartous"/);
+});
