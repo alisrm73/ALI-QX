@@ -505,6 +505,7 @@ node --test test/qir.test.js test/vm.test.js test/web-backend.test.js
 
 - Opcode: `MAKE_RECORD`
 - النتيجة: قيمة من النوع `RECORD`.
+- جميع السجلات تشترك في النوع العام `RECORD` في QIR 1.6؛ لا يفرض هذا الإصدار نوعاً بنيوياً مستقلاً لكل شكل حقول.
 - Operand: `fields: [{ name: string, value: ValueId }, ...]`.
 - أسماء الحقول فريدة وغير فارغة، وكل `value` مرجع إلى قيمة QIR معرفة ومهيمنة على موضع الاستخدام.
 - الحد الأعلى لعدد الحقول هو 10,000 في Validator وRuntime.
