@@ -273,7 +273,7 @@ function createQIRExecution(module, options = {}) {
               values.set(instruction.result, list.filter((_, itemIndex) => itemIndex !== index).map(cloneValue));
               break;
             }
-            if (op.command === "INTEGRATION.REQUEST" && args.length === 3 && module.version === "1.3") {
+            if (op.command === "INTEGRATION.REQUEST" && args.length === 3 && ["1.3", "1.4", "1.5"].includes(module.version)) {
               if (typeof integrationBroker?.request !== "function")
                 throw runtimeError("QX_VM_INTEGRATION_UNAVAILABLE", "No trusted integration broker was supplied", instruction, context);
               const connector = ensureString(readValue(frame, args[0], instruction), instruction, frame);
@@ -295,7 +295,7 @@ function createQIRExecution(module, options = {}) {
               values.set(instruction.result, response);
               break;
             }
-            if (op.command === "UI.TREE" && args.length === 1 && module.version === "1.4") {
+            if (op.command === "UI.TREE" && args.length === 1 && ["1.4", "1.5"].includes(module.version)) {
               if (!options.uiLock)
                 throw runtimeError("QX_VM_UI_LOCK_REQUIRED", "UI.TREE requires the project's qx.ui-lock.json manifest", instruction, context);
               const treeJson = ensureString(readValue(frame, args[0], instruction), instruction, frame);
@@ -307,11 +307,11 @@ function createQIRExecution(module, options = {}) {
               outputs.push(Object.freeze({ component: "TREE", tree, source: instruction.source }));
               break;
             }
-            if (op.command === "UI.SHOW" && args.length === 1 && ["1.2", "1.3", "1.4"].includes(module.version)) {
+            if (op.command === "UI.SHOW" && args.length === 1 && ["1.2", "1.3", "1.4", "1.5"].includes(module.version)) {
               outputs.push(Object.freeze({ component: "SHOW", value: cloneValue(readValue(frame, args[0], instruction)), source: instruction.source }));
               break;
             }
-            if (op.command === "UI.TEXT" && args.length === 1 && ["1.2", "1.3", "1.4"].includes(module.version)) {
+            if (op.command === "UI.TEXT" && args.length === 1 && ["1.2", "1.3", "1.4", "1.5"].includes(module.version)) {
               const value = readValue(frame, args[0], instruction);
               if (typeof value !== "string") throw runtimeError("QX_VM_INVALID_TEXT", "UI.TEXT requires TXT", instruction, context);
               ensureString(value, instruction, frame);
