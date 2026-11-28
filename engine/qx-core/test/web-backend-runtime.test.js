@@ -495,5 +495,5 @@ test("browser runtime executes QIR 1.6 immutable RECORD values", () => {
   assert.equal(section.children[0].textContent, "profile");
   assert.match(section.children[1].textContent, /"name": "Ali"/);
   assert.match(section.children[1].textContent, /"city": "Tartous"/);
-  assert.ok(nodes.get("qx-output").children.some(node => node.className === "qx-text" && node.textContent === "ready"));
+  assert.ok(nodes.get("qx-output").children.some(node => node.className === "qx-ui-text" && node.textContent === "ready"));
 });
