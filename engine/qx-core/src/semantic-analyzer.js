@@ -136,14 +136,20 @@ export function analyze(program) {
       case "ListLiteral": node.elements.forEach(e => expression(e, scope)); out = concrete("LIST"); break;
       case "RecordLiteral": {
         const names = new Set();
+        let valid = true;
         for (const field of node.fields ?? []) {
-          if (names.has(field.name)) report("QX3028", "Duplicate RECORD field: " + field.name, field);
+          if (names.has(field.name)) {
+            report("QX3028", "Duplicate RECORD field: " + field.name, field);
+            valid = false;
+          }
           names.add(field.name);
           const fieldType = typeOf(expression(field.value, scope));
-          if (fieldType === "NULL" || fieldType === "ERROR")
+          if (fieldType === "NULL" || fieldType === "ERROR") {
             report("QX3028", "RECORD field values must be non-NULL supported QX values", field.value);
+            valid = false;
+          }
         }
-        out = concrete("RECORD");
+        out = concrete(valid ? "RECORD" : "ERROR");
         break;
       }
       case "UnaryExpression": {
