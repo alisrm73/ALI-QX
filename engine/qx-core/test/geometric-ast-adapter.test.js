@@ -125,7 +125,7 @@ test("continues rejecting unresolved geometric symbols nested in geometric block
     '⬡("app") {',
     '  ◉("users")',
     '}'
-  ].join("\\n")));
+  ].join("\n")));
 
   assert.equal(result.valid, false);
   assert.equal(result.diagnostics.filter(item => item.code === "QX3028").length, 2);
