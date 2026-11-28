@@ -584,3 +584,15 @@ test("QIR 1.7 rejects non-TXT UI tree references and duplicate component ids", (
   makeTree.operands.tree.children[0].children[0].id = "main";
   assert.ok(validateQIR(module).some(item => item.code === "QIR_E_UI_TREE_SCHEMA"));
 });
+
+test("QIR 1.7 retains QIR 1.6 RECORD and immutable binding support", () => {
+  const module = compile([
+    '⊚(profile, { name: "Ali" })',
+    "△() { ▱(main) { ▰(heading, 'Static') } }"
+  ].join("\n"));
+  assert.equal(module.version, "1.7");
+  assert.ok(module.initializer.blocks.flatMap(block => block.instructions).some(item => item.opcode === "MAKE_RECORD"));
+  assert.ok(module.initializer.blocks.flatMap(block => block.instructions).some(item => item.opcode === "MAKE_UI_TREE"));
+  assert.equal(module.globals.find(item => item.name === "profile").mutable, false);
+  assert.deepEqual(validateQIR(module), []);
+});
