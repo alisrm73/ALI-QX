@@ -143,7 +143,7 @@ test("rejects unresolved geometric symbols uniformly in statement and expression
 test("continues rejecting unresolved geometric symbols nested in geometric blocks", () => {
   const result = analyze(parse([
     '⬡("app") {',
-    '  ◉(users, 1)',
+    '  ⊚(record, [])',
     '}'
   ].join("\n")));
 
@@ -154,80 +154,64 @@ test("continues rejecting unresolved geometric symbols nested in geometric block
 
 test("enforces approved usage positions for the six Group 2 symbols", () => {
   const statementOnly = new Set(["DATA", "STORE", "VALUE", "RECORD", "COLLECTION"]);
-  for (const symbol of GEOMETRIC_SYMBOLS.filter(item => item.group === "DATA_STORAGE")) {
-    const statementAst = parse(`${symbol.glyph}()`);
-    const statement = analyze(statementAst);
-    assert.equal(statement.valid, false, symbol.name);
-    if (symbol.name === "FETCH") {
-      assert.ok(statement.diagnostics.some(item =>
-        item.code === "QX3028" &&
-        item.message.includes("is expression-only and cannot be used as a statement")
-      ), `statement position: ${symbol.name}`);
-    } else {
-      assert.ok(statement.diagnostics.some(item =>
-        item.code === "QX3028" && item.message.includes("has no approved semantic contract")
-      ), `statement contract remains blocked: ${symbol.name}`);
-    }
-    assert.throws(() => lowerToQIR(statementAst, statement),
-      error => error.code === "QIR_E_SEMANTIC_ERRORS");
+  const validStatements = {
+    DATA: "◉(item, 1)",
+    STORE: "◉(item, 1)\n◍(item, 2)",
+    VALUE: "⊙(item, 1)",
+    RECORD: "⊚(item, [])",
+    COLLECTION: "⊛(items)"
+  };
 
-    const expressionAst = parse(`DATA.CREATE(value, ${symbol.glyph}())`);
-    const expression = analyze(expressionAst);
-    assert.equal(expression.valid, false, symbol.name);
-    if (statementOnly.has(symbol.name)) {
-      assert.ok(expression.diagnostics.some(item =>
-        item.code === "QX3028" &&
-        item.message.includes("is statement-only and cannot be used as an expression")
-      ), `expression position: ${symbol.name}`);
-    } else {
-      assert.ok(expression.diagnostics.some(item =>
-        item.code === "QX3028" && item.message.includes("has no approved semantic contract")
-      ), `expression contract remains blocked: ${symbol.name}`);
+  for (const symbol of GEOMETRIC_SYMBOLS.filter(item => item.group === "DATA_STORAGE")) {
+    if (symbol.name === "FETCH") {
+      const statement = analyze(parse("◉(item, 1)\n◌(item)"));
+      assert.ok(statement.diagnostics.some(item =>
+        item.code === "QX3028" && item.message.includes("FETCH is expression-only")
+      ));
+      const expression = analyze(parse("◉(item, 1)\nDATA.CREATE(copy, ◌(item))"));
+      assert.equal(expression.valid, true, JSON.stringify(expression.diagnostics));
+      continue;
     }
-    assert.throws(() => lowerToQIR(expressionAst, expression),
-      error => error.code === "QIR_E_SEMANTIC_ERRORS");
+
+    const statement = analyze(parse(validStatements[symbol.name]));
+    if (["DATA", "STORE", "COLLECTION"].includes(symbol.name)) {
+      assert.equal(statement.valid, true, symbol.name + ": " + JSON.stringify(statement.diagnostics));
+    } else {
+      assert.ok(statement.diagnostics.some(item =>
+        item.code === "QX3028" && item.message.includes(symbol.name)
+      ), symbol.name + " remains blocked");
+    }
+
+    const expression = analyze(parse("DATA.CREATE(result, " + symbol.glyph + "(item, 1))"));
+    assert.ok(expression.diagnostics.some(item =>
+      item.code === "QX3028" &&
+      item.message.includes("is statement-only and cannot be used as an expression")
+    ), "expression position: " + symbol.name);
   }
 });
 
-
 test("enforces exact Group 2 geometric argument counts and AST node types", () => {
   const validStatements = [
-    ["DATA", '◉(name, 1)'],
-    ["STORE", '◍(target, 1)'],
-    ["VALUE", '⊙(name, 1)'],
-    ["RECORD", '⊚(record, [])'],
-    ["COLLECTION", '⊛(items)']
+    ["DATA", '◉(name, 1)', true],
+    ["STORE", '◉(target, 1)\n◍(target, 2)', true],
+    ["VALUE", '⊙(name, 1)', false],
+    ["RECORD", '⊚(record, [])', false],
+    ["COLLECTION", '⊛(items)', true]
   ];
 
-  for (const [name, source] of validStatements) {
-    const ast = parse(source);
-    const semantic = analyze(ast);
-    assert.ok(
-      semantic.diagnostics.some(item =>
-        item.code === "QX3028" && item.message.includes("has no approved semantic contract")
-      ),
-      `${name} with a structurally valid argument schema remains semantically blocked`
-    );
+  for (const [name, source, expectedValid] of validStatements) {
+    const semantic = analyze(parse(source));
+    assert.equal(semantic.valid, expectedValid, name + ": " + JSON.stringify(semantic.diagnostics));
     assert.equal(
       semantic.diagnostics.some(item => item.message.includes("expects exactly") || item.message.includes("must be Identifier") || item.message.includes("must be Expression")),
       false,
-      `${name} should satisfy its approved argument schema`
+      name + " should satisfy its approved argument schema"
     );
-    assert.throws(() => lowerToQIR(ast, semantic),
-      error => error.code === "QIR_E_SEMANTIC_ERRORS");
   }
 
-  const fetchAst = parse("DATA.CREATE(result, ◌(source))");
+  const fetchAst = parse("◉(source, 1)\nDATA.CREATE(result, ◌(source))");
   const fetchSemantic = analyze(fetchAst);
-  assert.ok(fetchSemantic.diagnostics.some(item =>
-    item.code === "QX3028" && item.message.includes("FETCH has no approved semantic contract")
-  ));
-  assert.equal(
-    fetchSemantic.diagnostics.some(item => item.message.includes("FETCH expects exactly") || item.message.includes("FETCH argument")),
-    false
-  );
-  assert.throws(() => lowerToQIR(fetchAst, fetchSemantic),
-    error => error.code === "QIR_E_SEMANTIC_ERRORS");
+  assert.equal(fetchSemantic.valid, true, JSON.stringify(fetchSemantic.diagnostics));
 });
 
 test("rejects Group 2 geometric calls with incorrect argument arity or AST node types", () => {
