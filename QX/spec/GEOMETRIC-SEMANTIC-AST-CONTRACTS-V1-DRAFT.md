@@ -573,3 +573,22 @@ node --test test/qir.test.js test/vm.test.js test/web-backend.test.js
 - هذه أربعة ملفات مركزة وليست مجموعة الاختبارات الكاملة للمشروع، ولا تثبت اكتمال جميع رموز QX الـ72.
 
 وعليه، تم التحقق من مسارات Semantic Analyzer وQIR وVM وبناء أصول Web ضمن النطاق المذكور، مع إبقاء اختبارات Lexer/Parser وWeb Runtime كمتطلبات تحقق معلّقة.
+
+
+### 5.15 استكمال تحقق RECORD في Lexer/Parser وWeb Runtime — 2026-11-28
+
+تم تشغيل المجموعة التالية على Termux:
+
+```bash
+node --test test/geometric-symbol-lexer.test.js test/geometric-symbol-parser.test.js test/lexer-parser.test.js test/lexer-parser-boundaries.test.js test/web-backend-runtime.test.js
+```
+
+النتيجة: **58/58 ناجحاً**، 0 فشل، 0 ملغى، 0 متروك، 0 todo، بمدة `1042.396346 ms`.
+
+تغطي هذه المجموعة اختبارات Lexer وParser وحدود التحليل، إضافة إلى تشغيل Web Backend Runtime المولد، بما في ذلك الاختبار `browser runtime executes QIR 1.6 immutable RECORD values`.
+
+وبالاقتران مع مجموعتي التحقق السابقتين (75/75 للتحليل الدلالي وVM، و44/44 لـQIR وWeb asset generation)، أصبح مجموع الأدلة **177 اختباراً ناجحاً من 177** عبر ثلاث مجموعات مركزة و11 ملف اختبار. لم يتضمن خرج Termux إصدار Node.js أو SHA التشغيل، ولا تمثل هذه النتائج مجموعة الاختبارات الكاملة للمشروع.
+
+**حدود الإثبات:** اختبار Web Runtime جرى ضمن test harness الخاص بالمشروع؛ لا يعني نشر التطبيق أو اختباره على بيئة إنتاج خارجية. كما لا يثبت هذا اكتمال جميع رموز QX الـ72.
+
+بذلك اكتملت تغطية الاختبارات المركزة لمسار RECORD من Lexer/Parser إلى Semantic Analyzer وQIR 1.6 وVM وWeb asset generation وWeb Runtime ضمن الملفات المذكورة.
