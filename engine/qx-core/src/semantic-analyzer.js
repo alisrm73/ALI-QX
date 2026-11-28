@@ -363,7 +363,7 @@ export function analyze(program) {
   let uiScreenCount = 0;
   const uiIds = new Set();
 
-  function block(body, scope, fn = null, uiParent = null) {
+  function block(body, scope, fn = null, uiParent = null, allowScreen = false) {
     let guaranteedReturn = false;
     for (const node of body) {
       if (uiParent && !(node.type === "GeometricStatement" && node.group === "INTERFACE_DESIGN")) {
@@ -378,7 +378,7 @@ export function analyze(program) {
           const hasBody = Array.isArray(node.body);
           if (node.alternate) report("QX3070", "Interface symbols do not allow alternate branches", node);
           if (node.symbol === "SCREEN") {
-            if (fn || scope !== moduleScope || uiParent) report("QX3070", "SCREEN is allowed only at module level", node);
+            if (fn || scope !== moduleScope || uiParent || !allowScreen) report("QX3070", "SCREEN is allowed only as a direct module-level statement", node);
             if (++uiScreenCount > 1) report("QX3070", "A module may declare only one SCREEN", node);
             if (args.length !== 0) report("QX3070", "SCREEN expects no arguments", node);
             if (!hasBody) report("QX3070", "SCREEN requires a body", node);
@@ -497,7 +497,7 @@ export function analyze(program) {
   }
 
   // Module declarations are analyzed first to establish globals and function contracts.
-  for (const node of semanticProgram.body) if (node.type !== "FunctionDeclaration") block([node], moduleScope);
+  for (const node of semanticProgram.body) if (node.type !== "FunctionDeclaration") block([node], moduleScope, null, null, true);
   for (const fn of functions.values()) {
     const scope = new Scope(moduleScope, "function"); fn.params.forEach(p => declare(scope, p.node.name, p.cell, p.node, "parameter"));
     const returnsAllPaths = block(fn.node.body, scope, fn);
