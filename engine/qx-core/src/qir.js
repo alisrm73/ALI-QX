@@ -199,7 +199,7 @@ class FunctionBuilder {
     const left = this.lowerExpression(node.left);
     const tempName = "$qir_sc_" + this.tempCounter++;
     const temp = this.addVariable(tempName, "BOOL");
-    this.emit("DECLARE", { variable: temp.id, name: tempName, storage: "local", declared_type: "BOOL", generated: true }, null, null, node);
+    this.emit("DECLARE", { variable: temp.id, name: tempName, storage: "local", declared_type: "BOOL", generated: true, ...(this.owner.usesImmutable ? { mutable: true } : {}) }, null, null, node);
     const evalRight = this.newBlock(), shortcut = this.newBlock(), merge = this.newBlock();
     if (node.operator === "AND") this.terminate("BRANCH", { condition: left.value, true_target: evalRight.id, false_target: shortcut.id }, node);
     else this.terminate("BRANCH", { condition: left.value, true_target: shortcut.id, false_target: evalRight.id }, node);
@@ -237,7 +237,7 @@ class FunctionBuilder {
           fail("QIR_E_COMMAND_ARGUMENT", "DATA.CREATE initial value does not match its registered type", args[1]);
         const storage = this.descriptor.kind === "module_initializer" ? "global" : "local";
         const variable = this.addVariable(args[0].name, value.type, storage);
-        this.emit("DECLARE", { variable: variable.id, name: variable.name, storage, declared_type: value.type }, null, null, node);
+        this.emit("DECLARE", { variable: variable.id, name: variable.name, storage, declared_type: value.type, ...(this.owner.usesImmutable ? { mutable: true } : {}) }, null, null, node);
         this.store(variable, value.value, node); return;
       }
       case "DATA.SET":
@@ -342,7 +342,7 @@ class FunctionBuilder {
           const variable = this.addVariable(args[0].name, "LIST", storage);
           const empty = this.value();
           this.emit("MAKE_LIST", { elements: [] }, "LIST", empty, node);
-          this.emit("DECLARE", { variable: variable.id, name: variable.name, storage, declared_type: "LIST" }, null, null, node);
+          this.emit("DECLARE", { variable: variable.id, name: variable.name, storage, declared_type: "LIST", ...(this.owner.usesImmutable ? { mutable: true } : {}) }, null, null, node);
           this.store(variable, empty, node);
           return;
         }
@@ -649,9 +649,38 @@ export function validateQIR(module) {
     }
     flowByFunction.set(fn.id, { trackedVariables, inStates });
     const flow = flowByFunction.get(fn.id);
+    // Immutable bindings use a may-have-been-initialized analysis: if any
+    // incoming path has already written the binding, another STORE is invalid.
+    const immutableVariables = new Set((module.globals ?? []).filter(item => item.mutable === false).map(item => item.id));
+    for (const block of fn.blocks) for (const inst of block.instructions ?? [])
+      if (inst.opcode === "DECLARE" && inst.operands?.mutable === false) immutableVariables.add(inst.operands.variable);
+    const maybeIn = new Map(), maybeOut = new Map();
+    const initiallyWritten = fn.kind === "module_initializer" ? new Set() :
+      new Set((module.globals ?? []).filter(item => item.mutable === false).map(item => item.id));
+    for (const id of reachable) { maybeIn.set(id, new Set(initiallyWritten)); maybeOut.set(id, new Set(initiallyWritten)); }
+    let maybeChanged = true, maybeRounds = 0;
+    while (maybeChanged && maybeRounds++ < Math.max(4, reachable.size * 4)) {
+      maybeChanged = false;
+      for (const id of reachable) {
+        const preds = predecessorsOf(id);
+        const nextIn = new Set(initiallyWritten);
+        for (const pred of preds) for (const variable of maybeOut.get(pred) ?? []) nextIn.add(variable);
+        const nextOut = new Set(nextIn);
+        for (const inst of blocks.get(id)?.instructions ?? []) {
+          const op = inst.operands ?? {};
+          if (inst.opcode === "DECLARE" && immutableVariables.has(op.variable)) nextOut.delete(op.variable);
+          if ((inst.opcode === "STORE_LOCAL" || inst.opcode === "STORE_GLOBAL") && immutableVariables.has(op.variable)) nextOut.add(op.variable);
+        }
+        const same = (a,b) => a.size === b.size && [...a].every(x => b.has(x));
+        if (!same(maybeIn.get(id), nextIn) || !same(maybeOut.get(id), nextOut)) {
+          maybeIn.set(id, nextIn); maybeOut.set(id, nextOut); maybeChanged = true;
+        }
+      }
+    }
 
     for (const block of fn.blocks) {
       const initializedVariables = new Set(flow.inStates.get(block.id) ?? []);
+      const possiblyInitializedImmutable = new Set(maybeIn.get(block.id) ?? initiallyWritten);
       const seen = new Set();
       for (const inst of block.instructions) {
         const refs = [];
@@ -676,6 +705,12 @@ export function validateQIR(module) {
         }
         if (["STORE_LOCAL","STORE_GLOBAL"].includes(inst.opcode) && !definedVariables.has(op.variable))
           report("QIR_E_UNDECLARED_VARIABLE", "STORE before DECLARE", inst.source);
+        if (["STORE_LOCAL","STORE_GLOBAL"].includes(inst.opcode) && immutableVariables.has(op.variable)) {
+          if (possiblyInitializedImmutable.has(op.variable))
+            report("QIR_E_IMMUTABLE_WRITE", "Immutable variable cannot be assigned more than once", inst.source, { function: fn.id, block: block.id, variable: op.variable });
+          possiblyInitializedImmutable.add(op.variable);
+        }
+        if (inst.opcode === "DECLARE" && immutableVariables.has(op.variable)) possiblyInitializedImmutable.delete(op.variable);
         if (inst.opcode === "DECLARE" && flow?.trackedVariables.has(op.variable)) {
           if (op.parameter === true) initializedVariables.add(op.variable);
           else initializedVariables.delete(op.variable);
