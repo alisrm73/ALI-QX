@@ -498,11 +498,11 @@
         "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
         "rawAst": "PRESENT",
         "specializedAst": "UNSPECIFIED",
-        "semanticAnalyzer": "UNSUPPORTED",
+        "semanticAnalyzer": "ARGUMENT_SCHEMA_GUARD_PRESENT; SYMBOL_SEMANTICS_BLOCKED",
         "qir": "UNSUPPORTED",
         "vm": "NOT_REACHED",
         "backend": "NOT_REACHED",
-        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED"
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED; GROUP2_ARGUMENT_SCHEMA_TESTS_ADDED_NOT_RUN"
       },
       "syntacticRecognition": {
         "grammarV1": "APPROVED",
@@ -579,11 +579,11 @@
         "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
         "rawAst": "PRESENT",
         "specializedAst": "UNSPECIFIED",
-        "semanticAnalyzer": "UNSUPPORTED",
+        "semanticAnalyzer": "ARGUMENT_SCHEMA_GUARD_PRESENT; SYMBOL_SEMANTICS_BLOCKED",
         "qir": "UNSUPPORTED",
         "vm": "NOT_REACHED",
         "backend": "NOT_REACHED",
-        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED"
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED; GROUP2_ARGUMENT_SCHEMA_TESTS_ADDED_NOT_RUN"
       },
       "syntacticRecognition": {
         "grammarV1": "APPROVED",
@@ -654,11 +654,11 @@
         "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
         "rawAst": "PRESENT",
         "specializedAst": "UNSPECIFIED",
-        "semanticAnalyzer": "UNSUPPORTED",
+        "semanticAnalyzer": "ARGUMENT_SCHEMA_GUARD_PRESENT; SYMBOL_SEMANTICS_BLOCKED",
         "qir": "UNSUPPORTED",
         "vm": "NOT_REACHED",
         "backend": "NOT_REACHED",
-        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED"
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED; GROUP2_ARGUMENT_SCHEMA_TESTS_ADDED_NOT_RUN"
       },
       "syntacticRecognition": {
         "grammarV1": "APPROVED",
@@ -735,11 +735,11 @@
         "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
         "rawAst": "PRESENT",
         "specializedAst": "UNSPECIFIED",
-        "semanticAnalyzer": "UNSUPPORTED",
+        "semanticAnalyzer": "ARGUMENT_SCHEMA_GUARD_PRESENT; SYMBOL_SEMANTICS_BLOCKED",
         "qir": "UNSUPPORTED",
         "vm": "NOT_REACHED",
         "backend": "NOT_REACHED",
-        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED"
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED; GROUP2_ARGUMENT_SCHEMA_TESTS_ADDED_NOT_RUN"
       },
       "syntacticRecognition": {
         "grammarV1": "APPROVED",
@@ -817,11 +817,11 @@
         "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
         "rawAst": "PRESENT",
         "specializedAst": "UNSPECIFIED",
-        "semanticAnalyzer": "UNSUPPORTED",
+        "semanticAnalyzer": "ARGUMENT_SCHEMA_GUARD_PRESENT; SYMBOL_SEMANTICS_BLOCKED",
         "qir": "UNSUPPORTED",
         "vm": "NOT_REACHED",
         "backend": "NOT_REACHED",
-        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED"
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED; GROUP2_ARGUMENT_SCHEMA_TESTS_ADDED_NOT_RUN"
       },
       "syntacticRecognition": {
         "grammarV1": "APPROVED",
@@ -892,11 +892,11 @@
         "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
         "rawAst": "PRESENT",
         "specializedAst": "UNSPECIFIED",
-        "semanticAnalyzer": "UNSUPPORTED",
+        "semanticAnalyzer": "ARGUMENT_SCHEMA_GUARD_PRESENT; SYMBOL_SEMANTICS_BLOCKED",
         "qir": "UNSUPPORTED",
         "vm": "NOT_REACHED",
         "backend": "NOT_REACHED",
-        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED"
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED; GROUP2_ARGUMENT_SCHEMA_TESTS_ADDED_NOT_RUN"
       },
       "syntacticRecognition": {
         "grammarV1": "APPROVED",
@@ -4829,7 +4829,8 @@
     "Owner-approved usage-position decision (2026-11-28): ORIGIN, FORM, CORE, SEED, ROOT, and IDENTITY are valid only in statement position and invalid as expressions. This decision does not specify argument count or types, output, body policy, declaration ordering or relations, or execution semantics. Their semantic contracts remain otherwise UNSPECIFIED and QIR lowering remains blocked.",
     "Follow-up Termux verification reported by the owner on 2026-11-28: node --test test/geometric-ast-adapter.test.js passed 8/8 (0 failed; 620.443307 ms), including the new statement-only Group 1 expression rejection test. The terminal excerpt did not include Node.js version or git HEAD, so neither is asserted here. This remains a focused test-file result, not a full-suite or QIR/VM/backend success.",
     "Follow-up Termux verification reported by the owner on 2026-11-28 for Group 2 usage-position enforcement: node --test test/geometric-ast-adapter.test.js passed 9/9 (0 failed; 759.40573 ms). The two preceding node --check commands for semantic-analyzer.js and geometric-ast-adapter.test.js were chained with && and therefore completed successfully before the test command ran. The supplied terminal excerpt did not include Node.js version or git HEAD, so neither is asserted. This is a focused test-file result, not a full-suite or successful QIR/VM/backend result.",
-    "Owner-approved argument-shape decision for Group 2 (2026-11-28): DATA(name: Identifier, initialValue: Expression); STORE(target: Identifier, value: Expression); FETCH(reference: Identifier); VALUE(name: Identifier, value: Expression); RECORD(name: Identifier, fields: Expression); COLLECTION(name: Identifier). All arguments are required and arity is exact. RECORD.fields remains a generic Expression because QX V1 has no approved record-field/map literal shape. This decision does not determine value types, name resolution/existence, mutability, storage scope, persistence, collection element schema, record field semantics, output types, body policy, or QIR lowering; those remain UNSPECIFIED."
+    "Owner-approved argument-shape decision for Group 2 (2026-11-28): DATA(name: Identifier, initialValue: Expression); STORE(target: Identifier, value: Expression); FETCH(reference: Identifier); VALUE(name: Identifier, value: Expression); RECORD(name: Identifier, fields: Expression); COLLECTION(name: Identifier). All arguments are required and arity is exact. RECORD.fields remains a generic Expression because QX V1 has no approved record-field/map literal shape. This decision does not determine value types, name resolution/existence, mutability, storage scope, persistence, collection element schema, record field semantics, output types, body policy, or QIR lowering; those remain UNSPECIFIED.",
+    "Group 2 argument-shape enforcement implementation added on 2026-11-28: semantic-analyzer.js checks exact arity and AST node kinds for DATA, STORE, FETCH, VALUE, RECORD, and COLLECTION. Identifier designator positions are syntax-only and are not name-resolved by this guard; Expression positions are traversed by the existing expression analyzer. The symbols remain semantically rejected with QX3028 and blocked from QIR. Focused tests for accepted shapes, wrong arity, and wrong AST node kinds were added but have NOT YET BEEN RUN in Termux; no test pass is claimed."
   ],
   "verificationEvidence": {
     "scope": "engine/qx-core/test/geometric-ast-adapter.test.js only",
