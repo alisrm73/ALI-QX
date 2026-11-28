@@ -478,7 +478,12 @@ test("browser build preserves deprecated-but-supported exact pins with a warning
 });
 
 test("browser runtime executes QIR 1.6 immutable RECORD values", () => {
-  const project = buildWebProject('⊚(profile, { name: "Ali", age: 53, active: TRUE, nested: { city: "Tartous" } })');
+  const project = buildWebProject([
+    '⊚(profile, { name: "Ali", age: 53, active: TRUE, nested: { city: "Tartous" } })',
+    "DATA.CREATE(items, [1])",
+    "DATA.CREATE(added, DATA.ADD(items, 2))",
+    'UI.TEXT("ready")'
+  ].join("\n"));
   assert.match(project.files["app.js"], /"version":"1.6"/);
   assert.match(project.files["app.js"], /MAKE_RECORD/);
   const makeNode = () => ({ children: [], textContent: "", className: "", append(...items) { this.children.push(...items); } });
@@ -490,4 +495,5 @@ test("browser runtime executes QIR 1.6 immutable RECORD values", () => {
   assert.equal(section.children[0].textContent, "profile");
   assert.match(section.children[1].textContent, /"name": "Ali"/);
   assert.match(section.children[1].textContent, /"city": "Tartous"/);
+  assert.ok(nodes.get("qx-output").children.some(node => node.className === "qx-text" && node.textContent === "ready"));
 });
