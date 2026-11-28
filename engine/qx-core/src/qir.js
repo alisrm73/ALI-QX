@@ -536,6 +536,9 @@ export function validateQIR(module) {
       report("QIR_E_FUNCTION_SCHEMA", "Invalid function or duplicate function id"); continue;
     }
     functionIds.add(fn.id);
+    if (!validType(fn.return_type, module.version) || !Array.isArray(fn.parameters) ||
+        fn.parameters.some(parameter => !parameter || !validType(parameter.type, module.version)))
+      report("QIR_E_FUNCTION_SCHEMA", "Function parameter or return type is invalid for this QIR version", null, { function: fn.id });
     const blocks = new Map(fn.blocks.map(block => [block.id, block]));
     if (!blocks.has(fn.entry_block)) report("QIR_E_ENTRY_BLOCK", "Entry block does not exist", null, { function: fn.id });
     const valueTypes = new Map(), valueLocations = new Map(), instructionIds = new Set(), variableTypes = new Map();
