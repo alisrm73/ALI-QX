@@ -491,12 +491,13 @@ test("accepts the approved static SCREEN, PANEL, and BLOCK hierarchy", () => {
 
 test("rejects duplicate UI ids, invalid nesting, and deferred Group 3 symbols", () => {
   const cases = [
-    "△() { ▱(same) { ▰(same, \"x\") } }",
-    "△() { ▰(text, \"x\") ▱(text) {} }",
-    "△() { ◫(window) {} }",
-    "△() { ⌑(button) {} }",
-    "△() { ▤(layout) {} }",
-    "▱(outside) {}",\n    "△() { ▱(bad-id!) {} }"
+    '△() { ▱(same) { ▰(same, "x") } }',
+    ["△() {", '  ▰(text, "x")', "  ▱(text) {}", "}"].join("\n"),
+    '△() { ◫(window) {} }',
+    '△() { ⌑(button) {} }',
+    '△() { ▤(layout) {} }',
+    "▱(outside) {}",
+    "△() { ▱(معرف) {} }"
   ];
   for (const source of cases) {
     const result = check(source);
