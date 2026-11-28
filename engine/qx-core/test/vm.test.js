@@ -370,3 +370,16 @@ test("VM rejects repeated execution of an immutable DECLARE before initializatio
   assert.throws(() => runQIR(module), error =>
     error instanceof QXVMError && error.code === "QX_VM_IMMUTABLE_REDECLARE");
 });
+
+test("executes immutable RECORD values and FETCH through QIR 1.6", () => {
+  const result = runQIR(compile([
+    '⊚(profile, { name: "Ali", age: 53, active: TRUE, nested: { city: "Tartous" } })',
+    "FUNCTION echo(value)",
+    "RETURN value",
+    "END",
+    "echo(⧬(profile))"
+  ].join("\\n")));
+  assert.deepEqual(result.globals.profile, {
+    name: "Ali", age: 53, active: true, nested: { city: "Tartous" }
+  });
+});
