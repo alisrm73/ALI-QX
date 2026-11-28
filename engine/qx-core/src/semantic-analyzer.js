@@ -344,16 +344,16 @@ export function analyze(program) {
       // Geometric statements without approved semantic contracts are rejected
       // uniformly, regardless of whether the adapter specialized their AST type.
       if (node.type === "GeometricStatement" || node.syntaxType === "GeometricStatement") {
-        const hasBody = node.body !== null && node.body !== undefined;
-        if (hasBody) {
-          report("QX3028", "Geometric symbol " + node.symbol + " does not allow a body", node);
-          if (Array.isArray(node.body)) block(node.body, scope, fn);
-        }
-        if (node.alternate) {
-          report("QX3028", "Geometric symbol " + node.symbol + " does not allow an alternate branch", node);
-          block(Array.isArray(node.alternate) ? node.alternate : [node.alternate], scope, fn);
-        }
         if (node.group === "DATA_STORAGE") {
+          const hasBody = node.body !== null && node.body !== undefined;
+          if (hasBody) {
+            report("QX3028", "Geometric symbol " + node.symbol + " does not allow a body", node);
+            if (Array.isArray(node.body)) block(node.body, scope, fn);
+          }
+          if (node.alternate) {
+            report("QX3028", "Geometric symbol " + node.symbol + " does not allow an alternate branch", node);
+            block(Array.isArray(node.alternate) ? node.alternate : [node.alternate], scope, fn);
+          }
           geometricArguments(node, scope);
           const args = Array.isArray(node.args) ? node.args : [];
           if (node.symbol === "DATA" && args.length === 2 && args[0]?.type === "Identifier") {
