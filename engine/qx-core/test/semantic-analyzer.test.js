@@ -485,7 +485,7 @@ test("accepts the approved static SCREEN, PANEL, and BLOCK hierarchy", () => {
     "    }",
     "  }",
     "}"
-  ].join("\\n"));
+  ].join("\n"));
   assert.equal(result.valid, true, JSON.stringify(result.diagnostics));
 });
 
