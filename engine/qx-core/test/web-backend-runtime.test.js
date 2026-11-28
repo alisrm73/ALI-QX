@@ -519,7 +519,7 @@ test("browser runtime renders dynamic Group 3 UI trees through QIR 1.7", () => {
     createElement: tag => makeNode(tag),
     createTextNode: value => ({ kind: "text", textContent: value })
   };
-  vm.runInNewContext(project.files["app.js"], { document });
+  vm.runInNewContext(project.files["app.js"], { document, TextEncoder });
   assert.equal(nodes.get("qx-status").textContent, "Execution completed");
   const container = nodes.get("qx-output").children.find(node => node.className === "qx-ui-container");
   assert.ok(container);
