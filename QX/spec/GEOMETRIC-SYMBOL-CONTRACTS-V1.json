@@ -558,7 +558,7 @@
       "allowedContexts": "MODULE_SCOPE_OR_FUNCTION_BODY",
       "preconditions": "Target must already exist, be initialized, and be mutable. VALUE and RECORD bindings are not assignable. A function may update only bindings local to that function; module-level bindings may be updated only at module scope. No implicit global mutation from a function.",
       "validationRules": "Resolve target lexically. Reject undeclared targets, immutable targets, unsupported target kinds, and type mismatches. Do not create a binding when the target is absent.",
-      "relations": "Updates DATA or COLLECTION; cannot update VALUE. FETCH observes the current value after a successful STORE.",
+      "relations": "Updates DATA or COLLECTION; cannot update VALUE or immutable RECORD. FETCH observes the current value after a successful STORE.",
       "astEffect": "Update the existing mutable binding's value while preserving its inferred type.",
       "qirLowering": "LOWERED_TO_EXISTING_QIR_V1_OPCODES; FOCUSED_QIR_VM_AND_WEB_BACKEND_TESTS_PASSED_60_OF_60",
       "vmRequirements": "EXISTING_QIR_V1_VM_OPCODES; GROUP2_EXECUTION_VERIFIED_BY_FOCUSED_TERMUX_TESTS",
@@ -627,8 +627,8 @@
           }
         ]
       },
-      "inputTypes": "reference: Identifier resolving to an initialized DATA, VALUE, or COLLECTION binding.",
-      "outputType": "The statically inferred type of the referenced binding (NUM, TXT, BOOL, or LIST).",
+      "inputTypes": "reference: Identifier resolving to an initialized DATA, VALUE, COLLECTION, or RECORD binding.",
+      "outputType": "The statically inferred type of the referenced binding (NUM, TXT, BOOL, LIST, or RECORD).",
       "allowsBody": "FORBIDDEN",
       "allowedContexts": "ANY_EXPRESSION_CONTEXT_WHERE_THE_RESULT_TYPE_IS_VALID",
       "preconditions": "The referenced name must resolve lexically to an existing initialized supported binding.",
