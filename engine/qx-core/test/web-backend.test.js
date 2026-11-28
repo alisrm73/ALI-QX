@@ -65,6 +65,8 @@ test("builds web assets for QIR 1.5 immutable VALUE bindings", () => {
   const project = buildWebProject("⊙(fixed, 7)");
   assert.match(project.files["app.js"], /"version":"1.5"/);
   assert.match(project.files["app.js"], /"mutable":false/);
+  assert.match(project.files["app.js"], /QX_VM_IMMUTABLE_DECLARE/);
+  assert.match(project.files["app.js"], /QX_VM_IMMUTABLE_REDECLARE/);
 });
 
 test("rejects QIR 1.5 immutable global initialization without DECLARE", () => {
