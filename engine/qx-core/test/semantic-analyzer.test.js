@@ -473,3 +473,34 @@ test("keeps RECORD literals out of DATA VALUE and equality contracts", () => {
     assert.equal(result.valid, false, source);
   }
 });
+
+test("accepts the approved static SCREEN, PANEL, and BLOCK hierarchy", () => {
+  const result = check([
+    '◉(title, "Dynamic heading")',
+    "△() {",
+    "  ▱(main) {",
+    "    ▰(heading, ◌(title))",
+    "    ▱(details) {",
+    '      ▰(description, "Static text")',
+    "    }",
+    "  }",
+    "}"
+  ].join("\\n"));
+  assert.equal(result.valid, true, JSON.stringify(result.diagnostics));
+});
+
+test("rejects duplicate UI ids, invalid nesting, and deferred Group 3 symbols", () => {
+  const cases = [
+    "△() { ▱(same) { ▰(same, \"x\") } }",
+    "△() { ▰(text, \"x\") ▱(text) {} }",
+    "△() { ◫(window) {} }",
+    "△() { ⌑(button) {} }",
+    "△() { ▤(layout) {} }",
+    "▱(outside) {}"
+  ];
+  for (const source of cases) {
+    const result = check(source);
+    assert.equal(result.valid, false, source);
+    assert.ok(result.diagnostics.some(item => ["QX3070", "QX3071", "QX3073"].includes(item.code)), source);
+  }
+});
