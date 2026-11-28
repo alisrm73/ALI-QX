@@ -82,6 +82,26 @@ test("semantic analysis recognizes the approved AST types but blocks unresolved 
   }
 });
 
+test("enforces statement-only usage for the six approved Group 1 symbols", () => {
+  for (const symbol of GEOMETRIC_SYMBOLS.filter(item => item.group === "CREATION_DEFINITION")) {
+    const ast = parse(`DATA.CREATE(value, ${symbol.glyph}())`);
+    const semantic = analyze(ast);
+
+    assert.equal(semantic.valid, false, symbol.name);
+    assert.ok(
+      semantic.diagnostics.some(item =>
+        item.code === "QX3028" &&
+        item.message.includes("is statement-only and cannot be used as an expression")
+      ),
+      `expression position: ${symbol.name}`
+    );
+    assert.throws(
+      () => lowerToQIR(ast, semantic),
+      error => error.code === "QIR_E_SEMANTIC_ERRORS"
+    );
+  }
+});
+
 test("rejects non-Program input without mutating caller data", () => {
   const input = { type: "ExpressionStatement" };
   assert.throws(() => adaptGeometricAst(input), TypeError);
