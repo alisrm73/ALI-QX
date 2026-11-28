@@ -247,6 +247,7 @@ class FunctionBuilder {
           fail("QIR_E_BAD_COMMAND_ARGUMENTS", command.id + " does not match its registered signature", node);
         const variable = this.variables.get(args[0].name) ?? this.owner.globalVariable(args[0].name, this);
         if (!variable) fail("QIR_E_UNKNOWN_VARIABLE", "Unknown target " + args[0].name, args[0]);
+        if (variable.mutable === false) fail("QIR_E_IMMUTABLE_WRITE", "Cannot modify immutable VALUE binding", args[0]);
         if (signature.result.scope === "function" &&
             (this.descriptor.kind !== "function" || variable.storage !== signature.result.targetStorage))
           fail("QIR_E_GLOBAL_REQUIRED", "DATA.SET_GLOBAL requires a module global and must be used inside a function", args[0]);
@@ -267,6 +268,7 @@ class FunctionBuilder {
         if (args.length !== 2 || args[0].type !== "Identifier") fail("QIR_E_BAD_COMMAND_ARGUMENTS", command.id + " expects target and value", node);
         const variable = this.variables.get(args[0].name) ?? this.owner.globalVariable(args[0].name, this);
         if (!variable) fail("QIR_E_UNKNOWN_VARIABLE", "Unknown target " + args[0].name, args[0]);
+        if (variable.mutable === false) fail("QIR_E_IMMUTABLE_WRITE", "Cannot modify immutable VALUE binding", args[0]);
         const expected = command.signature.parameters[1].resultType;
         const expectedTarget = command.signature.parameters[0].variableType;
         if (variable.type !== expectedTarget) fail("QIR_E_TYPE_MISMATCH", "Stored target type mismatch", args[0]);
@@ -330,6 +332,7 @@ class FunctionBuilder {
         if (node.symbol === "STORE" && args.length === 2 && args[0]?.type === "Identifier") {
           const variable = this.variables.get(args[0].name) ?? this.owner.globalVariable(args[0].name, this);
           if (!variable) fail("QIR_E_UNKNOWN_VARIABLE", "Unknown target " + args[0].name, args[0]);
+          if (variable.mutable === false) fail("QIR_E_IMMUTABLE_WRITE", "Cannot modify immutable VALUE binding", args[0]);
           if (variable.storage === "global" && this.descriptor.kind !== "module_initializer")
             fail("QIR_E_GLOBAL_WRITE", "Geometric STORE cannot update a module binding inside a function", node);
           const value = this.lowerExpression(args[1]);
@@ -467,7 +470,7 @@ class ModuleLowerer {
     if (!global) return null;
     const local = builder.variables.get(name);
     if (local) return local;
-    return builder.addVariable(name, global.type, "global");
+    return builder.addVariable(name, global.type, "global", false, global.mutable !== false);
   }
   lower() {
     const initializerDescriptor = { id: "fn_0", kind: "module_initializer", name: null, parameters: [], returnType: "NULL", node: this.program };
