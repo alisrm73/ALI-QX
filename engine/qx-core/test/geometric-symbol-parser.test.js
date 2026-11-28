@@ -51,7 +51,7 @@ test("attaches geometric ELSE_IF and ELSE branches to their IF statement", () =>
     "⟢() {",
     '  ⊢("other")',
     "}"
-  ].join("\\n"));
+  ].join("\n"));
   const conditional = ast.body[0];
   assert.equal(conditional.symbol, "IF");
   assert.equal(conditional.alternate.symbol, "ELSE_IF");
