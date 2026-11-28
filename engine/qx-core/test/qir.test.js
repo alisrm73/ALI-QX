@@ -447,3 +447,18 @@ test("lowers VALUE to immutable QIR 1.5 metadata and rejects repeated stores", (
   });
   assert.ok(validateQIR(module).some(item => item.code === "QIR_E_IMMUTABLE_WRITE"));
 });
+
+test("lowers local VALUE bindings as immutable declarations in QIR 1.5", () => {
+  const module = compile([
+    "FUNCTION readFixed()",
+    "⊙(localFixed, 11)",
+    "RETURN localFixed",
+    "END",
+    "DATA.CREATE(result, readFixed())"
+  ].join("\n"));
+  assert.equal(module.version, "1.5");
+  const declarations = module.functions[0].blocks.flatMap(block => block.instructions)
+    .filter(item => item.opcode === "DECLARE");
+  assert.ok(declarations.some(item => item.operands.name === "localFixed" && item.operands.mutable === false));
+  assert.deepEqual(validateQIR(module), []);
+});
