@@ -178,7 +178,7 @@ function browserRun(module, combiningClassEntries, uiLock, uiRegistry) {
           case "CONST_TXT": if(typeof o.value!=="string"||o.value.length>LIMITS.maxStringLength)fail("QX_VM_INVALID_TEXT","Invalid text",i,ctx);values.set(i.result,o.value);break;
           case "CONST_BOOL": values.set(i.result,o.value);break;
           case "CONST_NULL": values.set(i.result,null);break;
-          case "DECLARE": if(o.storage==="global"){if(!globalsById.has(o.variable))fail("QX_VM_UNKNOWN_GLOBAL","Unknown global",i,ctx);globals.set(o.variable,UNINITIALIZED);initializedGlobals.delete(o.variable);}else if(o.parameter!==true){vars.set(o.variable,UNINITIALIZED);mutableVars.set(o.variable,o.mutable!==false);initializedVars.delete(o.variable);}break;
+          case "DECLARE": if(o.storage==="global"){if(!globalsById.has(o.variable))fail("QX_VM_UNKNOWN_GLOBAL","Unknown global",i,ctx);if(globalMutability.get(o.variable)===false&&initializedGlobals.has(o.variable))fail("QX_VM_IMMUTABLE_WRITE","Cannot redeclare an initialized immutable global",i,ctx);globals.set(o.variable,UNINITIALIZED);if(globalMutability.get(o.variable)!==false)initializedGlobals.delete(o.variable);}else if(o.parameter!==true){if(o.mutable===false&&initializedVars.has(o.variable))fail("QX_VM_IMMUTABLE_WRITE","Cannot redeclare an initialized immutable local",i,ctx);vars.set(o.variable,UNINITIALIZED);mutableVars.set(o.variable,o.mutable!==false);if(o.mutable!==false)initializedVars.delete(o.variable);}break;
           case "LOAD": values.set(i.result,readVar(o.variable,i));break;
           case "STORE_LOCAL": write(o.variable,read(o.value,i),i,false);break;
           case "STORE_GLOBAL": write(o.variable,read(o.value,i),i,true);break;
