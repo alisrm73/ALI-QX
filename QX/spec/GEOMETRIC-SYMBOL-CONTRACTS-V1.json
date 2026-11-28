@@ -814,15 +814,15 @@
         "QIR 1.1–1.5 command compatibility under QIR 1.6"
       ],
       "implementationStatus": {
-        "lexer": "COLON_TOKEN_IMPLEMENTED; TERMUX_RUNTIME_TEST_PENDING",
-        "parser": "RECORD_LITERAL_IMPLEMENTED; TERMUX_RUNTIME_TEST_PENDING",
+        "lexer": "COLON_TOKEN_IMPLEMENTED; TERMUX_FOCUSED_LEXER_TESTS_PASSED_58_WITH_PARSER_AND_WEB_RUNTIME",
+        "parser": "RECORD_LITERAL_IMPLEMENTED; TERMUX_FOCUSED_PARSER_TESTS_PASSED_58_WITH_LEXER_AND_WEB_RUNTIME",
         "rawAst": "RECORD_STATEMENT_AND_RECORD_LITERAL_PRESENT",
         "specializedAst": "NOT_REQUIRED; GENERIC_GEOMETRIC_STATEMENT_PRESERVED",
         "semanticAnalyzer": "RECORD_TYPE_AND_IMMUTABLE_BINDING_IMPLEMENTED; DUPLICATE_FIELD_NULL_AND_FETCH_RULES_ADDED; TERMUX_FOCUSED_SEMANTIC_TESTS_PASSED_75_WITH_VM",
         "qir": "QIR_1_6_RECORD_TYPE_AND_MAKE_RECORD_VALIDATOR_IMPLEMENTED; TERMUX_FOCUSED_QIR_TESTS_PASSED_44_WITH_WEB_BACKEND",
         "vm": "MAKE_RECORD_EXECUTION_AND_IMMUTABLE_BINDING_GUARDS_IMPLEMENTED; TERMUX_FOCUSED_VM_TESTS_PASSED_75_WITH_SEMANTIC_ANALYZER",
-        "backend": "WEB_RUNTIME_MAKE_RECORD_EXECUTION_IMPLEMENTED; TERMUX_WEB_ASSET_GENERATION_TESTS_PASSED_44_WITH_QIR; BROWSER_RUNTIME_TEST_PENDING",
-        "tests": "TERMUX_SEMANTIC_ANALYZER_AND_VM_TESTS_PASSED_75_OF_75; TERMUX_QIR_AND_WEB_BACKEND_TESTS_PASSED_44_OF_44; FOUR_FOCUSED_TEST_FILES; LEXER_PARSER_AND_WEB_BROWSER_RUNTIME_TESTS_PENDING; NODE_VERSION_NOT_CAPTURED; TEST_RUN_HEAD_NOT_CAPTURED"
+        "backend": "WEB_RUNTIME_MAKE_RECORD_EXECUTION_IMPLEMENTED; TERMUX_WEB_ASSET_GENERATION_TESTS_PASSED_44_WITH_QIR; TERMUX_BROWSER_RUNTIME_TESTS_PASSED_58_WITH_LEXER_PARSER",
+        "tests": "TERMUX_SEMANTIC_ANALYZER_AND_VM_TESTS_PASSED_75_OF_75; TERMUX_QIR_AND_WEB_BACKEND_TESTS_PASSED_44_OF_44; TERMUX_LEXER_PARSER_AND_WEB_BACKEND_RUNTIME_TESTS_PASSED_58_OF_58; THREE_FOCUSED_RUN_GROUPS; NODE_VERSION_NOT_CAPTURED; TEST_RUN_HEAD_NOT_CAPTURED; NOT_FULL_PROJECT_SUITE"
       },
       "syntacticRecognition": {
         "grammarV1": "APPROVED",
@@ -4825,7 +4825,7 @@
   "contractFieldCountDefinition": "Counts the 24 semantic/execution contract fields; excludes symbolId, internalName, and referenceDocuments.",
   "implementationNotes": "The six approved Group 1 statement forms are mapped by geometric-ast-adapter.js to their approved specialized AST node types under DefinitionDeclaration. The adapter preserves the original parser AST and all source/syntax fields.,Semantic Analyzer applies a uniform QX3028 guard to specialized geometric statements through their GeometricStatement syntaxType, and to GeometricCallExpression values. This blocks unresolved symbols while their semantic contracts remain UNSPECIFIED; it does not implement their semantic behavior.,The focused Node test file test/geometric-ast-adapter.test.js passed 7/7 on Termux with Node.js v24.22.3 at commit 663cfc76efa216cbdd4c30c0a4ac4cddd2e2c3db. This evidence does not establish a full-suite pass, lexer/parser suite pass, successful QIR lowering, or VM/backend execution.,Owner-approved usage-position decision (2026-11-28): ORIGIN, FORM, CORE, SEED, ROOT, and IDENTITY are valid only in statement position and invalid as expressions. This decision does not specify argument count or types, output, body policy, declaration ordering or relations, or execution semantics. Their semantic contracts remain otherwise UNSPECIFIED and QIR lowering remains blocked.,Follow-up Termux verification reported by the owner on 2026-11-28: node --test test/geometric-ast-adapter.test.js passed 8/8 (0 failed; 620.443307 ms), including the new statement-only Group 1 expression rejection test. The terminal excerpt did not include Node.js version or git HEAD, so neither is asserted here. This remains a focused test-file result, not a full-suite or QIR/VM/backend success.,Follow-up Termux verification reported by the owner on 2026-11-28 for Group 2 usage-position enforcement: node --test test/geometric-ast-adapter.test.js passed 9/9 (0 failed; 759.40573 ms). The two preceding node --check commands for semantic-analyzer.js and geometric-ast-adapter.test.js were chained with && and therefore completed successfully before the test command ran. The supplied terminal excerpt did not include Node.js version or git HEAD, so neither is asserted. This is a focused test-file result, not a full-suite or successful QIR/VM/backend result.,Owner-approved argument-shape decision for Group 2 (2026-11-28): DATA(name: Identifier, initialValue: Expression); STORE(target: Identifier, value: Expression); FETCH(reference: Identifier); VALUE(name: Identifier, value: Expression); RECORD(name: Identifier, fields: Expression); COLLECTION(name: Identifier). All arguments are required and arity is exact. RECORD.fields remains a generic Expression because QX V1 has no approved record-field/map literal shape. This decision does not determine value types, name resolution/existence, mutability, storage scope, persistence, collection element schema, record field semantics, output types, body policy, or QIR lowering; those remain UNSPECIFIED.,Group 2 argument-shape enforcement implementation added on 2026-11-28: semantic-analyzer.js checks exact arity and AST node kinds for DATA, STORE, FETCH, VALUE, RECORD, and COLLECTION. Identifier designator positions are syntax-only and are not name-resolved by this guard; Expression positions are traversed by the existing expression analyzer. This was an intermediate state; see the subsequent semantic implementation note and verification evidence.\n2026-11-28: The assistant selected and recorded a conservative Group 2 semantic design at the user's explicit delegation. DATA is mutable; VALUE is immutable; STORE updates only existing mutable DATA/COLLECTION bindings; FETCH reads initialized supported bindings; COLLECTION creates an empty mutable LIST. RECORD remains explicitly deferred because QX V1 has no record literal or RECORD type; it must not be coerced to LIST. These are contract decisions, not implementation claims. Group 2 remains blocked from QIR until symbol-specific analyzer implementation, QIR lowering, runtime support, and tests are completed.,Group 2 semantic analyzer implementation added on 2026-11-28: DATA declares mutable initialized NUM/TXT/BOOL/LIST bindings; STORE updates only existing mutable DATA/COLLECTION bindings with exact type and prohibits implicit module-binding mutation from functions; FETCH resolves supported bindings as typed expressions; COLLECTION declares an initialized mutable LIST. VALUE remains blocked pending immutable QIR/runtime enforcement; RECORD remains deferred. All Group 2 geometric statements reject bodies/alternate branches. This implementation is analyzer-only: no geometric Group 2 QIR lowering, VM execution, or Web Backend support is claimed.\n\nOwner approval and implementation in progress (2026-11-28): RECORD now uses a named-field RecordLiteral `{ field: Expression, ... }`, with unique Identifier keys and non-NULL supported values. RECORD bindings are immutable; FETCH reads the complete record; field selection and field mutation remain unspecified. QIR 1.6 adds RECORD and MAKE_RECORD; VM and Web Runtime implementations and focused regression tests have been added. All new RECORD tests remain pending Termux execution; no test success is claimed here. Earlier statements that RECORD is deferred are historical and superseded by this decision.",
   "verificationEvidence": {
-    "scope": "engine/qx-core/test/qir.test.js and engine/qx-core/test/web-backend.test.js; QIR 1.6 RECORD lowering/validation and Web asset generation",
+    "scope": "engine/qx-core/test/geometric-symbol-lexer.test.js, geometric-symbol-parser.test.js, lexer-parser.test.js, lexer-parser-boundaries.test.js, and web-backend-runtime.test.js; RECORD literal lexical/parsing paths and generated browser runtime execution",
     "branch": "audit/geometric-language-alignment",
     "commit": "NOT_CAPTURED_IN_USER_OUTPUT",
     "date": "2026-11-28",
@@ -4833,24 +4833,23 @@
     "workingDirectory": "~/ALI-QX-geometric-worktree/engine/qx-core",
     "commands": [
       {
-        "command": "node --test test/qir.test.js test/web-backend.test.js",
+        "command": "node --test test/geometric-symbol-lexer.test.js test/geometric-symbol-parser.test.js test/lexer-parser.test.js test/lexer-parser-boundaries.test.js test/web-backend-runtime.test.js",
         "result": "PASS",
-        "tests": 44,
-        "passed": 44,
+        "tests": 58,
+        "passed": 58,
         "failed": 0,
         "cancelled": 0,
         "skipped": 0,
         "todo": 0,
-        "durationMs": 806.790423
+        "durationMs": 1042.396346
       }
     ],
-    "includedCoverage": "Focused QIR and Web Backend tests passed for QIR 1.6 RECORD lowering/validation and generated validated Web assets, alongside the tested Group 2 and QIR 1.5 immutable VALUE asset paths.",
+    "includedCoverage": "Focused lexer and parser suites, parser boundary coverage, and generated browser runtime execution including QIR 1.6 immutable RECORD values.",
     "limitations": [
-      "Two focused test files only; not evidence that the full Node test suite passed.",
+      "Five focused test files only; this is not evidence that the full Node test suite passed.",
       "The supplied terminal excerpt did not include git rev-parse HEAD or Node.js version; no test-run commit SHA or Node version is asserted.",
-      "Web Backend test coverage here verifies generated validated assets; web-backend-runtime.test.js was not run, so browser execution of generated RECORD runtime is not verified.",
-      "Lexer/Parser runtime tests are not included in this run.",
-      "The result does not establish completion of all Group 2 symbols, all 72 geometric symbols, or the full QX implementation."
+      "The test output confirms browser-runtime test execution in the test harness; it does not establish deployment to or testing on an external production browser environment.",
+      "The result does not establish completion of all 72 geometric symbols or the full QX implementation."
     ]
   },
   "verificationEvidenceHistory": [
@@ -5124,6 +5123,34 @@
         "Web Backend test coverage here verifies generated validated assets; web-backend-runtime.test.js was not run, so browser execution of generated RECORD runtime is not verified.",
         "Lexer/Parser runtime tests are not included in this run.",
         "The result does not establish completion of all Group 2 symbols, all 72 geometric symbols, or the full QX implementation."
+      ]
+    },
+    {
+      "scope": "engine/qx-core/test/geometric-symbol-lexer.test.js, geometric-symbol-parser.test.js, lexer-parser.test.js, lexer-parser-boundaries.test.js, and web-backend-runtime.test.js; RECORD literal lexical/parsing paths and generated browser runtime execution",
+      "branch": "audit/geometric-language-alignment",
+      "commit": "NOT_CAPTURED_IN_USER_OUTPUT",
+      "date": "2026-11-28",
+      "environment": "Termux; Node.js version not included in supplied output",
+      "workingDirectory": "~/ALI-QX-geometric-worktree/engine/qx-core",
+      "commands": [
+        {
+          "command": "node --test test/geometric-symbol-lexer.test.js test/geometric-symbol-parser.test.js test/lexer-parser.test.js test/lexer-parser-boundaries.test.js test/web-backend-runtime.test.js",
+          "result": "PASS",
+          "tests": 58,
+          "passed": 58,
+          "failed": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0,
+          "durationMs": 1042.396346
+        }
+      ],
+      "includedCoverage": "Focused lexer and parser suites, parser boundary coverage, and generated browser runtime execution including QIR 1.6 immutable RECORD values.",
+      "limitations": [
+        "Five focused test files only; this is not evidence that the full Node test suite passed.",
+        "The supplied terminal excerpt did not include git rev-parse HEAD or Node.js version; no test-run commit SHA or Node version is asserted.",
+        "The test output confirms browser-runtime test execution in the test harness; it does not establish deployment to or testing on an external production browser environment.",
+        "The result does not establish completion of all 72 geometric symbols or the full QX implementation."
       ]
     }
   ]
