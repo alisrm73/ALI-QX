@@ -311,3 +311,14 @@ test("executes VALUE declarations while preserving immutable metadata", () => {
   assert.equal(module.globals[0].mutable, false);
   assert.equal(runQIR(module).globals.fixed, 7);
 });
+
+test("executes local VALUE bindings in QIR 1.5 functions", () => {
+  const module = compile([
+    "FUNCTION readFixed()",
+    "⊙(localFixed, 11)",
+    "RETURN localFixed",
+    "END",
+    "DATA.CREATE(result, readFixed())"
+  ].join("\n"));
+  assert.equal(runQIR(module).globals.result, 11);
+});
