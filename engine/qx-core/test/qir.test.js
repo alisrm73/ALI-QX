@@ -430,3 +430,20 @@ test("lowers Group 2 bindings inside functions without implicit global writes", 
   assert.ok(fnInstructions.some(item => item.opcode === "LOAD"));
   assert.equal(fnInstructions.some(item => item.opcode === "STORE_GLOBAL"), false);
 });
+
+test("lowers VALUE to immutable QIR 1.5 metadata and rejects repeated stores", () => {
+  const module = compile("⊙(fixed, 7)");
+  assert.equal(module.version, "1.5");
+  assert.equal(module.globals[0].mutable, false);
+  const instructions = module.initializer.blocks.flatMap(block => block.instructions);
+  assert.ok(instructions.some(item => item.opcode === "DECLARE" && item.operands.mutable === false));
+  assert.deepEqual(validateQIR(module), []);
+
+  const block = module.initializer.blocks[0];
+  const store = block.instructions.find(item => item.opcode === "STORE_GLOBAL");
+  block.instructions.splice(block.instructions.length - 1, 0, {
+    ...structuredClone(store),
+    id: "inst_immutable_repeat"
+  });
+  assert.ok(validateQIR(module).some(item => item.code === "QIR_E_IMMUTABLE_WRITE"));
+});
