@@ -129,6 +129,12 @@ export function analyze(program) {
         }
         report("QX3012", "This command has no approved value-returning expression contract", node); node.args.forEach(a => expression(a, scope)); out = concrete("ERROR"); break;
       }
+      case "GeometricCallExpression": {
+        report("QX3028", "Geometric symbol " + node.symbol + " has no approved semantic contract", node);
+        node.args.forEach(arg => expression(arg, scope));
+        out = concrete("ERROR");
+        break;
+      }
       case "CallExpression": {
         const fn = node.callee?.type === "Identifier" ? functions.get(node.callee.name) : null;
         if (!fn) { report("QX3033", "Unknown function: " + (node.callee?.name ?? "<expression>"), node.callee ?? node); node.args.forEach(a => expression(a, scope)); out = concrete("ERROR"); break; }
@@ -253,15 +259,16 @@ export function analyze(program) {
   function block(body, scope, fn = null) {
     let guaranteedReturn = false;
     for (const node of body) {
+      // Geometric statements without approved semantic contracts are rejected
+      // uniformly, regardless of whether the adapter specialized their AST type.
+      if (node.type === "GeometricStatement" || node.syntaxType === "GeometricStatement") {
+        report("QX3028", "Geometric symbol " + node.symbol + " has no approved semantic contract", node);
+        node.args?.forEach(arg => expression(arg, scope));
+        if (Array.isArray(node.body)) block(node.body, scope, fn);
+        if (node.alternate) block(Array.isArray(node.alternate) ? node.alternate : [node.alternate], scope, fn);
+        continue;
+      }
       switch (node.type) {
-        case "OriginDeclaration":
-        case "FormDefinition":
-        case "CoreEntityDeclaration":
-        case "ComponentDeclaration":
-        case "RootSelectionDeclaration":
-        case "IdentityDeclaration":
-          report("QX3028", "Geometric declaration " + node.symbol + " has no approved semantic contract", node);
-          break;
         case "CommandStatement": command(node, scope); break;
         case "IfStatement": {
           constrain(expression(node.test, scope), ["BOOL"], node.test, "QX3026", "IF condition must be BOOL");
