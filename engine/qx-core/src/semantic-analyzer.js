@@ -379,7 +379,7 @@ export function analyze(program) {
           if (node.alternate) report("QX3070", "Interface symbols do not allow alternate branches", node);
           if (node.symbol === "SCREEN") {
             if (fn || scope !== moduleScope || uiParent || !allowScreen) report("QX3070", "SCREEN is allowed only as a direct module-level statement", node);
-            if (++uiScreenCount > 1) report("QX3070", "A module may declare only one SCREEN", node);
+            if (allowScreen && ++uiScreenCount > 1) report("QX3070", "A module may declare only one SCREEN", node);
             if (args.length !== 0) report("QX3070", "SCREEN expects no arguments", node);
             if (!hasBody) report("QX3070", "SCREEN requires a body", node);
             if (hasBody) block(node.body, scope, fn, "SCREEN");
