@@ -446,3 +446,15 @@ test("keeps RECORD declarations immutable and FETCH expression-only", () => {
   assert.equal(result.valid, false);
   assert.ok(result.diagnostics.some(item => item.code === "QX3028"));
 });
+
+test("keeps RECORD literals out of DATA VALUE and equality contracts", () => {
+  for (const source of [
+    'DATA.CREATE(profile, { name: "Ali" })',
+    '◉(profile, { name: "Ali" })',
+    '⊙(profile, { name: "Ali" })',
+    '⊚(profile, { name: "Ali" })\\nDATA.CREATE(equal, profile == profile)'
+  ]) {
+    const result = check(source);
+    assert.equal(result.valid, false, source);
+  }
+});
