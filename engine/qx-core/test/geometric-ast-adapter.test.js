@@ -36,7 +36,7 @@ test("preserves nested statements and every existing geometric node field", () =
     '    ◉(users)',
     '  }',
     '}'
-  ].join("\\n"));
+  ].join("\n"));
   const adapted = adaptGeometricAst(raw);
 
   assert.equal(adapted.body[0].type, "OriginDeclaration");
@@ -53,7 +53,7 @@ test("does not map expression calls or symbols outside the approved first group"
   const raw = parse([
     '⬡(⧬(1 + 2))',
     '◉("users")'
-  ].join("\\n"));
+  ].join("\n"));
   const adapted = adaptGeometricAst(raw);
 
   assert.equal(adapted.body[0].type, "OriginDeclaration");
