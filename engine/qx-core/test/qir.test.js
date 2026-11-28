@@ -496,3 +496,14 @@ test("QIR 1.5 retains command features introduced by QIR 1.1 through 1.4", () =>
   assert.deepEqual(commands, ["DATA.ADD", "UI.TEXT", "UI.TREE", "INTEGRATION.REQUEST"]);
   assert.deepEqual(validateQIR(module), []);
 });
+
+test("refuses QIR lowering for a syntactically valid but semantically deferred RECORD", () => {
+  const ast = parse('⊚(profile, ["name", "Ali"])');
+  const semantic = analyze(ast);
+  assert.equal(semantic.valid, false);
+  assert.ok(semantic.diagnostics.some(item => item.code === "QX3028"));
+  assert.throws(
+    () => lowerToQIR(ast, semantic),
+    error => error.name === "QIRDiagnostic" && error.code === "QIR_E_SEMANTIC_ERRORS"
+  );
+});
