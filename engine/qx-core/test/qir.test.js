@@ -462,3 +462,20 @@ test("lowers local VALUE bindings as immutable declarations in QIR 1.5", () => {
   assert.ok(declarations.some(item => item.operands.name === "localFixed" && item.operands.mutable === false));
   assert.deepEqual(validateQIR(module), []);
 });
+
+test("requires immutable globals to be declared before their single initialization", () => {
+  const original = compile("⊙(fixed, 7)");
+  const withoutDeclaration = structuredClone(original);
+  const instructions = withoutDeclaration.initializer.blocks[0].instructions;
+  const declarationIndex = instructions.findIndex(item => item.opcode === "DECLARE" && item.operands.mutable === false);
+  instructions.splice(declarationIndex, 1);
+  assert.ok(validateQIR(withoutDeclaration).some(item => item.code === "QIR_E_IMMUTABLE_DECLARE"));
+
+  const storeBeforeDeclaration = structuredClone(original);
+  const block = storeBeforeDeclaration.initializer.blocks[0];
+  const declaration = block.instructions.find(item => item.opcode === "DECLARE" && item.operands.mutable === false);
+  const store = block.instructions.find(item => item.opcode === "STORE_GLOBAL");
+  block.instructions.splice(block.instructions.indexOf(store), 1);
+  block.instructions.splice(block.instructions.indexOf(declaration), 0, store);
+  assert.ok(validateQIR(storeBeforeDeclaration).some(item => item.code === "QIR_E_IMMUTABLE_DECLARE_ORDER"));
+});
