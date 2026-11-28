@@ -396,3 +396,16 @@ test("accepts VALUE as an immutable binding and rejects STORE reassignment", () 
   assert.equal(invalid.valid, false);
   assert.ok(invalid.diagnostics.some(item => item.code === "QX3028"));
 });
+
+test("rejects command-based mutation of immutable VALUE bindings", () => {
+  for (const source of [
+    "⊙(fixed, 7)\nDATA.SET(fixed, 8)",
+    "⊙(fixed, 7)\nPROCESS.CALCULATE(fixed, 8)",
+    "⊙(fixed, 7)\nPROCESS.ADD(fixed, 1)",
+    "⊙(flag, TRUE)\nPROCESS.COMPARE(flag, FALSE)"
+  ]) {
+    const result = check(source);
+    assert.equal(result.valid, false, source);
+    assert.ok(result.diagnostics.some(item => item.code === "QX3028"), source);
+  }
+});
