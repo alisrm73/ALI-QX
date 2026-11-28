@@ -169,7 +169,7 @@ export function analyze(program) {
           constrain(left, ["BOOL"], node.left, "QX3008", op + " requires two BOOL operands");
           constrain(right, ["BOOL"], node.right, "QX3008", op + " requires two BOOL operands"); out = concrete("BOOL");
         } else if (["==", "!="].includes(op)) {
-          join(left, right, node, "QX3009", op + " requires operands of the same compatible type"); constrain(left, VALUE_TYPES, node, "QX3009", op + " requires operands of the same compatible type"); out = concrete("BOOL");
+          join(left, right, node, "QX3009", op + " requires operands of the same compatible type"); constrain(left, ["NUM", "TXT", "BOOL", "LIST"], node, "QX3009", op + " requires operands of the same compatible type"); out = concrete("BOOL");
         } else if ([">", ">=", "<", "<="].includes(op)) {
           join(left, right, node, "QX3010", op + " requires two NUM operands or two TXT operands"); constrain(left, ["NUM", "TXT"], node, "QX3010", op + " requires two NUM operands or two TXT operands"); out = concrete("BOOL");
         } else out = concrete("ERROR");
@@ -381,7 +381,7 @@ export function analyze(program) {
           if (node.symbol === "DATA" && args.length === 2 && args[0]?.type === "Identifier") {
             const value = expression(args[1], scope);
             const inferred = typeOf(value);
-            if (inferred === "NULL" || inferred === "ERROR") {
+            if (!["NUM", "TXT", "BOOL", "LIST"].includes(inferred)) {
               report("QX3018", "DATA initial value must infer NUM, TXT, BOOL, or LIST", args[1]);
             } else {
               // A function parameter or forward function result may still be
@@ -406,7 +406,7 @@ export function analyze(program) {
           } else if (node.symbol === "VALUE" && args.length === 2 && args[0]?.type === "Identifier") {
             const value = expression(args[1], scope);
             const inferred = typeOf(value);
-            if (inferred === "NULL" || inferred === "ERROR") {
+            if (!["NUM", "TXT", "BOOL", "LIST"].includes(inferred)) {
               report("QX3018", "VALUE initial value must infer NUM, TXT, BOOL, or LIST", args[1]);
             } else {
               declare(scope, args[0].name, value, args[0], "value");
