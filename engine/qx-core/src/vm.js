@@ -212,12 +212,16 @@ function createQIRExecution(module, options = {}) {
             if (op.storage === "global") {
               if (!globalsById.has(op.variable))
                 throw runtimeError("QX_VM_UNKNOWN_GLOBAL", "Unknown global declaration: " + op.variable, instruction, context);
+              if (globalMutability.get(op.variable) === false && initializedGlobals.has(op.variable))
+                throw runtimeError("QX_VM_IMMUTABLE_WRITE", "Cannot redeclare an initialized immutable global", instruction, context);
               globals.set(op.variable, UNINITIALIZED);
-              initializedGlobals.delete(op.variable);
+              if (globalMutability.get(op.variable) !== false) initializedGlobals.delete(op.variable);
             } else if (op.parameter !== true) {
+              if (op.mutable === false && frame.initializedVariables.has(op.variable))
+                throw runtimeError("QX_VM_IMMUTABLE_WRITE", "Cannot redeclare an initialized immutable local", instruction, context);
               variables.set(op.variable, UNINITIALIZED);
               frame.mutableVariables.set(op.variable, op.mutable !== false);
-              frame.initializedVariables.delete(op.variable);
+              if (op.mutable !== false) frame.initializedVariables.delete(op.variable);
             }
             break;
           case "LOAD": values.set(instruction.result, readVariable(frame, op.variable, instruction)); break;
