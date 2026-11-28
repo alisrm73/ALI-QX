@@ -456,7 +456,7 @@ class ModuleLowerer {
         }
       } else if (node.type === "GeometricStatement" && node.group === "DATA_STORAGE") {
         const args = node.args ?? [];
-        if (["DATA", "VALUE"].includes(node.symbol) && args.length === 2 && args[0]?.type === "Identifier") {
+        if (["DATA", "VALUE", "RECORD"].includes(node.symbol) && args.length === 2 && args[0]?.type === "Identifier") {
           name = args[0].name;
           type = inferExpression(args[1], variables, functions);
         } else if (node.symbol === "COLLECTION" && args.length === 1 && args[0]?.type === "Identifier") {
@@ -467,7 +467,7 @@ class ModuleLowerer {
       if (name === null) continue;
       if (!VALUE_TYPES.has(type) || type === "NULL") fail("QIR_E_NULL_VARIABLE", "Cannot infer global type", node);
       const id = "var_" + this.globals.length;
-      const immutable = this.program.body.some(node => node.type === "GeometricStatement" && node.symbol === "VALUE" && node.args?.[0]?.name === name);
+      const immutable = this.program.body.some(node => node.type === "GeometricStatement" && ["VALUE", "RECORD"].includes(node.symbol) && node.args?.[0]?.name === name);
       const item = { id, name, type, storage: "global", ...(this.usesImmutable ? { mutable: !immutable } : {}) };
       this.globals.push(item); this.globalsByName.set(item.name, item); variables.set(item.name, item);
     }
@@ -736,7 +736,6 @@ export function validateQIR(module) {
         if (inst.opcode === "BINARY") refs.push(op.left, op.right);
         if (inst.opcode === "MAKE_LIST") refs.push(...(op.elements ?? []));
         if (inst.opcode === "MAKE_RECORD") refs.push(...(op.fields ?? []).map(field => field?.value));
-        if (inst.opcode === "MAKE_RECORD") refs.push(...(op.fields ?? []).map(field => field?.value));
         if (inst.opcode === "CALL" || inst.opcode === "COMMAND_CALL") refs.push(...(op.arguments ?? []));
         if (inst.opcode === "BRANCH") refs.push(op.condition);
         if (inst.opcode === "STORE_LOCAL" || inst.opcode === "STORE_GLOBAL") refs.push(op.value);
@@ -842,6 +841,7 @@ export function validateQIR(module) {
         if (inst.opcode === "UNARY") refs.push(op.value);
         if (inst.opcode === "BINARY") refs.push(op.left, op.right);
         if (inst.opcode === "MAKE_LIST") refs.push(...(op.elements ?? []));
+        if (inst.opcode === "MAKE_RECORD") refs.push(...(op.fields ?? []).map(field => field?.value));
         if (inst.opcode === "CALL" || inst.opcode === "COMMAND_CALL") refs.push(...(op.arguments ?? []));
         if (inst.opcode === "BRANCH") refs.push(op.condition);
         for (const ref of refs) {
