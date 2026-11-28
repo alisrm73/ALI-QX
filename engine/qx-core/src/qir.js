@@ -529,6 +529,7 @@ export function validateQIR(module) {
     const valueTypes = new Map(), valueLocations = new Map(), instructionIds = new Set(), variableTypes = new Map();
     valueTypesByFunction.set(fn.id, valueTypes);
     const definedVariables = new Set();
+    const declaredVariables = new Set();
     for (const global of module.globals ?? []) { variableTypes.set(global.id, global.type); definedVariables.add(global.id); }
     const predecessors = new Map(fn.blocks.map(block => [block.id, new Set()]));
     for (const block of fn.blocks) {
@@ -558,6 +559,8 @@ export function validateQIR(module) {
         if (inst.opcode === "DECLARE") {
           const { variable, declared_type: type, storage } = inst.operands ?? {};
           if (!variable || !VALUE_TYPES.has(type) || !["local", "global"].includes(storage) || module.version === "1.5" && typeof inst.operands?.mutable !== "boolean" || module.version !== "1.5" && Object.hasOwn(inst.operands ?? {}, "mutable")) report("QIR_E_DECLARE", "Invalid DECLARE", inst.source);
+          else if (declaredVariables.has(variable)) report("QIR_E_DUPLICATE_DECLARE", "Variable is declared more than once in a function", inst.source);
+          else declaredVariables.add(variable);
           else {
             variableTypes.set(variable, type); definedVariables.add(variable);
             if (storage === "global" && module.version === "1.5") {
@@ -675,7 +678,6 @@ export function validateQIR(module) {
         const nextOut = new Set(nextIn);
         for (const inst of blocks.get(id)?.instructions ?? []) {
           const op = inst.operands ?? {};
-          if (inst.opcode === "DECLARE" && immutableVariables.has(op.variable)) nextOut.delete(op.variable);
           if ((inst.opcode === "STORE_LOCAL" || inst.opcode === "STORE_GLOBAL") && immutableVariables.has(op.variable)) nextOut.add(op.variable);
         }
         const same = (a,b) => a.size === b.size && [...a].every(x => b.has(x));
@@ -717,7 +719,6 @@ export function validateQIR(module) {
             report("QIR_E_IMMUTABLE_WRITE", "Immutable variable cannot be assigned more than once", inst.source, { function: fn.id, block: block.id, variable: op.variable });
           possiblyInitializedImmutable.add(op.variable);
         }
-        if (inst.opcode === "DECLARE" && immutableVariables.has(op.variable)) possiblyInitializedImmutable.delete(op.variable);
         if (inst.opcode === "DECLARE" && flow?.trackedVariables.has(op.variable)) {
           if (op.parameter === true) initializedVariables.add(op.variable);
           else initializedVariables.delete(op.variable);
