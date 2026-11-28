@@ -410,13 +410,36 @@ test("rejects command-based mutation of immutable VALUE bindings", () => {
   }
 });
 
-test("keeps RECORD rejected until its field shape and independent value type are specified", () => {
-  const result = check("⊚(profile, [\"name\", \"Ali\"])");
+test("accepts immutable RECORD declarations with unique typed fields", () => {
+  const result = check([
+    '⊚(profile, { name: "Ali", age: 53, active: TRUE, tags: ["qx", "engine"], nested: { city: "Tartous" } })',
+    'DATA.CREATE(copy, ⧬(profile))'
+  ].join("\\n"));
+  assert.equal(result.valid, true, JSON.stringify(result.diagnostics));
+  assert.deepEqual(result.symbols.map(item => [item.name, item.type, item.kind]), [
+    ["profile", "RECORD", "record"],
+    ["copy", "RECORD", "data"]
+  ]);
+});
+
+test("rejects duplicate RECORD fields and NULL field values", () => {
+  for (const source of [
+    '⊚(profile, { name: "Ali", name: "Other" })',
+    '⊚(profile, { name: NULL })'
+  ]) {
+    const result = check(source);
+    assert.equal(result.valid, false, source);
+    assert.ok(result.diagnostics.some(item => item.code === "QX3028"), source);
+    assert.equal(result.symbols.some(item => item.name === "profile"), false);
+  }
+});
+
+test("keeps RECORD declarations immutable and FETCH expression-only", () => {
+  const result = check([
+    '⊚(profile, { name: "Ali" })',
+    '⊙(copy, ⧬(profile))',
+    'STORE(profile, { name: "Other" })'
+  ].join("\\n"));
   assert.equal(result.valid, false);
-  assert.ok(result.diagnostics.some(item =>
-    item.code === "QX3028" &&
-    item.message.includes("field-expression shape") &&
-    item.message.includes("independent RECORD type/value representation")
-  ));
-  assert.equal(result.symbols.some(item => item.name === "profile"), false);
+  assert.ok(result.diagnostics.some(item => item.code === "QX3028"));
 });
