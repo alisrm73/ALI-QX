@@ -276,3 +276,31 @@ test("rejects non-JSON integration broker responses", async () => {
   await assert.rejects(runQIRAsync(module, { integrationBroker }),
     error => error instanceof QXVMError && error.code === "QX_VM_INTEGRATION_RESPONSE");
 });
+
+
+test("executes Group 2 DATA, STORE, FETCH, and COLLECTION bindings", () => {
+  const result = runQIR(compile([
+    "◉(total, 1)",
+    "◍(total, ◌(total) + 4)",
+    "⊛(items)",
+    "◍(items, [1, \"two\", TRUE])",
+    "◉(count, DATA.COUNT(◌(items)))",
+    "◉(copy, ◌(total))"
+  ].join("\n"))).globals;
+  assert.equal(result.total, 5);
+  assert.deepEqual(result.items, [1, "two", true]);
+  assert.equal(result.count, 3);
+  assert.equal(result.copy, 5);
+});
+
+test("executes Group 2 local bindings and FETCH inside functions", () => {
+  const result = runQIR(compile([
+    "FUNCTION calculate(seed)",
+    "◉(localValue, seed)",
+    "◍(localValue, ◌(localValue) * 2)",
+    "RETURN ◌(localValue)",
+    "END",
+    "◉(result, calculate(6))"
+  ].join("\n"))).globals;
+  assert.equal(result.result, 12);
+});
