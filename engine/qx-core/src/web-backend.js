@@ -47,6 +47,8 @@ function browserRun(module, combiningClassEntries, uiLock, uiRegistry) {
   }
   const globalsById=new Map(module.globals.map(x=>[x.id,x]));
   const globals=new Map(module.globals.map(x=>[x.id,UNINITIALIZED]));
+  const globalMutability=new Map(module.globals.map(x=>[x.id,x.mutable!==false]));
+  const initializedGlobals=new Set();
   const functions=new Map([module.initializer,...module.functions].map(x=>[x.id,x]));
   let instructionCount=0;
   const outputs=[];
@@ -161,7 +163,9 @@ function browserRun(module, combiningClassEntries, uiLock, uiRegistry) {
     params.forEach((i,n)=>vars.set(i.operands.variable,clone(args[n])));
     const read=(id,i)=>{if(!values.has(id))fail("QX_VM_UNDEFINED_VALUE","Unavailable value: "+id,i,ctx);return values.get(id);};
     const readVar=(id,i)=>{const v=globalsById.has(id)?globals.get(id):vars.get(id);if(v===undefined||v===UNINITIALIZED)fail("QX_VM_UNINITIALIZED_VARIABLE","Uninitialized variable: "+id,i,ctx);return v;};
-    const write=(id,v,i,g)=>{if(g){if(!globalsById.has(id))fail("QX_VM_UNKNOWN_GLOBAL","Unknown global: "+id,i,ctx);globals.set(id,clone(v));}else{if(!vars.has(id))fail("QX_VM_UNKNOWN_LOCAL","Unknown local: "+id,i,ctx);vars.set(id,clone(v));}};
+    const mutableVars=new Map(params.map(i=>[i.operands.variable,i.operands.mutable!==false]));
+    const initializedVars=new Set(params.map(i=>i.operands.variable));
+    const write=(id,v,i,g)=>{if(g){if(!globalsById.has(id))fail("QX_VM_UNKNOWN_GLOBAL","Unknown global: "+id,i,ctx);if(globalMutability.get(id)===false&&initializedGlobals.has(id))fail("QX_VM_IMMUTABLE_WRITE","Cannot reassign an immutable global",i,ctx);globals.set(id,clone(v));initializedGlobals.add(id);}else{if(!vars.has(id))fail("QX_VM_UNKNOWN_LOCAL","Unknown local: "+id,i,ctx);if(mutableVars.get(id)===false&&initializedVars.has(id))fail("QX_VM_IMMUTABLE_WRITE","Cannot reassign an immutable local",i,ctx);vars.set(id,clone(v));initializedVars.add(id);}};
     let blockId=fn.entry_block;
     while(true) {
       const block=blocks.get(blockId);if(!block)fail("QX_VM_INVALID_BLOCK","Unknown block: "+blockId,null,ctx);ctx.block=block.id;
@@ -174,7 +178,7 @@ function browserRun(module, combiningClassEntries, uiLock, uiRegistry) {
           case "CONST_TXT": if(typeof o.value!=="string"||o.value.length>LIMITS.maxStringLength)fail("QX_VM_INVALID_TEXT","Invalid text",i,ctx);values.set(i.result,o.value);break;
           case "CONST_BOOL": values.set(i.result,o.value);break;
           case "CONST_NULL": values.set(i.result,null);break;
-          case "DECLARE": if(o.storage==="global"){if(!globalsById.has(o.variable))fail("QX_VM_UNKNOWN_GLOBAL","Unknown global",i,ctx);globals.set(o.variable,UNINITIALIZED);}else if(o.parameter!==true)vars.set(o.variable,UNINITIALIZED);break;
+          case "DECLARE": if(o.storage==="global"){if(!globalsById.has(o.variable))fail("QX_VM_UNKNOWN_GLOBAL","Unknown global",i,ctx);globals.set(o.variable,UNINITIALIZED);initializedGlobals.delete(o.variable);}else if(o.parameter!==true){vars.set(o.variable,UNINITIALIZED);mutableVars.set(o.variable,o.mutable!==false);initializedVars.delete(o.variable);}break;
           case "LOAD": values.set(i.result,readVar(o.variable,i));break;
           case "STORE_LOCAL": write(o.variable,read(o.value,i),i,false);break;
           case "STORE_GLOBAL": write(o.variable,read(o.value,i),i,true);break;
