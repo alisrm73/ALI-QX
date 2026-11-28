@@ -390,6 +390,8 @@ export function analyze(program) {
         } else {
           report("QX3028", "Geometric symbol " + node.symbol + " has no approved semantic contract", node);
           geometricArguments(node, scope);
+          if (Array.isArray(node.body)) block(node.body, scope, fn);
+          if (node.alternate) block(Array.isArray(node.alternate) ? node.alternate : [node.alternate], scope, fn);
         }
         continue;
       }
