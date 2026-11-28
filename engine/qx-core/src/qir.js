@@ -522,6 +522,7 @@ export function validateQIR(module) {
   const functionById = new Map(functions.map(fn => [fn.id, fn]));
   const flowByFunction = new Map();
   const valueTypesByFunction = new Map();
+  const immutableDeclarationLocations = new Map();
   for (const fn of functions) {
     if (!fn || functionIds.has(fn.id) || !Array.isArray(fn.blocks) || !fn.blocks.length) {
       report("QIR_E_FUNCTION_SCHEMA", "Invalid function or duplicate function id"); continue;
@@ -570,6 +571,13 @@ export function validateQIR(module) {
               const descriptor = (module.globals ?? []).find(item => item.id === variable);
               if (!descriptor || descriptor.mutable !== inst.operands.mutable)
                 report("QIR_E_IMMUTABLE_SCHEMA", "Global DECLARE mutability differs from its module descriptor", inst.source);
+            }
+            if (module.version === "1.5" && inst.operands.mutable === false) {
+              if (immutableDeclarationLocations.has(variable)) {
+                report("QIR_E_IMMUTABLE_DECLARE", "Immutable binding must have exactly one DECLARE instruction", inst.source, { function: fn.id, variable });
+              } else {
+                immutableDeclarationLocations.set(variable, { functionId: fn.id, blockId: block.id, index: i, storage });
+              }
             }
           }
         }
@@ -694,7 +702,9 @@ export function validateQIR(module) {
       const initializedVariables = new Set(flow.inStates.get(block.id) ?? []);
       const possiblyInitializedImmutable = new Set(maybeIn.get(block.id) ?? initiallyWritten);
       const seen = new Set();
+      let instructionIndex = 0;
       for (const inst of block.instructions) {
+        const currentInstructionIndex = instructionIndex++;
         const refs = [];
         const op = inst.operands ?? {};
         if (inst.opcode === "LOAD") refs.push(op.variable);
@@ -718,6 +728,15 @@ export function validateQIR(module) {
         if (["STORE_LOCAL","STORE_GLOBAL"].includes(inst.opcode) && !definedVariables.has(op.variable))
           report("QIR_E_UNDECLARED_VARIABLE", "STORE before DECLARE", inst.source);
         if (["STORE_LOCAL","STORE_GLOBAL"].includes(inst.opcode) && immutableVariables.has(op.variable)) {
+          const declaration = immutableDeclarationLocations.get(op.variable);
+          if (!declaration) {
+            report("QIR_E_IMMUTABLE_DECLARE", "Immutable binding must be declared before initialization", inst.source, { function: fn.id, block: block.id, variable: op.variable });
+          } else if (declaration.functionId !== fn.id ||
+              (declaration.blockId === block.id
+                ? declaration.index >= currentInstructionIndex
+                : !dominators.get(block.id)?.has(declaration.blockId))) {
+            report("QIR_E_IMMUTABLE_DECLARE_ORDER", "Immutable binding must be declared on every path before its initialization", inst.source, { function: fn.id, block: block.id, variable: op.variable });
+          }
           if (possiblyInitializedImmutable.has(op.variable))
             report("QIR_E_IMMUTABLE_WRITE", "Immutable variable cannot be assigned more than once", inst.source, { function: fn.id, block: block.id, variable: op.variable });
           possiblyInitializedImmutable.add(op.variable);
@@ -808,6 +827,15 @@ export function validateQIR(module) {
           else if (definition && definition.block !== block.id && !dominators.get(block.id)?.has(definition.block))
             report("QIR_E_DOMINANCE", "Value definition does not dominate use", inst.source, { function: fn.id, block: block.id });
         }
+      }
+    }
+  }
+  if (module.version === "1.5") {
+    for (const global of module.globals ?? []) {
+      if (global.mutable !== false) continue;
+      const declaration = immutableDeclarationLocations.get(global.id);
+      if (!declaration || declaration.functionId !== module.initializer.id || declaration.storage !== "global") {
+        report("QIR_E_IMMUTABLE_DECLARE", "Every immutable global must be declared exactly once by the module initializer", null, { variable: global.id });
       }
     }
   }
