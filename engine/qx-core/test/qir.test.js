@@ -516,3 +516,19 @@ test("rejects RECORD values in QIR versions before 1.6", () => {
   module.version = "1.5";
   assert.ok(validateQIR(module).some(item => item.code === "QIR_E_GLOBAL_SCHEMA"));
 });
+
+test("QIR 1.6 retains command features from QIR 1.1 through 1.5", () => {
+  const module = compile([
+    '⊚(profile, { name: "Ali" })',
+    "DATA.CREATE(items, [1, 2])",
+    "DATA.CREATE(updated, DATA.ADD(items, 3))",
+    'UI.TEXT("ready")',
+    'UI.TREE("{}")'
+  ].join("\n"));
+  assert.equal(module.version, "1.6");
+  const commands = module.initializer.blocks.flatMap(block => block.instructions)
+    .filter(item => item.opcode === "COMMAND_CALL")
+    .map(item => item.operands.command);
+  assert.deepEqual(commands, ["DATA.ADD", "UI.TEXT", "UI.TREE"]);
+  assert.deepEqual(validateQIR(module), []);
+});
