@@ -394,3 +394,39 @@ test("enforces DATA.SET_GLOBAL registered function and global-target constraints
     error => error.code === "QIR_E_GLOBAL_REQUIRED"
   );
 });
+
+
+test("lowers Group 2 DATA, STORE, FETCH, and COLLECTION into existing QIR 1.0 instructions", () => {
+  const qir = compile([
+    "◉(total, 1)",
+    "◍(total, 2)",
+    "⊛(items)",
+    "◍(items, [1, \"two\", TRUE])",
+    "◉(copy, ◌(total))"
+  ].join("\n"));
+  assert.equal(qir.version, "1.0");
+  assert.deepEqual(validateQIR(parseQIR(serializeQIR(qir))), []);
+  assert.deepEqual(qir.globals.map(item => [item.name, item.type]), [
+    ["total", "NUM"], ["items", "LIST"], ["copy", "NUM"]
+  ]);
+  const instructions = qir.initializer.blocks.flatMap(block => block.instructions);
+  assert.ok(instructions.some(item => item.opcode === "MAKE_LIST" && item.operands.elements.length === 0));
+  assert.ok(instructions.some(item => item.opcode === "STORE_GLOBAL"));
+  assert.ok(instructions.some(item => item.opcode === "LOAD"));
+});
+
+test("lowers Group 2 bindings inside functions without implicit global writes", () => {
+  const qir = compile([
+    "FUNCTION update(seed)",
+    "◉(localValue, seed)",
+    "◍(localValue, ◌(localValue) + 1)",
+    "RETURN ◌(localValue)",
+    "END",
+    "◉(result, update(4))"
+  ].join("\n"));
+  assert.deepEqual(validateQIR(qir), []);
+  const fnInstructions = qir.functions[0].blocks.flatMap(block => block.instructions);
+  assert.ok(fnInstructions.some(item => item.opcode === "STORE_LOCAL"));
+  assert.ok(fnInstructions.some(item => item.opcode === "LOAD"));
+  assert.equal(fnInstructions.some(item => item.opcode === "STORE_GLOBAL"), false);
+});
