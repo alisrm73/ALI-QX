@@ -437,7 +437,10 @@ test("rejects duplicate RECORD fields and NULL field values", () => {
 test("keeps RECORD declarations immutable and FETCH expression-only", () => {
   const result = check([
     '⊚(profile, { name: "Ali" })',
-    '⊙(copy, ⧬(profile))',
+    "FUNCTION echo(value)",
+    "RETURN value",
+    "END",
+    'echo(⧬(profile))',
     '◍(profile, { name: "Other" })'
   ].join("\\n"));
   assert.equal(result.valid, false);
