@@ -66,3 +66,14 @@ test("builds web assets for QIR 1.5 immutable VALUE bindings", () => {
   assert.match(project.files["app.js"], /"version":"1.5"/);
   assert.match(project.files["app.js"], /"mutable":false/);
 });
+
+test("rejects QIR 1.5 immutable global initialization without DECLARE", () => {
+  const ast = parse("⊙(fixed, 7)");
+  const qir = lowerToQIR(ast, analyze(ast));
+  const instructions = qir.initializer.blocks[0].instructions;
+  const declarationIndex = instructions.findIndex(item => item.opcode === "DECLARE" && item.operands.mutable === false);
+  instructions.splice(declarationIndex, 1);
+  assert.throws(() => generateWebAssets(qir), error =>
+    error instanceof QXWebBuildError && error.code === "QX_WEB_INVALID_QIR" &&
+    error.diagnostics.some(item => item.code === "QIR_E_IMMUTABLE_DECLARE"));
+});
