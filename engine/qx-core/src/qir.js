@@ -739,13 +739,7 @@ export function validateQIR(module) {
         if (inst.opcode === "UNARY") refs.push(op.value);
         if (inst.opcode === "BINARY") refs.push(op.left, op.right);
         if (inst.opcode === "MAKE_LIST") refs.push(...(op.elements ?? []));
-        if (inst.opcode === "MAKE_RECORD") {
-          refs.push(...(op.fields ?? []).map(field => field?.value));
-          for (const field of op.fields ?? []) {
-            if (valueTypes.get(field?.value) === "NULL")
-              report("QIR_E_RECORD_FIELD", "RECORD fields cannot contain NULL values", inst.source);
-          }
-        }
+        if (inst.opcode === "MAKE_RECORD") refs.push(...(op.fields ?? []).map(field => field?.value));
         if (inst.opcode === "CALL" || inst.opcode === "COMMAND_CALL") refs.push(...(op.arguments ?? []));
         if (inst.opcode === "BRANCH") refs.push(op.condition);
         if (inst.opcode === "STORE_LOCAL" || inst.opcode === "STORE_GLOBAL") refs.push(op.value);
@@ -851,7 +845,13 @@ export function validateQIR(module) {
         if (inst.opcode === "UNARY") refs.push(op.value);
         if (inst.opcode === "BINARY") refs.push(op.left, op.right);
         if (inst.opcode === "MAKE_LIST") refs.push(...(op.elements ?? []));
-        if (inst.opcode === "MAKE_RECORD") refs.push(...(op.fields ?? []).map(field => field?.value));
+        if (inst.opcode === "MAKE_RECORD") {
+          refs.push(...(op.fields ?? []).map(field => field?.value));
+          for (const field of op.fields ?? []) {
+            if (valueTypes.get(field?.value) === "NULL")
+              report("QIR_E_RECORD_FIELD", "RECORD fields cannot contain NULL values", inst.source);
+          }
+        }
         if (inst.opcode === "CALL" || inst.opcode === "COMMAND_CALL") refs.push(...(op.arguments ?? []));
         if (inst.opcode === "BRANCH") refs.push(op.condition);
         for (const ref of refs) {
