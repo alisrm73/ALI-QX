@@ -1,0 +1,38 @@
+name: QX geometric language validation
+
+on:
+  push:
+    branches:
+      - "audit/geometric-language-alignment"
+    paths:
+      - "engine/qx-core/**"
+      - "QX/spec/GEOMETRIC-*.md"
+      - "الدستور الهندسي للغة QX — QX Geometric Language Specification.md"
+      - ".github/workflows/geometric-language-validation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qx-core:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout authorized work branch
+        uses: actions/checkout@v4
+        with:
+          ref: audit/geometric-language-alignment
+
+      - name: Set up Node.js 22.16.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.16.0"
+
+      - name: Record runtime
+        run: |
+          node --version
+          npm --version
+
+      - name: Run complete QX Core test suite
+        working-directory: engine/qx-core
+        run: npm test
