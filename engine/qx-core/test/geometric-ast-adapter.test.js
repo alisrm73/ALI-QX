@@ -150,3 +150,41 @@ test("continues rejecting unresolved geometric symbols nested in geometric block
   assert.equal(result.valid, false);
   assert.equal(result.diagnostics.filter(item => item.code === "QX3028").length, 2);
 });
+
+
+test("enforces approved usage positions for the six Group 2 symbols", () => {
+  const statementOnly = new Set(["DATA", "STORE", "VALUE", "RECORD", "COLLECTION"]);
+  for (const symbol of GEOMETRIC_SYMBOLS.filter(item => item.group === "DATA_STORAGE")) {
+    const statementAst = parse(`${symbol.glyph}()`);
+    const statement = analyze(statementAst);
+    assert.equal(statement.valid, false, symbol.name);
+    if (symbol.name === "FETCH") {
+      assert.ok(statement.diagnostics.some(item =>
+        item.code === "QX3028" &&
+        item.message.includes("is expression-only and cannot be used as a statement")
+      ), `statement position: ${symbol.name}`);
+    } else {
+      assert.ok(statement.diagnostics.some(item =>
+        item.code === "QX3028" && item.message.includes("has no approved semantic contract")
+      ), `statement contract remains blocked: ${symbol.name}`);
+    }
+    assert.throws(() => lowerToQIR(statementAst, statement),
+      error => error.code === "QIR_E_SEMANTIC_ERRORS");
+
+    const expressionAst = parse(`DATA.CREATE(value, ${symbol.glyph}())`);
+    const expression = analyze(expressionAst);
+    assert.equal(expression.valid, false, symbol.name);
+    if (statementOnly.has(symbol.name)) {
+      assert.ok(expression.diagnostics.some(item =>
+        item.code === "QX3028" &&
+        item.message.includes("is statement-only and cannot be used as an expression")
+      ), `expression position: ${symbol.name}`);
+    } else {
+      assert.ok(expression.diagnostics.some(item =>
+        item.code === "QX3028" && item.message.includes("has no approved semantic contract")
+      ), `expression contract remains blocked: ${symbol.name}`);
+    }
+    assert.throws(() => lowerToQIR(expressionAst, expression),
+      error => error.code === "QIR_E_SEMANTIC_ERRORS");
+  }
+});
