@@ -12,7 +12,7 @@ const KEYWORDS = new Map([
   ["NULL", "NULL"], ["فارغ", "NULL"], ["AND", "AND"], ["و", "AND"],
   ["OR", "OR"], ["أو", "OR"], ["NOT", "NOT"], ["ليس", "NOT"]
 ]);
-const PUNCT = new Map(Object.entries({ "(": "LPAREN", ")": "RPAREN", "{": "LBRACE", "}": "RBRACE", "[": "LBRACKET", "]": "RBRACKET", ",": "COMMA", ".": "DOT", "+": "PLUS", "-": "MINUS", "*": "STAR", "/": "SLASH", "%": "PERCENT", ">": "GT", "<": "LT" }));
+const PUNCT = new Map(Object.entries({ "(": "LPAREN", ")": "RPAREN", "{": "LBRACE", "}": "RBRACE", "[": "LBRACKET", "]": "RBRACKET", ",": "COMMA", ":": "COLON", ".": "DOT", "+": "PLUS", "-": "MINUS", "*": "STAR", "/": "SLASH", "%": "PERCENT", ">": "GT", "<": "LT" }));
 const GEOMETRIC_SYMBOLS_LONGEST_FIRST = [...GEOMETRIC_SYMBOLS].sort((a, b) => b.glyph.length - a.glyph.length);
 const PAIRS = new Map([["==", "EQ_EQ"], ["!=", "BANG_EQ"], [">=", "GT_EQ"], ["<=", "LT_EQ"]]);
 
