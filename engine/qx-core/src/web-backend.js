@@ -191,13 +191,13 @@ function browserRun(module, combiningClassEntries, uiLock, uiRegistry) {
             if(o.command==="DATA.COUNT"&&args.length===1){const list=read(args[0],i);if(!Array.isArray(list))fail("QX_VM_COMMAND_ARGUMENT","DATA.COUNT requires LIST",i,ctx);if(i.result)values.set(i.result,list.length);break;}
             if(o.command==="DATA.ADD"&&args.length===2){const list=read(args[0],i),value=read(args[1],i);if(!Array.isArray(list))fail("QX_VM_COMMAND_ARGUMENT","DATA.ADD requires LIST",i,ctx);if(list.length>=LIMITS.maxListLength)fail("QX_VM_LIST_LIMIT","Maximum list length exceeded",i,ctx);values.set(i.result,[...list.map(clone),clone(value)]);break;}
             if(o.command==="DATA.REMOVE"&&args.length===2){const list=read(args[0],i),index=read(args[1],i);if(!Array.isArray(list))fail("QX_VM_COMMAND_ARGUMENT","DATA.REMOVE requires LIST",i,ctx);if(!Number.isSafeInteger(index)||index<0||index>=list.length)fail("QX_VM_LIST_INDEX","DATA.REMOVE index must be a valid zero-based integer within the list",i,ctx);values.set(i.result,list.filter((_,n)=>n!==index).map(clone));break;}
-            if(o.command==="UI.TREE"&&args.length===1&&module.version==="1.4"){
+            if(o.command==="UI.TREE"&&args.length===1&&["1.4","1.5"].includes(module.version)){
               const json=read(args[0],i);
               if(typeof json!=="string"||json.length>LIMITS.maxStringLength)fail("QX_VM_INVALID_TEXT","UI.TREE requires bounded TXT JSON",i,ctx);
               outputs.push({component:"TREE",tree:validateUITree(json,i,ctx),source:i.source});break;
             }
-            if(o.command==="UI.SHOW"&&args.length===1&&["1.2","1.3","1.4"].includes(module.version)){outputs.push({component:"SHOW",value:clone(read(args[0],i)),source:i.source});break;}
-            if(o.command==="UI.TEXT"&&args.length===1&&["1.2","1.3","1.4"].includes(module.version)){const value=read(args[0],i);if(typeof value!=="string"||value.length>LIMITS.maxStringLength)fail("QX_VM_INVALID_TEXT","UI.TEXT requires bounded TXT",i,ctx);outputs.push({component:"TEXT",value,source:i.source});break;}
+            if(o.command==="UI.SHOW"&&args.length===1&&["1.2","1.3","1.4","1.5"].includes(module.version)){outputs.push({component:"SHOW",value:clone(read(args[0],i)),source:i.source});break;}
+            if(o.command==="UI.TEXT"&&args.length===1&&["1.2","1.3","1.4","1.5"].includes(module.version)){const value=read(args[0],i);if(typeof value!=="string"||value.length>LIMITS.maxStringLength)fail("QX_VM_INVALID_TEXT","UI.TEXT requires bounded TXT",i,ctx);outputs.push({component:"TEXT",value,source:i.source});break;}
             fail("QX_VM_COMMAND_NOT_ALLOWED","Command is not available in this QIR version",i,ctx);break;
           }
           case "BRANCH": {const v=read(o.condition,i);if(typeof v!=="boolean")fail("QX_VM_BRANCH_TYPE","BRANCH requires BOOL",i,ctx);blockId=v?o.true_target:o.false_target;transferred=true;break;}
