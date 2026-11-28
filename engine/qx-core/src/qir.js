@@ -619,7 +619,7 @@ export function validateQIR(module) {
         if (inst.opcode === "MAKE_UI_TREE") {
           const tree = opTree(inst.operands?.tree);
           if (module.version !== "1.7" || inst.type !== "TXT" || !tree.valid) report("QIR_E_UI_TREE_SCHEMA", "MAKE_UI_TREE requires QIR 1.7, a TXT result, and a valid bounded tree descriptor", inst.source);
-          else for (const id of tree.valueRefs) if (valueTypes.get(id) !== "TXT") report("QIR_E_UI_TREE_TEXT", "UI tree text references must resolve to TXT values", inst.source);
+
         }
         if (inst.opcode === "MAKE_RECORD") {
           const fields = inst.operands?.fields;
@@ -790,6 +790,7 @@ export function validateQIR(module) {
         if (inst.opcode === "BINARY") refs.push(op.left, op.right);
         if (inst.opcode === "MAKE_LIST") refs.push(...(op.elements ?? []));
         if (inst.opcode === "MAKE_RECORD") refs.push(...(op.fields ?? []).map(field => field?.value));
+        if (inst.opcode === "MAKE_UI_TREE") for (const id of opTree(op.tree).valueRefs) if (valueTypes.get(id) !== "TXT") report("QIR_E_UI_TREE_TEXT", "UI tree text references must resolve to TXT values", inst.source);
         if (inst.opcode === "MAKE_UI_TREE") refs.push(...opTree(op.tree).valueRefs);
         if (inst.opcode === "CALL" || inst.opcode === "COMMAND_CALL") refs.push(...(op.arguments ?? []));
         if (inst.opcode === "BRANCH") refs.push(op.condition);
