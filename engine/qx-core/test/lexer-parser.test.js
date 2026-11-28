@@ -136,3 +136,18 @@ test("parses qualified command calls inside lists and binary expressions", () =>
 test("requires a call after a qualified command expression", () => {
   assert.throws(() => parse("DATA.CREATE(value, DATA.GET)"), error => error.code === "QX2013");
 });
+
+test("parses named record fields, nested records, and trailing commas", () => {
+  const ast = parse('⊚(profile, { name: "Ali", age: 53, active: TRUE, nested: { city: "Tartous", }, })');
+  const record = ast.body[0].args[1];
+  assert.equal(record.type, "RecordLiteral");
+  assert.deepEqual(record.fields.map(field => field.name), ["name", "age", "active", "nested"]);
+  assert.equal(record.fields[1].value.type, "NumberLiteral");
+  assert.equal(record.fields[3].value.type, "RecordLiteral");
+  assert.equal(record.fields[3].value.fields[0].name, "city");
+});
+
+test("rejects malformed record field separators and values", () => {
+  assert.throws(() => parse('⊚(profile, { name "Ali" })'), error => error.code === "QX2001");
+  assert.throws(() => parse('⊚(profile, { name: })'), error => error.code === "QX2009");
+});
