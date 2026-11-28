@@ -409,3 +409,14 @@ test("rejects command-based mutation of immutable VALUE bindings", () => {
     assert.ok(result.diagnostics.some(item => item.code === "QX3028"), source);
   }
 });
+
+test("keeps RECORD rejected until its field shape and independent value type are specified", () => {
+  const result = check("⊚(profile, [\"name\", \"Ali\"])");
+  assert.equal(result.valid, false);
+  assert.ok(result.diagnostics.some(item =>
+    item.code === "QX3028" &&
+    item.message.includes("field-expression shape") &&
+    item.message.includes("independent RECORD type/value representation")
+  ));
+  assert.equal(result.symbols.some(item => item.name === "profile"), false);
+});
