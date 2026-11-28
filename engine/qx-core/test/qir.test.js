@@ -505,7 +505,8 @@ test("lowers RECORD declarations into immutable QIR 1.6 values", () => {
   const instructions = module.initializer.blocks.flatMap(block => block.instructions);
   const makeRecord = instructions.filter(item => item.opcode === "MAKE_RECORD");
   assert.equal(makeRecord.length, 2);
-  assert.deepEqual(makeRecord[0].operands.fields.map(field => field.name), ["name", "age", "active"]);
+  const topRecord = makeRecord.find(item => item.operands.fields.length === 4);
+  assert.deepEqual(topRecord.operands.fields.map(field => field.name), ["name", "age", "active", "nested"]);
   assert.deepEqual(validateQIR(module), []);
   assert.deepEqual(parseQIR(serializeQIR(module)), module);
 });
