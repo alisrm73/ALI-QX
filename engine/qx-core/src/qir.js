@@ -423,7 +423,7 @@ class ModuleLowerer {
     const containsSymbol = (node, symbols) => Array.isArray(node) ? node.some(item => containsSymbol(item, symbols)) : !!node && typeof node === "object" && (node.type === "GeometricStatement" && symbols.includes(node.symbol) || Object.values(node).some(value => containsSymbol(value, symbols)));
     const containsRecordLiteral = node => Array.isArray(node) ? node.some(containsRecordLiteral) : !!node && typeof node === "object" && (node.type === "RecordLiteral" || Object.values(node).some(containsRecordLiteral));
     this.usesRecord = containsSymbol(program, ["RECORD"]) || containsRecordLiteral(program);
-    this.usesImmutable = containsSymbol(program, ["VALUE", "RECORD"]);
+    this.usesImmutable = this.usesRecord || containsSymbol(program, ["VALUE"]);
     this.collectFunctions();
     this.collectGlobals();
   }
