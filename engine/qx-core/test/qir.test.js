@@ -513,5 +513,5 @@ test("lowers RECORD declarations into immutable QIR 1.6 values", () => {
 test("rejects RECORD values in QIR versions before 1.6", () => {
   const module = compile('⊚(profile, { name: "Ali" })');
   module.version = "1.5";
-  assert.ok(validateQIR(module).some(item => item.code === "QIR_E_SCHEMA"));
+  assert.ok(validateQIR(module).some(item => item.code === "QIR_E_GLOBAL_SCHEMA"));
 });
