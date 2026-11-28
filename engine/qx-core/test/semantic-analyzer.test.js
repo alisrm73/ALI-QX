@@ -438,7 +438,7 @@ test("keeps RECORD declarations immutable and FETCH expression-only", () => {
   const result = check([
     '⊚(profile, { name: "Ali" })',
     '⊙(copy, ⧬(profile))',
-    'STORE(profile, { name: "Other" })'
+    '◍(profile, { name: "Other" })'
   ].join("\\n"));
   assert.equal(result.valid, false);
   assert.ok(result.diagnostics.some(item => item.code === "QX3028"));
