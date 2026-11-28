@@ -3,6 +3,19 @@ import { adaptGeometricAst } from "./geometric-ast-adapter.js";
 
 const TYPES = new Set(["TXT", "NUM", "BOOL", "LIST"]);
 const VALUE_TYPES = [...TYPES];
+const GEOMETRIC_EXPRESSION_TYPES = new Set([
+  "NumberLiteral", "StringLiteral", "BooleanLiteral", "NullLiteral", "Identifier",
+  "GroupExpression", "ListLiteral", "UnaryExpression", "BinaryExpression",
+  "CommandCallExpression", "GeometricCallExpression", "CallExpression"
+]);
+const GEOMETRIC_ARGUMENT_SCHEMAS = Object.freeze({
+  DATA: ["Identifier", "Expression"],
+  STORE: ["Identifier", "Expression"],
+  FETCH: ["Identifier"],
+  VALUE: ["Identifier", "Expression"],
+  RECORD: ["Identifier", "Expression"],
+  COLLECTION: ["Identifier"]
+});
 const loc = node => node?.location ?? { line: 1, column: 1, offset: 0 };
 
 class TypeCell {
@@ -30,6 +43,51 @@ export function analyze(program) {
     const l = loc(node), key = `${code}:${l.offset}:${message}`;
     if (!reported.has(key)) { reported.add(key); diagnostics.push({ code, message, location: l }); }
   };
+
+  function geometricArguments(node, scope) {
+    const schema = GEOMETRIC_ARGUMENT_SCHEMAS[node.symbol];
+    const args = Array.isArray(node.args) ? node.args : [];
+    if (!schema) {
+      args.forEach(arg => expression(arg, scope));
+      return;
+    }
+
+    if (args.length !== schema.length) {
+      report(
+        "QX3028",
+        "Geometric symbol " + node.symbol + " expects exactly " + schema.length +
+          " argument(s), received " + args.length,
+        node
+      );
+    }
+
+    args.forEach((arg, index) => {
+      const expected = schema[index];
+      if (!expected) {
+        expression(arg, scope);
+        return;
+      }
+
+      const valid = expected === "Identifier"
+        ? arg?.type === "Identifier"
+        : GEOMETRIC_EXPRESSION_TYPES.has(arg?.type);
+
+      if (!valid) {
+        report(
+          "QX3028",
+          "Geometric symbol " + node.symbol + " argument " + (index + 1) +
+            " must be " + expected,
+          arg ?? node
+        );
+      }
+
+      // Identifier-designator positions are syntax-only here. Resolving their
+      // names would add a declaration/existence rule not included in this contract.
+      if (expected === "Expression" || (!valid && GEOMETRIC_EXPRESSION_TYPES.has(arg?.type))) {
+        expression(arg, scope);
+      }
+    });
+  }
   const constrain = (cell, types, node, code, message) => {
     const r = root(cell);
     if (r.allowed.size === 1 && r.allowed.has("ERROR")) return true;
@@ -136,7 +194,7 @@ export function analyze(program) {
         } else {
           report("QX3028", "Geometric symbol " + node.symbol + " has no approved semantic contract", node);
         }
-        node.args.forEach(arg => expression(arg, scope));
+        geometricArguments(node, scope);
         out = concrete("ERROR");
         break;
       }
@@ -272,7 +330,7 @@ export function analyze(program) {
         } else {
           report("QX3028", "Geometric symbol " + node.symbol + " has no approved semantic contract", node);
         }
-        node.args?.forEach(arg => expression(arg, scope));
+        geometricArguments(node, scope);
         if (Array.isArray(node.body)) block(node.body, scope, fn);
         if (node.alternate) block(Array.isArray(node.alternate) ? node.alternate : [node.alternate], scope, fn);
         continue;
