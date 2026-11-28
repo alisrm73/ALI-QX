@@ -453,8 +453,24 @@
       "constitutionalFunction": "تعريف البيانات — Define data",
       "semanticRole": "UNSPECIFIED",
       "usagePosition": "STATEMENT_ONLY",
-      "acceptsArguments": "UNSPECIFIED",
-      "argumentSchema": "UNSPECIFIED",
+      "acceptsArguments": "REQUIRED_EXACT_COUNT",
+      "argumentSchema": {
+        "count": 2,
+        "parameters": [
+          {
+            "position": 1,
+            "name": "name",
+            "nodeType": "Identifier",
+            "required": true
+          },
+          {
+            "position": 2,
+            "name": "initialValue",
+            "nodeType": "Expression",
+            "required": true
+          }
+        ]
+      },
       "inputTypes": "UNSPECIFIED",
       "outputType": "UNSPECIFIED",
       "allowsBody": "UNSPECIFIED",
@@ -518,8 +534,24 @@
       "constitutionalFunction": "تخزين البيانات — Store data",
       "semanticRole": "UNSPECIFIED",
       "usagePosition": "STATEMENT_ONLY",
-      "acceptsArguments": "UNSPECIFIED",
-      "argumentSchema": "UNSPECIFIED",
+      "acceptsArguments": "REQUIRED_EXACT_COUNT",
+      "argumentSchema": {
+        "count": 2,
+        "parameters": [
+          {
+            "position": 1,
+            "name": "target",
+            "nodeType": "Identifier",
+            "required": true
+          },
+          {
+            "position": 2,
+            "name": "value",
+            "nodeType": "Expression",
+            "required": true
+          }
+        ]
+      },
       "inputTypes": "UNSPECIFIED",
       "outputType": "UNSPECIFIED",
       "allowsBody": "UNSPECIFIED",
@@ -583,8 +615,18 @@
       "constitutionalFunction": "جلب البيانات — Fetch data",
       "semanticRole": "UNSPECIFIED",
       "usagePosition": "EXPRESSION_ONLY",
-      "acceptsArguments": "UNSPECIFIED",
-      "argumentSchema": "UNSPECIFIED",
+      "acceptsArguments": "REQUIRED_EXACT_COUNT",
+      "argumentSchema": {
+        "count": 1,
+        "parameters": [
+          {
+            "position": 1,
+            "name": "reference",
+            "nodeType": "Identifier",
+            "required": true
+          }
+        ]
+      },
       "inputTypes": "UNSPECIFIED",
       "outputType": "UNSPECIFIED",
       "allowsBody": "UNSPECIFIED",
@@ -648,8 +690,24 @@
       "constitutionalFunction": "تحديد قيمة — Define a value",
       "semanticRole": "UNSPECIFIED",
       "usagePosition": "STATEMENT_ONLY",
-      "acceptsArguments": "UNSPECIFIED",
-      "argumentSchema": "UNSPECIFIED",
+      "acceptsArguments": "REQUIRED_EXACT_COUNT",
+      "argumentSchema": {
+        "count": 2,
+        "parameters": [
+          {
+            "position": 1,
+            "name": "name",
+            "nodeType": "Identifier",
+            "required": true
+          },
+          {
+            "position": 2,
+            "name": "value",
+            "nodeType": "Expression",
+            "required": true
+          }
+        ]
+      },
       "inputTypes": "UNSPECIFIED",
       "outputType": "UNSPECIFIED",
       "allowsBody": "UNSPECIFIED",
@@ -713,8 +771,25 @@
       "constitutionalFunction": "إنشاء سجل — Create a record",
       "semanticRole": "UNSPECIFIED",
       "usagePosition": "STATEMENT_ONLY",
-      "acceptsArguments": "UNSPECIFIED",
-      "argumentSchema": "UNSPECIFIED",
+      "acceptsArguments": "REQUIRED_EXACT_COUNT",
+      "argumentSchema": {
+        "count": 2,
+        "parameters": [
+          {
+            "position": 1,
+            "name": "name",
+            "nodeType": "Identifier",
+            "required": true
+          },
+          {
+            "position": 2,
+            "name": "fields",
+            "nodeType": "Expression",
+            "required": true,
+            "shape": "UNSPECIFIED"
+          }
+        ]
+      },
       "inputTypes": "UNSPECIFIED",
       "outputType": "UNSPECIFIED",
       "allowsBody": "UNSPECIFIED",
@@ -778,8 +853,18 @@
       "constitutionalFunction": "إنشاء مجموعة بيانات — Create a data collection",
       "semanticRole": "UNSPECIFIED",
       "usagePosition": "STATEMENT_ONLY",
-      "acceptsArguments": "UNSPECIFIED",
-      "argumentSchema": "UNSPECIFIED",
+      "acceptsArguments": "REQUIRED_EXACT_COUNT",
+      "argumentSchema": {
+        "count": 1,
+        "parameters": [
+          {
+            "position": 1,
+            "name": "name",
+            "nodeType": "Identifier",
+            "required": true
+          }
+        ]
+      },
       "inputTypes": "UNSPECIFIED",
       "outputType": "UNSPECIFIED",
       "allowsBody": "UNSPECIFIED",
@@ -4743,7 +4828,8 @@
     "The focused Node test file test/geometric-ast-adapter.test.js passed 7/7 on Termux with Node.js v24.22.3 at commit 663cfc76efa216cbdd4c30c0a4ac4cddd2e2c3db. This evidence does not establish a full-suite pass, lexer/parser suite pass, successful QIR lowering, or VM/backend execution.",
     "Owner-approved usage-position decision (2026-11-28): ORIGIN, FORM, CORE, SEED, ROOT, and IDENTITY are valid only in statement position and invalid as expressions. This decision does not specify argument count or types, output, body policy, declaration ordering or relations, or execution semantics. Their semantic contracts remain otherwise UNSPECIFIED and QIR lowering remains blocked.",
     "Follow-up Termux verification reported by the owner on 2026-11-28: node --test test/geometric-ast-adapter.test.js passed 8/8 (0 failed; 620.443307 ms), including the new statement-only Group 1 expression rejection test. The terminal excerpt did not include Node.js version or git HEAD, so neither is asserted here. This remains a focused test-file result, not a full-suite or QIR/VM/backend success.",
-    "Follow-up Termux verification reported by the owner on 2026-11-28 for Group 2 usage-position enforcement: node --test test/geometric-ast-adapter.test.js passed 9/9 (0 failed; 759.40573 ms). The two preceding node --check commands for semantic-analyzer.js and geometric-ast-adapter.test.js were chained with && and therefore completed successfully before the test command ran. The supplied terminal excerpt did not include Node.js version or git HEAD, so neither is asserted. This is a focused test-file result, not a full-suite or successful QIR/VM/backend result."
+    "Follow-up Termux verification reported by the owner on 2026-11-28 for Group 2 usage-position enforcement: node --test test/geometric-ast-adapter.test.js passed 9/9 (0 failed; 759.40573 ms). The two preceding node --check commands for semantic-analyzer.js and geometric-ast-adapter.test.js were chained with && and therefore completed successfully before the test command ran. The supplied terminal excerpt did not include Node.js version or git HEAD, so neither is asserted. This is a focused test-file result, not a full-suite or successful QIR/VM/backend result.",
+    "Owner-approved argument-shape decision for Group 2 (2026-11-28): DATA(name: Identifier, initialValue: Expression); STORE(target: Identifier, value: Expression); FETCH(reference: Identifier); VALUE(name: Identifier, value: Expression); RECORD(name: Identifier, fields: Expression); COLLECTION(name: Identifier). All arguments are required and arity is exact. RECORD.fields remains a generic Expression because QX V1 has no approved record-field/map literal shape. This decision does not determine value types, name resolution/existence, mutability, storage scope, persistence, collection element schema, record field semantics, output types, body policy, or QIR lowering; those remain UNSPECIFIED."
   ],
   "verificationEvidence": {
     "scope": "engine/qx-core/test/geometric-ast-adapter.test.js only",
