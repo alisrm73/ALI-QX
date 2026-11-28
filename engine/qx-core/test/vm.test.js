@@ -374,6 +374,8 @@ test("VM rejects repeated execution of an immutable DECLARE before initializatio
 test("executes immutable RECORD values and FETCH through QIR 1.6", () => {
   const result = runQIR(compile([
     '⊚(profile, { name: "Ali", age: 53, active: TRUE, nested: { city: "Tartous" } })',
+    "DATA.CREATE(items, [1])",
+    "DATA.CREATE(added, DATA.ADD(items, 2))",
     "FUNCTION echo(value)",
     "RETURN value",
     "END",
@@ -382,4 +384,5 @@ test("executes immutable RECORD values and FETCH through QIR 1.6", () => {
   assert.deepEqual(result.globals.profile, {
     name: "Ali", age: 53, active: true, nested: { city: "Tartous" }
   });
+  assert.deepEqual(result.globals.added, [1, 2]);
 });
