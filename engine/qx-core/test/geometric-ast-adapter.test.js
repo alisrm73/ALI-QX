@@ -174,7 +174,7 @@ test("enforces approved usage positions for the six Group 2 symbols", () => {
     }
 
     const statement = analyze(parse(validStatements[symbol.name]));
-    if (["DATA", "STORE", "COLLECTION"].includes(symbol.name)) {
+    if (["DATA", "STORE", "RECORD", "COLLECTION"].includes(symbol.name)) {
       assert.equal(statement.valid, true, symbol.name + ": " + JSON.stringify(statement.diagnostics));
     } else {
       assert.ok(statement.diagnostics.some(item =>
