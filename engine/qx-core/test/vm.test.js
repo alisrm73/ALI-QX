@@ -332,3 +332,17 @@ test("rejects QIR 1.5 immutable global initialization without DECLARE", () => {
     error.name === "QIRValidationError" &&
     error.diagnostics.some(item => item.code === "QIR_E_IMMUTABLE_DECLARE"));
 });
+
+test("executes inherited QIR 1.1 and 1.2 commands in a QIR 1.5 module", () => {
+  const module = compile([
+    "⊙(fixed, 7)",
+    "DATA.CREATE(items, [1])",
+    "DATA.CREATE(added, DATA.ADD(items, 2))",
+    'UI.TEXT("ready")'
+  ].join("\n"));
+  assert.equal(module.version, "1.5");
+  const result = runQIR(module);
+  assert.equal(result.globals.fixed, 7);
+  assert.deepEqual(result.globals.added, [1, 2]);
+  assert.deepEqual(result.outputs.map(item => [item.component, item.value]), [["TEXT", "ready"]]);
+});
