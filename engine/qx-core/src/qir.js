@@ -323,6 +323,9 @@ class FunctionBuilder {
         return { kind: "component", id: item.args[0].name, type: "UI.CONTAINER", version: "1.0.0", props: {}, children: buildChildren(item.body ?? []) };
       }
       if (item.symbol === "BLOCK") {
+        if (item.args[1]?.type !== "StringLiteral") {
+          fail("QIR_E_UI_DYNAMIC_TEXT_UNSUPPORTED", "Dynamic BLOCK text requires a versioned QIR UI-tree value extension", item.args[1] ?? item);
+        }
         return { kind: "component", id: item.args[0].name, type: "UI.TEXT_BLOCK", version: "1.0.0", props: {}, children: [{ kind: "text", value: item.args[1].value }] };
       }
       fail("QIR_E_UNSUPPORTED_AST", "Unsupported child in static UI tree", item);
