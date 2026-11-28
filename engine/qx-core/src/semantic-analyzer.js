@@ -359,9 +359,12 @@ export function analyze(program) {
           if (node.symbol === "DATA" && args.length === 2 && args[0]?.type === "Identifier") {
             const value = expression(args[1], scope);
             const inferred = typeOf(value);
-            if (inferred === "NULL" || inferred === "UNKNOWN" || inferred === "ERROR") {
+            if (inferred === "NULL" || inferred === "ERROR") {
               report("QX3018", "DATA initial value must infer NUM, TXT, BOOL, or LIST", args[1]);
             } else {
+              // A function parameter or forward function result may still be
+              // UNKNOWN here. Keep the shared TypeCell so later constraints
+              // can resolve it before QIR lowering.
               declare(scope, args[0].name, value, args[0], "data");
             }
           } else if (node.symbol === "STORE" && args.length === 2 && args[0]?.type === "Identifier") {
