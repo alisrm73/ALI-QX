@@ -173,6 +173,21 @@ test("recognizes procedures without RETURN and prevents using them as values", (
   assert.ok(asValue.diagnostics.some(item => item.code === "QX3018"));
 });
 
+test("defers geometric DATA parameter types until function call-site constraints resolve", () => {
+  const result = check([
+    "FUNCTION calculate(seed)",
+    "◉(localValue, seed)",
+    "◍(localValue, ◌(localValue) * 2)",
+    "RETURN ◌(localValue)",
+    "END",
+    "◉(result, calculate(6))"
+  ].join("\n"));
+  assert.equal(result.valid, true, JSON.stringify(result.diagnostics));
+  assert.equal(result.functions[0].parameters[0].type, "NUM");
+  assert.equal(result.functions[0].returnType, "NUM");
+  assert.equal(result.symbols.find(item => item.name === "result").type, "NUM");
+});
+
 test("infers types through DATA.COUNT and PROCESS commands inside functions", () => {
   const result = check([
     "FUNCTION countItems(items)",
