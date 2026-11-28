@@ -395,7 +395,7 @@ test("executes dynamic static UI trees through QIR 1.7 and the host UI lock", ()
     "    ▰(heading, ◌(title))",
     "  }",
     "}"
-  ].join("\\n"));
+  ].join("\n"));
   assert.equal(module.version, "1.7");
   const result = runQIR(module, { uiLock: createDefaultUILock() });
   assert.equal(result.outputs.length, 1);
