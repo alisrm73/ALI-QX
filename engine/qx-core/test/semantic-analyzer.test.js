@@ -388,3 +388,11 @@ test("enforces DATA.SET_GLOBAL registry scope and target-storage constraints", (
   ].join("\n"));
   assert.ok(localTarget.diagnostics.some(item => item.code === "QX3021"));
 });
+
+test("accepts VALUE as an immutable binding and rejects STORE reassignment", () => {
+  const valid = check("⊙(fixed, 7)");
+  assert.equal(valid.valid, true, JSON.stringify(valid.diagnostics));
+  const invalid = check("⊙(fixed, 7)\n◍(fixed, 8)");
+  assert.equal(invalid.valid, false);
+  assert.ok(invalid.diagnostics.some(item => item.code === "QX3028"));
+});
