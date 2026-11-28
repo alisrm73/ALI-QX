@@ -143,7 +143,7 @@ test("rejects unresolved geometric symbols uniformly in statement and expression
 test("continues rejecting unresolved geometric symbols nested in geometric blocks", () => {
   const result = analyze(parse([
     '⬡("app") {',
-    '  ◉("users")',
+    '  ◉(users, 1)',
     '}'
   ].join("\n")));
 
