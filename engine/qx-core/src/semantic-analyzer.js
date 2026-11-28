@@ -188,14 +188,33 @@ export function analyze(program) {
         report("QX3012", "This command has no approved value-returning expression contract", node); node.args.forEach(a => expression(a, scope)); out = concrete("ERROR"); break;
       }
       case "GeometricCallExpression": {
-        if (node.group === "CREATION_DEFINITION" ||
-            (node.group === "DATA_STORAGE" && node.symbol !== "FETCH")) {
-          report("QX3028", "Geometric symbol " + node.symbol + " is statement-only and cannot be used as an expression", node);
+        if (node.group === "DATA_STORAGE" && node.symbol === "FETCH") {
+          geometricArguments(node, scope);
+          const reference = node.args?.[0];
+          if (node.args?.length === 1 && reference?.type === "Identifier") {
+            const found = scope.lookup(reference.name);
+            if (!found) {
+              report("QX3003", "Undeclared identifier: " + reference.name, reference);
+              out = concrete("ERROR");
+            } else if (!["data", "value", "collection"].includes(found.symbol.kind)) {
+              report("QX3028", "FETCH cannot read binding kind " + found.symbol.kind + ": " + reference.name, reference);
+              out = concrete("ERROR");
+            } else {
+              out = found.symbol.cell;
+            }
+          } else {
+            out = concrete("ERROR");
+          }
         } else {
-          report("QX3028", "Geometric symbol " + node.symbol + " has no approved semantic contract", node);
+          if (node.group === "CREATION_DEFINITION" ||
+              (node.group === "DATA_STORAGE" && node.symbol !== "FETCH")) {
+            report("QX3028", "Geometric symbol " + node.symbol + " is statement-only and cannot be used as an expression", node);
+          } else {
+            report("QX3028", "Geometric symbol " + node.symbol + " has no approved semantic contract", node);
+          }
+          geometricArguments(node, scope);
+          out = concrete("ERROR");
         }
-        geometricArguments(node, scope);
-        out = concrete("ERROR");
         break;
       }
       case "CallExpression": {
@@ -325,14 +344,53 @@ export function analyze(program) {
       // Geometric statements without approved semantic contracts are rejected
       // uniformly, regardless of whether the adapter specialized their AST type.
       if (node.type === "GeometricStatement" || node.syntaxType === "GeometricStatement") {
-        if (node.group === "DATA_STORAGE" && node.symbol === "FETCH") {
-          report("QX3028", "Geometric symbol FETCH is expression-only and cannot be used as a statement", node);
+        const hasBody = node.body !== null && node.body !== undefined;
+        if (hasBody) {
+          report("QX3028", "Geometric symbol " + node.symbol + " does not allow a body", node);
+          if (Array.isArray(node.body)) block(node.body, scope, fn);
+        }
+        if (node.alternate) {
+          report("QX3028", "Geometric symbol " + node.symbol + " does not allow an alternate branch", node);
+          block(Array.isArray(node.alternate) ? node.alternate : [node.alternate], scope, fn);
+        }
+        if (node.group === "DATA_STORAGE") {
+          geometricArguments(node, scope);
+          const args = Array.isArray(node.args) ? node.args : [];
+          if (node.symbol === "DATA" && args.length === 2 && args[0]?.type === "Identifier") {
+            const value = expression(args[1], scope);
+            const inferred = typeOf(value);
+            if (inferred === "NULL" || inferred === "UNKNOWN" || inferred === "ERROR") {
+              report("QX3018", "DATA initial value must infer NUM, TXT, BOOL, or LIST", args[1]);
+            } else {
+              declare(scope, args[0].name, value, args[0], "data");
+            }
+          } else if (node.symbol === "STORE" && args.length === 2 && args[0]?.type === "Identifier") {
+            const found = scope.lookup(args[0].name);
+            const value = expression(args[1], scope);
+            if (!found) {
+              report("QX3003", "Undeclared identifier: " + args[0].name, args[0]);
+            } else if (!["data", "collection"].includes(found.symbol.kind)) {
+              report("QX3028", "STORE target is not a mutable DATA or COLLECTION binding: " + args[0].name, args[0]);
+            } else {
+              if (scope.kind === "function" && found.scope.kind !== "function")
+                report("QX3020", "STORE cannot update a module binding from inside a function", node);
+              join(found.symbol.cell, value, args[1], "QX3022", "Stored value has a different type from binding " + args[0].name);
+            }
+          } else if (node.symbol === "COLLECTION" && args.length === 1 && args[0]?.type === "Identifier") {
+            declare(scope, args[0].name, concrete("LIST"), args[0], "collection");
+          } else if (node.symbol === "VALUE") {
+            report("QX3028", "VALUE remains blocked until immutable QIR and runtime enforcement are implemented", node);
+          } else if (node.symbol === "RECORD") {
+            report("QX3028", "RECORD remains deferred pending record type and value representation", node);
+          } else if (node.symbol === "FETCH") {
+            report("QX3028", "Geometric symbol FETCH is expression-only and cannot be used as a statement", node);
+          } else if (!["DATA", "STORE", "COLLECTION", "VALUE", "RECORD", "FETCH"].includes(node.symbol)) {
+            report("QX3028", "Geometric symbol " + node.symbol + " has no approved semantic contract", node);
+          }
         } else {
           report("QX3028", "Geometric symbol " + node.symbol + " has no approved semantic contract", node);
+          geometricArguments(node, scope);
         }
-        geometricArguments(node, scope);
-        if (Array.isArray(node.body)) block(node.body, scope, fn);
-        if (node.alternate) block(Array.isArray(node.alternate) ? node.alternate : [node.alternate], scope, fn);
         continue;
       }
       switch (node.type) {
