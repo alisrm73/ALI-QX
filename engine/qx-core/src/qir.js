@@ -45,6 +45,14 @@ function inferExpression(node, variables, functions) {
       if (cmd?.id === "INTEGRATION.REQUEST") return "TXT";
       fail("QIR_E_COMMAND_NOT_ALLOWED", "Command has no approved QIR expression contract", node);
     }
+    case "GeometricCallExpression": {
+      if (node.group === "DATA_STORAGE" && node.symbol === "FETCH" && node.args?.length === 1 && node.args[0]?.type === "Identifier") {
+        const found = variables.get(node.args[0].name);
+        if (!found) fail("QIR_E_UNKNOWN_VARIABLE", "Unknown variable " + node.args[0].name, node.args[0]);
+        return found.type;
+      }
+      fail("QIR_E_UNSUPPORTED_GEOMETRIC_EXPRESSION", "Geometric expression has no approved QIR lowering", node);
+    }
     default: fail("QIR_E_UNSUPPORTED_AST", "Unsupported expression " + node.type, node);
   }
 }
@@ -146,6 +154,15 @@ class FunctionBuilder {
         }
         const result = this.value(); this.emit("CALL", { function: fn.id, arguments: args }, fn.returnType, result, node);
         return { value: result, type: fn.returnType };
+      }
+      case "GeometricCallExpression": {
+        if (node.group !== "DATA_STORAGE" || node.symbol !== "FETCH" || node.args?.length !== 1 || node.args[0]?.type !== "Identifier")
+          fail("QIR_E_UNSUPPORTED_GEOMETRIC_EXPRESSION", "Geometric expression has no approved QIR lowering", node);
+        const variable = this.variables.get(node.args[0].name) ?? this.owner.globalVariable(node.args[0].name, this);
+        if (!variable) fail("QIR_E_UNKNOWN_VARIABLE", "Unknown variable " + node.args[0].name, node.args[0]);
+        const result = this.value();
+        this.emit("LOAD", { variable: variable.id }, variable.type, result, node);
+        return { value: result, type: variable.type };
       }
       case "CommandCallExpression": {
         const cmd = resolveCommand(node.domain, node.command);
@@ -296,6 +313,40 @@ class FunctionBuilder {
     if (!this.current) return;
     switch (node.type) {
       case "CommandStatement": return this.lowerCommand(node);
+      case "GeometricStatement": {
+        if (node.group !== "DATA_STORAGE") fail("QIR_E_UNSUPPORTED_AST", "Unsupported geometric statement " + node.symbol, node);
+        const args = node.args ?? [];
+        if (node.symbol === "DATA" && args.length === 2 && args[0]?.type === "Identifier") {
+          const value = this.lowerExpression(args[1]);
+          if (!VALUE_TYPES.has(value.type) || value.type === "NULL")
+            fail("QIR_E_NULL_VARIABLE", "Cannot infer geometric DATA type", args[1]);
+          const storage = this.descriptor.kind === "module_initializer" ? "global" : "local";
+          const variable = this.addVariable(args[0].name, value.type, storage);
+          this.emit("DECLARE", { variable: variable.id, name: variable.name, storage, declared_type: value.type }, null, null, node);
+          this.store(variable, value.value, node);
+          return;
+        }
+        if (node.symbol === "STORE" && args.length === 2 && args[0]?.type === "Identifier") {
+          const variable = this.variables.get(args[0].name) ?? this.owner.globalVariable(args[0].name, this);
+          if (!variable) fail("QIR_E_UNKNOWN_VARIABLE", "Unknown target " + args[0].name, args[0]);
+          if (variable.storage === "global" && this.descriptor.kind !== "module_initializer")
+            fail("QIR_E_GLOBAL_WRITE", "Geometric STORE cannot update a module binding inside a function", node);
+          const value = this.lowerExpression(args[1]);
+          if (value.type !== variable.type) fail("QIR_E_TYPE_MISMATCH", "Geometric STORE value type mismatch", args[1]);
+          this.store(variable, value.value, node);
+          return;
+        }
+        if (node.symbol === "COLLECTION" && args.length === 1 && args[0]?.type === "Identifier") {
+          const storage = this.descriptor.kind === "module_initializer" ? "global" : "local";
+          const variable = this.addVariable(args[0].name, "LIST", storage);
+          const empty = this.value();
+          this.emit("MAKE_LIST", { elements: [] }, "LIST", empty, node);
+          this.emit("DECLARE", { variable: variable.id, name: variable.name, storage, declared_type: "LIST" }, null, null, node);
+          this.store(variable, empty, node);
+          return;
+        }
+        fail("QIR_E_UNSUPPORTED_AST", "Geometric symbol has no approved QIR statement lowering: " + node.symbol, node);
+      }
       case "ExpressionStatement": {
         if (node.expression.type === "CallExpression" && this.owner.functionsByName.get(node.expression.callee.name)?.returnType === "NULL") {
           const fn = this.owner.functionsByName.get(node.expression.callee.name);
@@ -383,13 +434,27 @@ class ModuleLowerer {
     const variables = new Map();
     const functions = new Map([...this.functionsByName].map(([name, fn]) => [name, fn]));
     for (const node of this.program.body) {
-      if (node.type !== "CommandStatement") continue;
-      const command = resolveCommand(node.domain, node.command);
-      if (command?.id !== "DATA.CREATE" || node.args[0]?.type !== "Identifier" || node.args.length !== 2) continue;
-      const type = inferExpression(node.args[1], variables, functions);
+      let name = null, type = null;
+      if (node.type === "CommandStatement") {
+        const command = resolveCommand(node.domain, node.command);
+        if (command?.id === "DATA.CREATE" && node.args[0]?.type === "Identifier" && node.args.length === 2) {
+          name = node.args[0].name;
+          type = inferExpression(node.args[1], variables, functions);
+        }
+      } else if (node.type === "GeometricStatement" && node.group === "DATA_STORAGE") {
+        const args = node.args ?? [];
+        if (node.symbol === "DATA" && args.length === 2 && args[0]?.type === "Identifier") {
+          name = args[0].name;
+          type = inferExpression(args[1], variables, functions);
+        } else if (node.symbol === "COLLECTION" && args.length === 1 && args[0]?.type === "Identifier") {
+          name = args[0].name;
+          type = "LIST";
+        }
+      }
+      if (name === null) continue;
       if (!VALUE_TYPES.has(type) || type === "NULL") fail("QIR_E_NULL_VARIABLE", "Cannot infer global type", node);
       const id = "var_" + this.globals.length;
-      const item = { id, name: node.args[0].name, type, storage: "global" };
+      const item = { id, name, type, storage: "global" };
       this.globals.push(item); this.globalsByName.set(item.name, item); variables.set(item.name, item);
     }
   }
