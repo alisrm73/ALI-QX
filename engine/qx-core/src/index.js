@@ -9,6 +9,7 @@ export {
 } from "./project-repair-authorization.js";
 export { executeProjectRepair } from "./project-repair-execution.js";
 export { executeProjectRepairAndVerify } from "./project-repair-verification.js";
+export { GEOMETRIC_SYMBOLS, GEOMETRIC_SYMBOL_BY_GLYPH } from "./geometric-symbols.js";
 export { Lexer, QXLexError, tokenize } from "./lexer.js";
 export { Parser, QXParseError, parse } from "./parser.js";
 export { COMMAND_DOMAINS, COMMAND_REGISTRY, isCommandEnabled, resolveCommand } from "./command-registry.js";
