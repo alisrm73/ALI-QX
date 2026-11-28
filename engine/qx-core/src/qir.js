@@ -317,11 +317,30 @@ class FunctionBuilder {
       default: fail("QIR_E_COMMAND_NOT_ALLOWED", "Command has no approved QIR lowering: " + command.id, node);
     }
   }
+  lowerStaticUI(node) {
+    const buildChildren = (items) => items.map(item => {
+      if (item.symbol === "PANEL") {
+        return { kind: "component", id: item.args[0].name, type: "UI.CONTAINER", version: "1.0.0", props: {}, children: buildChildren(item.body ?? []) };
+      }
+      if (item.symbol === "BLOCK") {
+        return { kind: "component", id: item.args[0].name, type: "UI.TEXT_BLOCK", version: "1.0.0", props: {}, children: [{ kind: "text", value: item.args[1].value }] };
+      }
+      fail("QIR_E_UNSUPPORTED_AST", "Unsupported child in static UI tree", item);
+    });
+    const tree = { schema: "QX.UI.TREE", version: "1.0", children: buildChildren(node.body ?? []) };
+    const value = this.value();
+    this.emit("CONST_TXT", { value: JSON.stringify(tree) }, "TXT", value, node);
+    this.emit("COMMAND_CALL", { command: "UI.TREE", arguments: [value] }, null, null, node);
+  }
   lowerStatement(node) {
     if (!this.current) return;
     switch (node.type) {
       case "CommandStatement": return this.lowerCommand(node);
       case "GeometricStatement": {
+        if (node.group === "INTERFACE_DESIGN" && node.symbol === "SCREEN") {
+          this.lowerStaticUI(node);
+          return;
+        }
         if (node.group !== "DATA_STORAGE") fail("QIR_E_UNSUPPORTED_AST", "Unsupported geometric statement " + node.symbol, node);
         const args = node.args ?? [];
         if (["DATA", "VALUE", "RECORD"].includes(node.symbol) && args.length === 2 && args[0]?.type === "Identifier") {
