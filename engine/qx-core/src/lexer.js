@@ -1,3 +1,4 @@
+import { GEOMETRIC_SYMBOLS } from "./geometric-symbols.js";
 import {
   UNICODE_VERSION, isXIDStart, isXIDContinue, isLetter, isLatin, isArabic,
   isDefaultIgnorable, normalizeNFC
@@ -38,7 +39,15 @@ export class Lexer {
     return ch;
   }
   loc() { return { line: this.line, column: this.column, offset: this.i }; }
-  add(type, value, start, raw = value) { this.tokens.push({ type, value, raw, line: start.line, column: start.column, offset: start.offset, endLine: this.line, endColumn: this.column, endOffset: this.i }); }
+  add(type, value, start, raw = value, extra = {}) { this.tokens.push({ type, value, raw, line: start.line, column: start.column, offset: start.offset, endLine: this.line, endColumn: this.column, endOffset: this.i, ...extra }); }
+  geometricSymbol() {
+    const symbol = GEOMETRIC_SYMBOLS.find(item => this.source.startsWith(item.glyph, this.i));
+    if (!symbol) return false;
+    const start = this.loc();
+    for (const _ of symbol.glyph) this.take();
+    this.add("GEOMETRIC_SYMBOL", symbol.name, start, symbol.glyph, { glyph: symbol.glyph, group: symbol.group });
+    return true;
+  }
   error(code, message, at = this.loc()) { throw new QXLexError(code, message, at); }
   comment() { while (this.peek() !== null && this.peek() !== "\n" && this.peek() !== "\r") this.take(); }
   string() {
@@ -88,6 +97,9 @@ export class Lexer {
       if (ch === "\n" || ch === "\r") { const start = this.loc(); this.take(); this.add("NEWLINE", "\n", start, "\n"); continue; }
       if (ch === "/" && this.peekNext() === "/") { this.take(); this.take(); this.comment(); continue; }
       if (ch === '"') { this.string(); continue; }
+      // Match approved multi-code-point glyphs before rejecting default-ignorable
+      // code points (variation selectors, combining marks, and ZWJ sequences).
+      if (this.geometricSymbol()) continue;
       if (isDefaultIgnorable(ch.codePointAt(0))) this.error("QX1007", "Invisible or default-ignorable characters are not allowed in source identifiers", this.loc());
       if (/[0-9]/.test(ch)) { this.number(); continue; }
       if (isXIDStart(ch.codePointAt(0))) { this.identifier(); continue; }
