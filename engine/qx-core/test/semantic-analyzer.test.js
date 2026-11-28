@@ -442,7 +442,7 @@ test("keeps RECORD declarations immutable and FETCH expression-only", () => {
     "END",
     'echo(⧬(profile))',
     '◍(profile, { name: "Other" })'
-  ].join("\\n"));
+  ].join("\n"));
   assert.equal(result.valid, false);
   assert.ok(result.diagnostics.some(item => item.code === "QX3028"));
 });
