@@ -381,8 +381,14 @@ export function analyze(program) {
             }
           } else if (node.symbol === "COLLECTION" && args.length === 1 && args[0]?.type === "Identifier") {
             declare(scope, args[0].name, concrete("LIST"), args[0], "collection");
-          } else if (node.symbol === "VALUE") {
-            report("QX3028", "VALUE remains blocked until immutable QIR and runtime enforcement are implemented", node);
+          } else if (node.symbol === "VALUE" && args.length === 2 && args[0]?.type === "Identifier") {
+            const value = expression(args[1], scope);
+            const inferred = typeOf(value);
+            if (inferred === "NULL" || inferred === "ERROR") {
+              report("QX3018", "VALUE initial value must infer NUM, TXT, BOOL, or LIST", args[1]);
+            } else {
+              declare(scope, args[0].name, value, args[0], "value");
+            }
           } else if (node.symbol === "RECORD") {
             report("QX3028", "RECORD remains deferred pending record type and value representation", node);
           } else if (node.symbol === "FETCH") {
