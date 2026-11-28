@@ -484,7 +484,7 @@ node --test test/qir.test.js test/vm.test.js test/web-backend.test.js
 
 **حدود الإثبات:** هذه ثلاثة ملفات اختبار مركزة وليست مجموعة Node كاملة. لا يتضمن خرج Termux إصدار Node.js أو SHA التشغيل، ولا تثبت اختبارات Web تشغيل التطبيق المولد في متصفح. لا يُنسب الاختبار إلى Commit بعينه.
 
-### 17.8 حدود RECORD في QIR V1
+### 17.8 حدود RECORD قبل اعتماد QIR 1.6 (حالة تاريخية مستبدلة بالقسم 17.9)
 
 لا يعرّف QIR V1 نوعاً أو قيمة أو Opcode مستقلة لـ`RECORD`. لذلك:
 
@@ -494,6 +494,8 @@ node --test test/qir.test.js test/vm.test.js test/web-backend.test.js
 - لا يعلن دعم RECORD في VM أو Web Backend قبل اعتماد تمثيل QIR واختبارات التنفيذ المتطابقة.
 
 هذا حد توافق مقصود، وليس نقصاً يجوز تجاوزه بتحويل ضمني. متطلبات فتح التنفيذ موثقة في القسم 5.12 من `GEOMETRIC-SEMANTIC-AST-CONTRACTS-V1-DRAFT.md`.
+
+**ملاحظة الحالة:** يصف هذا القسم الوضع السابق لاعتماد Record Literal وQIR 1.6؛ لم يعد يمثل حد الدعم الحالي. القسم 17.9 هو المرجع المعتمد الحالي.
 
 ### 17.9 امتداد QIR 1.6 — RECORD
 
