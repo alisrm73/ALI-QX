@@ -1,7 +1,7 @@
 import { resolveCommand } from "./command-registry.js";
 
 function opTree(input) {
-  const valueRefs = []; let nodes = 0, valid = true;
+  const valueRefs = []; let nodes = 0, valid = true; const ids = new Set();
   const exact = (object, keys) => object && Object.getPrototypeOf(object) === Object.prototype && Object.keys(object).sort().join(",") === keys.slice().sort().join(",");
   const visit = (node, depth) => {
     if (++nodes > 1000 || depth > 32 || !node || typeof node !== "object") { valid = false; return; }
