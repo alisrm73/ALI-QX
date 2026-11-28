@@ -479,9 +479,9 @@
       "validationRules": "Infer the binding type from initialValue. Preserve that type for the binding lifetime. Reject NULL and unsupported types. Module-scope DATA is global; DATA inside a function is local to that function.",
       "relations": "STORE may update DATA bindings subject to scope rules. FETCH may read initialized DATA bindings. VALUE is a separate immutable binding kind.",
       "astEffect": "Declare a mutable symbol with inferred type and initialized state in the current scope.",
-      "qirLowering": "BLOCKED_PENDING_SYMBOL_SPECIFIC_LOWERING_AND_QIR_VALIDATION",
-      "vmRequirements": "NOT_DEFINED",
-      "backendRequirements": "NOT_DEFINED",
+      "qirLowering": "LOWERED_TO_EXISTING_QIR_V1_OPCODES; FOCUSED_QIR_VM_AND_WEB_BACKEND_TESTS_PASSED_60_OF_60",
+      "vmRequirements": "EXISTING_QIR_V1_VM_OPCODES; GROUP2_EXECUTION_VERIFIED_BY_FOCUSED_TERMUX_TESTS",
+      "backendRequirements": "EXISTING_QIR_V1_WEB_BACKEND_PIPELINE; GROUP2_WEB_ASSET_BUILD_VERIFIED_BY_FOCUSED_TERMUX_TESTS",
       "possibleErrors": "Duplicate declaration; forbidden local shadowing; unsupported initial type; invalid or uninitialized initializer.",
       "requiredTests": [
         "registry identity and Unicode sequence",
@@ -498,11 +498,11 @@
         "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
         "rawAst": "PRESENT",
         "specializedAst": "UNSPECIFIED",
-        "semanticAnalyzer": "ARGUMENT_SCHEMA_GUARD_PRESENT; SEMANTIC_CONTRACT_APPROVED_NOT_IMPLEMENTED; SYMBOL_SEMANTICS_BLOCKED",
-        "qir": "UNSUPPORTED",
-        "vm": "NOT_REACHED",
-        "backend": "NOT_REACHED",
-        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED; TERMUX_GROUP2_ARGUMENT_SCHEMA_TESTS_PASSED_11_OF_11; FAILED_PRE_FIX_RUN_10_OF_11_RECORDED"
+        "semanticAnalyzer": "IMPLEMENTED",
+        "qir": "IMPLEMENTED_EXISTING_QIR_V1_OPCODES; TERMUX_FOCUSED_TESTS_PASSED",
+        "vm": "EXECUTION_VERIFIED_BY_TERMUX_FOCUSED_TESTS",
+        "backend": "WEB_ASSET_BUILD_VERIFIED_BY_TERMUX_FOCUSED_TESTS",
+        "tests": "TERMUX_GROUP2_SEMANTIC_ANALYZER_TESTS_PASSED_17_OF_17; TERMUX_QIR_VM_WEB_BACKEND_TESTS_PASSED_60_OF_60; THREE_FOCUSED_TEST_FILES; NODE_VERSION_NOT_CAPTURED; HEAD_NOT_CAPTURED_IN_USER_OUTPUT"
       },
       "syntacticRecognition": {
         "grammarV1": "APPROVED",
@@ -560,9 +560,9 @@
       "validationRules": "Resolve target lexically. Reject undeclared targets, immutable targets, unsupported target kinds, and type mismatches. Do not create a binding when the target is absent.",
       "relations": "Updates DATA or COLLECTION; cannot update VALUE. FETCH observes the current value after a successful STORE.",
       "astEffect": "Update the existing mutable binding's value while preserving its inferred type.",
-      "qirLowering": "BLOCKED_PENDING_SYMBOL_SPECIFIC_LOWERING_AND_QIR_VALIDATION",
-      "vmRequirements": "NOT_DEFINED",
-      "backendRequirements": "NOT_DEFINED",
+      "qirLowering": "LOWERED_TO_EXISTING_QIR_V1_OPCODES; FOCUSED_QIR_VM_AND_WEB_BACKEND_TESTS_PASSED_60_OF_60",
+      "vmRequirements": "EXISTING_QIR_V1_VM_OPCODES; GROUP2_EXECUTION_VERIFIED_BY_FOCUSED_TERMUX_TESTS",
+      "backendRequirements": "EXISTING_QIR_V1_WEB_BACKEND_PIPELINE; GROUP2_WEB_ASSET_BUILD_VERIFIED_BY_FOCUSED_TERMUX_TESTS",
       "possibleErrors": "Undeclared target; immutable target; invalid scope write; type mismatch.",
       "requiredTests": [
         "registry identity and Unicode sequence",
@@ -579,11 +579,11 @@
         "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
         "rawAst": "PRESENT",
         "specializedAst": "UNSPECIFIED",
-        "semanticAnalyzer": "ARGUMENT_SCHEMA_GUARD_PRESENT; SEMANTIC_CONTRACT_APPROVED_NOT_IMPLEMENTED; SYMBOL_SEMANTICS_BLOCKED",
-        "qir": "UNSUPPORTED",
-        "vm": "NOT_REACHED",
-        "backend": "NOT_REACHED",
-        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED; TERMUX_GROUP2_ARGUMENT_SCHEMA_TESTS_PASSED_11_OF_11; FAILED_PRE_FIX_RUN_10_OF_11_RECORDED"
+        "semanticAnalyzer": "IMPLEMENTED",
+        "qir": "IMPLEMENTED_EXISTING_QIR_V1_OPCODES; TERMUX_FOCUSED_TESTS_PASSED",
+        "vm": "EXECUTION_VERIFIED_BY_TERMUX_FOCUSED_TESTS",
+        "backend": "WEB_ASSET_BUILD_VERIFIED_BY_TERMUX_FOCUSED_TESTS",
+        "tests": "TERMUX_GROUP2_SEMANTIC_ANALYZER_TESTS_PASSED_17_OF_17; TERMUX_QIR_VM_WEB_BACKEND_TESTS_PASSED_60_OF_60; THREE_FOCUSED_TEST_FILES; NODE_VERSION_NOT_CAPTURED; HEAD_NOT_CAPTURED_IN_USER_OUTPUT"
       },
       "syntacticRecognition": {
         "grammarV1": "APPROVED",
@@ -635,9 +635,9 @@
       "validationRules": "Reject undeclared or unsupported binding kinds. Return the referenced binding's existing type without coercion or mutation.",
       "relations": "Reads DATA, VALUE, and COLLECTION. Does not mutate state. RECORD remains unavailable until its value representation and type are specified.",
       "astEffect": "Produce an expression value reference to the resolved binding.",
-      "qirLowering": "BLOCKED_PENDING_SYMBOL_SPECIFIC_LOWERING_AND_QIR_VALIDATION",
-      "vmRequirements": "NOT_DEFINED",
-      "backendRequirements": "NOT_DEFINED",
+      "qirLowering": "LOWERED_TO_EXISTING_QIR_V1_OPCODES; FOCUSED_QIR_VM_AND_WEB_BACKEND_TESTS_PASSED_60_OF_60",
+      "vmRequirements": "EXISTING_QIR_V1_VM_OPCODES; GROUP2_EXECUTION_VERIFIED_BY_FOCUSED_TERMUX_TESTS",
+      "backendRequirements": "EXISTING_QIR_V1_WEB_BACKEND_PIPELINE; GROUP2_WEB_ASSET_BUILD_VERIFIED_BY_FOCUSED_TERMUX_TESTS",
       "possibleErrors": "Undeclared identifier; unsupported binding kind; read before initialization.",
       "requiredTests": [
         "registry identity and Unicode sequence",
@@ -654,11 +654,11 @@
         "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
         "rawAst": "PRESENT",
         "specializedAst": "UNSPECIFIED",
-        "semanticAnalyzer": "ARGUMENT_SCHEMA_GUARD_PRESENT; SEMANTIC_CONTRACT_APPROVED_NOT_IMPLEMENTED; SYMBOL_SEMANTICS_BLOCKED",
-        "qir": "UNSUPPORTED",
-        "vm": "NOT_REACHED",
-        "backend": "NOT_REACHED",
-        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED; TERMUX_GROUP2_ARGUMENT_SCHEMA_TESTS_PASSED_11_OF_11; FAILED_PRE_FIX_RUN_10_OF_11_RECORDED"
+        "semanticAnalyzer": "IMPLEMENTED_TYPED_EXPRESSION; UNKNOWN_LOCAL_PARAMETER_TYPES_DEFERRED_UNTIL_CONSTRAINT_RESOLUTION",
+        "qir": "IMPLEMENTED_EXISTING_QIR_V1_OPCODES; TERMUX_FOCUSED_TESTS_PASSED",
+        "vm": "EXECUTION_VERIFIED_BY_TERMUX_FOCUSED_TESTS",
+        "backend": "WEB_ASSET_BUILD_VERIFIED_BY_TERMUX_FOCUSED_TESTS",
+        "tests": "TERMUX_GROUP2_SEMANTIC_ANALYZER_TESTS_PASSED_17_OF_17; TERMUX_QIR_VM_WEB_BACKEND_TESTS_PASSED_60_OF_60; THREE_FOCUSED_TEST_FILES; NODE_VERSION_NOT_CAPTURED; HEAD_NOT_CAPTURED_IN_USER_OUTPUT"
       },
       "syntacticRecognition": {
         "grammarV1": "APPROVED",
@@ -735,10 +735,10 @@
         "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
         "rawAst": "PRESENT",
         "specializedAst": "UNSPECIFIED",
-        "semanticAnalyzer": "ARGUMENT_SCHEMA_GUARD_PRESENT; SEMANTIC_CONTRACT_APPROVED_NOT_IMPLEMENTED; SYMBOL_SEMANTICS_BLOCKED",
-        "qir": "UNSUPPORTED",
-        "vm": "NOT_REACHED",
-        "backend": "NOT_REACHED",
+        "semanticAnalyzer": "BLOCKED_PENDING_IMMUTABLE_BINDING_ENFORCEMENT_IN_QIR_VM_AND_WEB_RUNTIME",
+        "qir": "BLOCKED_PENDING_IMMUTABILITY_PRESERVING_LOWERING_AND_VALIDATION",
+        "vm": "BLOCKED_PENDING_IMMUTABILITY_ENFORCEMENT",
+        "backend": "BLOCKED_PENDING_IMMUTABILITY_ENFORCEMENT",
         "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED; TERMUX_GROUP2_ARGUMENT_SCHEMA_TESTS_PASSED_11_OF_11; FAILED_PRE_FIX_RUN_10_OF_11_RECORDED"
       },
       "syntacticRecognition": {
@@ -817,10 +817,10 @@
         "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
         "rawAst": "PRESENT",
         "specializedAst": "UNSPECIFIED",
-        "semanticAnalyzer": "ARGUMENT_SCHEMA_GUARD_PRESENT; RECORD_SEMANTICS_DEFERRED_PENDING_TYPE_DESIGN; SYMBOL_SEMANTICS_BLOCKED",
-        "qir": "UNSUPPORTED",
-        "vm": "NOT_REACHED",
-        "backend": "NOT_REACHED",
+        "semanticAnalyzer": "DEFERRED_PENDING_RECORD_TYPE_AND_VALUE_MODEL",
+        "qir": "UNSUPPORTED_PENDING_RECORD_TYPE_AND_QIR_EXTENSION",
+        "vm": "UNSUPPORTED_PENDING_RECORD_VALUE_MODEL",
+        "backend": "UNSUPPORTED_PENDING_RECORD_VALUE_MODEL",
         "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED; TERMUX_GROUP2_ARGUMENT_SCHEMA_TESTS_PASSED_11_OF_11; FAILED_PRE_FIX_RUN_10_OF_11_RECORDED"
       },
       "syntacticRecognition": {
@@ -873,9 +873,9 @@
       "validationRules": "Create an empty LIST value. LIST elements follow QX V1 heterogeneous-list semantics. The binding is mutable and may be replaced by STORE with another LIST value; STORE must preserve the LIST type.",
       "relations": "FETCH reads the collection as LIST. STORE may replace its complete LIST value. Existing list operations remain governed by their own QX contracts.",
       "astEffect": "Declare a mutable, initialized LIST binding in the current scope.",
-      "qirLowering": "BLOCKED_PENDING_SYMBOL_SPECIFIC_LOWERING_AND_QIR_VALIDATION",
-      "vmRequirements": "NOT_DEFINED",
-      "backendRequirements": "NOT_DEFINED",
+      "qirLowering": "LOWERED_TO_EXISTING_QIR_V1_OPCODES; FOCUSED_QIR_VM_AND_WEB_BACKEND_TESTS_PASSED_60_OF_60",
+      "vmRequirements": "EXISTING_QIR_V1_VM_OPCODES; GROUP2_EXECUTION_VERIFIED_BY_FOCUSED_TERMUX_TESTS",
+      "backendRequirements": "EXISTING_QIR_V1_WEB_BACKEND_PIPELINE; GROUP2_WEB_ASSET_BUILD_VERIFIED_BY_FOCUSED_TERMUX_TESTS",
       "possibleErrors": "Duplicate declaration; forbidden local shadowing; invalid STORE target or non-LIST replacement.",
       "requiredTests": [
         "registry identity and Unicode sequence",
@@ -892,11 +892,11 @@
         "parser": "PRESENT_NOT_RUNTIME_VERIFIED",
         "rawAst": "PRESENT",
         "specializedAst": "UNSPECIFIED",
-        "semanticAnalyzer": "ARGUMENT_SCHEMA_GUARD_PRESENT; SEMANTIC_CONTRACT_APPROVED_NOT_IMPLEMENTED; SYMBOL_SEMANTICS_BLOCKED",
-        "qir": "UNSUPPORTED",
-        "vm": "NOT_REACHED",
-        "backend": "NOT_REACHED",
-        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED; TERMUX_GROUP2_ARGUMENT_SCHEMA_TESTS_PASSED_11_OF_11; FAILED_PRE_FIX_RUN_10_OF_11_RECORDED"
+        "semanticAnalyzer": "IMPLEMENTED",
+        "qir": "IMPLEMENTED_EXISTING_QIR_V1_OPCODES; TERMUX_FOCUSED_TESTS_PASSED",
+        "vm": "EXECUTION_VERIFIED_BY_TERMUX_FOCUSED_TESTS",
+        "backend": "WEB_ASSET_BUILD_VERIFIED_BY_TERMUX_FOCUSED_TESTS",
+        "tests": "TERMUX_GROUP2_SEMANTIC_ANALYZER_TESTS_PASSED_17_OF_17; TERMUX_QIR_VM_WEB_BACKEND_TESTS_PASSED_60_OF_60; THREE_FOCUSED_TEST_FILES; NODE_VERSION_NOT_CAPTURED; HEAD_NOT_CAPTURED_IN_USER_OUTPUT"
       },
       "syntacticRecognition": {
         "grammarV1": "APPROVED",
@@ -4824,7 +4824,7 @@
   "contractFieldCountDefinition": "Counts the 24 semantic/execution contract fields; excludes symbolId, internalName, and referenceDocuments.",
   "implementationNotes": "The six approved Group 1 statement forms are mapped by geometric-ast-adapter.js to their approved specialized AST node types under DefinitionDeclaration. The adapter preserves the original parser AST and all source/syntax fields.,Semantic Analyzer applies a uniform QX3028 guard to specialized geometric statements through their GeometricStatement syntaxType, and to GeometricCallExpression values. This blocks unresolved symbols while their semantic contracts remain UNSPECIFIED; it does not implement their semantic behavior.,The focused Node test file test/geometric-ast-adapter.test.js passed 7/7 on Termux with Node.js v24.22.3 at commit 663cfc76efa216cbdd4c30c0a4ac4cddd2e2c3db. This evidence does not establish a full-suite pass, lexer/parser suite pass, successful QIR lowering, or VM/backend execution.,Owner-approved usage-position decision (2026-11-28): ORIGIN, FORM, CORE, SEED, ROOT, and IDENTITY are valid only in statement position and invalid as expressions. This decision does not specify argument count or types, output, body policy, declaration ordering or relations, or execution semantics. Their semantic contracts remain otherwise UNSPECIFIED and QIR lowering remains blocked.,Follow-up Termux verification reported by the owner on 2026-11-28: node --test test/geometric-ast-adapter.test.js passed 8/8 (0 failed; 620.443307 ms), including the new statement-only Group 1 expression rejection test. The terminal excerpt did not include Node.js version or git HEAD, so neither is asserted here. This remains a focused test-file result, not a full-suite or QIR/VM/backend success.,Follow-up Termux verification reported by the owner on 2026-11-28 for Group 2 usage-position enforcement: node --test test/geometric-ast-adapter.test.js passed 9/9 (0 failed; 759.40573 ms). The two preceding node --check commands for semantic-analyzer.js and geometric-ast-adapter.test.js were chained with && and therefore completed successfully before the test command ran. The supplied terminal excerpt did not include Node.js version or git HEAD, so neither is asserted. This is a focused test-file result, not a full-suite or successful QIR/VM/backend result.,Owner-approved argument-shape decision for Group 2 (2026-11-28): DATA(name: Identifier, initialValue: Expression); STORE(target: Identifier, value: Expression); FETCH(reference: Identifier); VALUE(name: Identifier, value: Expression); RECORD(name: Identifier, fields: Expression); COLLECTION(name: Identifier). All arguments are required and arity is exact. RECORD.fields remains a generic Expression because QX V1 has no approved record-field/map literal shape. This decision does not determine value types, name resolution/existence, mutability, storage scope, persistence, collection element schema, record field semantics, output types, body policy, or QIR lowering; those remain UNSPECIFIED.,Group 2 argument-shape enforcement implementation added on 2026-11-28: semantic-analyzer.js checks exact arity and AST node kinds for DATA, STORE, FETCH, VALUE, RECORD, and COLLECTION. Identifier designator positions are syntax-only and are not name-resolved by this guard; Expression positions are traversed by the existing expression analyzer. This was an intermediate state; see the subsequent semantic implementation note and verification evidence.\n2026-11-28: The assistant selected and recorded a conservative Group 2 semantic design at the user's explicit delegation. DATA is mutable; VALUE is immutable; STORE updates only existing mutable DATA/COLLECTION bindings; FETCH reads initialized supported bindings; COLLECTION creates an empty mutable LIST. RECORD remains explicitly deferred because QX V1 has no record literal or RECORD type; it must not be coerced to LIST. These are contract decisions, not implementation claims. Group 2 remains blocked from QIR until symbol-specific analyzer implementation, QIR lowering, runtime support, and tests are completed.,Group 2 semantic analyzer implementation added on 2026-11-28: DATA declares mutable initialized NUM/TXT/BOOL/LIST bindings; STORE updates only existing mutable DATA/COLLECTION bindings with exact type and prohibits implicit module-binding mutation from functions; FETCH resolves supported bindings as typed expressions; COLLECTION declares an initialized mutable LIST. VALUE remains blocked pending immutable QIR/runtime enforcement; RECORD remains deferred. All Group 2 geometric statements reject bodies/alternate branches. This implementation is analyzer-only: no geometric Group 2 QIR lowering, VM execution, or Web Backend support is claimed.",
   "verificationEvidence": {
-    "scope": "engine/qx-core/test/geometric-ast-adapter.test.js only",
+    "scope": "engine/qx-core/test/qir.test.js, engine/qx-core/test/vm.test.js, and engine/qx-core/test/web-backend.test.js; focused Group 2 QIR lowering, VM execution, and Web asset build coverage",
     "branch": "audit/geometric-language-alignment",
     "commit": "NOT_CAPTURED_IN_USER_OUTPUT",
     "date": "2026-11-28",
@@ -4832,29 +4832,48 @@
     "workingDirectory": "~/ALI-QX-geometric-worktree/engine/qx-core",
     "commands": [
       {
+        "command": "git pull --ff-only origin audit/geometric-language-alignment",
+        "result": "PASS (inferred from successful continuation through &&)"
+      },
+      {
         "command": "node --check src/semantic-analyzer.js",
         "result": "PASS (inferred from successful continuation through &&)"
       },
       {
-        "command": "node --check test/geometric-ast-adapter.test.js",
+        "command": "node --check src/qir.js",
         "result": "PASS (inferred from successful continuation through &&)"
       },
       {
-        "command": "node --test test/geometric-ast-adapter.test.js",
+        "command": "node --check test/qir.test.js",
+        "result": "PASS (inferred from successful continuation through &&)"
+      },
+      {
+        "command": "node --check test/vm.test.js",
+        "result": "PASS (inferred from successful continuation through &&)"
+      },
+      {
+        "command": "node --check test/web-backend.test.js",
+        "result": "PASS (inferred from successful continuation through &&)"
+      },
+      {
+        "command": "node --test test/qir.test.js test/vm.test.js test/web-backend.test.js",
         "result": "PASS",
-        "tests": 17,
-        "passed": 17,
+        "tests": 60,
+        "passed": 60,
         "failed": 0,
         "cancelled": 0,
         "skipped": 0,
         "todo": 0,
-        "durationMs": 781.722115
+        "durationMs": 819.168615
       }
     ],
+    "includedCoverage": "Group 2 DATA, STORE, FETCH, and COLLECTION lower to QIR V1, execute in VM including function-local bindings, and build validated Web assets. VALUE and RECORD remain excluded from this verified implementation scope.",
     "limitations": [
-      "Focused test file only; not evidence that the full Node test suite passed.",
+      "Three focused test files only; not evidence that the full Node test suite passed.",
       "The supplied terminal excerpt did not include git rev-parse HEAD or Node.js version.",
-      "No geometric Group 2 QIR lowering, VM execution, or Web Backend execution is established."
+      "VALUE immutability is not implemented or claimed; VALUE remains blocked.",
+      "RECORD remains deferred and unsupported.",
+      "This test run does not verify Group 1 or all 72 geometric symbols."
     ]
   },
   "verificationEvidenceHistory": [
@@ -4990,6 +5009,59 @@
         "Focused test file only; not evidence that the full Node test suite passed.",
         "The supplied terminal excerpt did not include git rev-parse HEAD or Node.js version.",
         "No geometric Group 2 QIR lowering, VM execution, or Web Backend execution is established."
+      ]
+    },
+    {
+      "scope": "engine/qx-core/test/qir.test.js, engine/qx-core/test/vm.test.js, and engine/qx-core/test/web-backend.test.js; focused Group 2 QIR lowering, VM execution, and Web asset build coverage",
+      "branch": "audit/geometric-language-alignment",
+      "commit": "NOT_CAPTURED_IN_USER_OUTPUT",
+      "date": "2026-11-28",
+      "environment": "Termux; Node.js version not included in supplied output",
+      "workingDirectory": "~/ALI-QX-geometric-worktree/engine/qx-core",
+      "commands": [
+        {
+          "command": "git pull --ff-only origin audit/geometric-language-alignment",
+          "result": "PASS (inferred from successful continuation through &&)"
+        },
+        {
+          "command": "node --check src/semantic-analyzer.js",
+          "result": "PASS (inferred from successful continuation through &&)"
+        },
+        {
+          "command": "node --check src/qir.js",
+          "result": "PASS (inferred from successful continuation through &&)"
+        },
+        {
+          "command": "node --check test/qir.test.js",
+          "result": "PASS (inferred from successful continuation through &&)"
+        },
+        {
+          "command": "node --check test/vm.test.js",
+          "result": "PASS (inferred from successful continuation through &&)"
+        },
+        {
+          "command": "node --check test/web-backend.test.js",
+          "result": "PASS (inferred from successful continuation through &&)"
+        },
+        {
+          "command": "node --test test/qir.test.js test/vm.test.js test/web-backend.test.js",
+          "result": "PASS",
+          "tests": 60,
+          "passed": 60,
+          "failed": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0,
+          "durationMs": 819.168615
+        }
+      ],
+      "includedCoverage": "Group 2 DATA, STORE, FETCH, and COLLECTION lower to QIR V1, execute in VM including function-local bindings, and build validated Web assets. VALUE and RECORD remain excluded from this verified implementation scope.",
+      "limitations": [
+        "Three focused test files only; not evidence that the full Node test suite passed.",
+        "The supplied terminal excerpt did not include git rev-parse HEAD or Node.js version.",
+        "VALUE immutability is not implemented or claimed; VALUE remains blocked.",
+        "RECORD remains deferred and unsupported.",
+        "This test run does not verify Group 1 or all 72 geometric symbols."
       ]
     }
   ]
