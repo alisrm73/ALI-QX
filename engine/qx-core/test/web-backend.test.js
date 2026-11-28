@@ -44,3 +44,19 @@ test("rejects oversized titles",()=>{
   assert.throws(()=>buildWebProject("DATA.CREATE(value, 1)",{title:"x".repeat(121)}),
     e=>e instanceof QXWebBuildError&&e.code==="QX_WEB_INVALID_TITLE");
 });
+
+
+test("builds validated web assets from Group 2 geometric bindings", () => {
+  const project = buildWebProject([
+    "◉(total, 1)",
+    "◍(total, ◌(total) + 1)",
+    "⊛(items)",
+    "◍(items, [1, 2])",
+    "◉(count, DATA.COUNT(◌(items)))"
+  ].join("\n"));
+  assert.equal(project.metadata.networkAccess, false);
+  assert.match(project.files["app.js"], /"opcode":"LOAD"/);
+  assert.match(project.files["app.js"], /"opcode":"STORE_GLOBAL"/);
+  assert.match(project.files["app.js"], /"opcode":"MAKE_LIST"/);
+  assert.match(project.files["index.html"], /Content-Security-Policy/);
+});
