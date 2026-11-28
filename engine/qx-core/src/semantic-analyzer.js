@@ -130,7 +130,8 @@ export function analyze(program) {
         report("QX3012", "This command has no approved value-returning expression contract", node); node.args.forEach(a => expression(a, scope)); out = concrete("ERROR"); break;
       }
       case "GeometricCallExpression": {
-        if (node.group === "CREATION_DEFINITION") {
+        if (node.group === "CREATION_DEFINITION" ||
+            (node.group === "DATA_STORAGE" && node.symbol !== "FETCH")) {
           report("QX3028", "Geometric symbol " + node.symbol + " is statement-only and cannot be used as an expression", node);
         } else {
           report("QX3028", "Geometric symbol " + node.symbol + " has no approved semantic contract", node);
@@ -266,7 +267,11 @@ export function analyze(program) {
       // Geometric statements without approved semantic contracts are rejected
       // uniformly, regardless of whether the adapter specialized their AST type.
       if (node.type === "GeometricStatement" || node.syntaxType === "GeometricStatement") {
-        report("QX3028", "Geometric symbol " + node.symbol + " has no approved semantic contract", node);
+        if (node.group === "DATA_STORAGE" && node.symbol === "FETCH") {
+          report("QX3028", "Geometric symbol FETCH is expression-only and cannot be used as a statement", node);
+        } else {
+          report("QX3028", "Geometric symbol " + node.symbol + " has no approved semantic contract", node);
+        }
         node.args?.forEach(arg => expression(arg, scope));
         if (Array.isArray(node.body)) block(node.body, scope, fn);
         if (node.alternate) block(Array.isArray(node.alternate) ? node.alternate : [node.alternate], scope, fn);
