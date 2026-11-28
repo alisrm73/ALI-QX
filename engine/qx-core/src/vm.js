@@ -58,6 +58,8 @@ function createQIRExecution(module, options = {}) {
   const functions = new Map([module.initializer, ...module.functions].map(fn => [fn.id, fn]));
   const globalsById = new Map(module.globals.map(item => [item.id, item]));
   const globals = new Map(module.globals.map(item => [item.id, UNINITIALIZED]));
+  const globalMutability = new Map(module.globals.map(item => [item.id, item.mutable !== false]));
+  const initializedGlobals = new Set();
   const state = { instructions: 0 };
   const outputs = [];
   const integrationBroker = options.integrationBroker;
@@ -84,11 +86,17 @@ function createQIRExecution(module, options = {}) {
     if (global) {
       if (!globalsById.has(id))
         throw runtimeError("QX_VM_UNKNOWN_GLOBAL", "Unknown global variable: " + id, instruction, frame.context);
+      if (globalMutability.get(id) === false && initializedGlobals.has(id))
+        throw runtimeError("QX_VM_IMMUTABLE_WRITE", "Cannot reassign an immutable global", instruction, frame.context);
       globals.set(id, value);
+      initializedGlobals.add(id);
     } else {
       if (!frame.variables.has(id))
         throw runtimeError("QX_VM_UNKNOWN_LOCAL", "Unknown local variable: " + id, instruction, frame.context);
+      if (frame.mutableVariables.get(id) === false && frame.initializedVariables.has(id))
+        throw runtimeError("QX_VM_IMMUTABLE_WRITE", "Cannot reassign an immutable local", instruction, frame.context);
       frame.variables.set(id, value);
+      frame.initializedVariables.add(id);
     }
   }
 
@@ -177,8 +185,10 @@ function createQIRExecution(module, options = {}) {
     if (parameterDeclarations.length !== fn.parameters.length || args.length !== fn.parameters.length)
       throw new QXVMError("QX_VM_PARAMETER_MISMATCH", "Function parameter layout does not match its arguments", null, context);
 
+    const mutableVariables = new Map(parameterDeclarations.map(instruction => [instruction.operands.variable, instruction.operands.mutable !== false]));
+    const initializedVariables = new Set(parameterDeclarations.map(instruction => instruction.operands.variable));
     parameterDeclarations.forEach((instruction, index) => variables.set(instruction.operands.variable, args[index]));
-    const frame = { variables, values, context };
+    const frame = { variables, values, context, mutableVariables, initializedVariables };
 
     let blockId = fn.entry_block;
     while (true) {
@@ -203,8 +213,11 @@ function createQIRExecution(module, options = {}) {
               if (!globalsById.has(op.variable))
                 throw runtimeError("QX_VM_UNKNOWN_GLOBAL", "Unknown global declaration: " + op.variable, instruction, context);
               globals.set(op.variable, UNINITIALIZED);
+              initializedGlobals.delete(op.variable);
             } else if (op.parameter !== true) {
               variables.set(op.variable, UNINITIALIZED);
+              frame.mutableVariables.set(op.variable, op.mutable !== false);
+              frame.initializedVariables.delete(op.variable);
             }
             break;
           case "LOAD": values.set(instruction.result, readVariable(frame, op.variable, instruction)); break;
