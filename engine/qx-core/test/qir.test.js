@@ -540,3 +540,15 @@ test("QIR 1.6 rejects duplicate or malformed RECORD field descriptors", () => {
   makeRecord.operands.fields[1].name = makeRecord.operands.fields[0].name;
   assert.ok(validateQIR(module).some(item => item.code === "QIR_E_RECORD_FIELD"));
 });
+
+test("QIR 1.6 rejects NULL values inside MAKE_RECORD", () => {
+  const module = compile('⊚(profile, { name: "Ali" })');
+  const instructions = module.initializer.blocks[0].instructions;
+  const makeRecord = instructions.find(item => item.opcode === "MAKE_RECORD");
+  instructions.splice(instructions.indexOf(makeRecord), 0, {
+    id: "inst_injected_null", opcode: "CONST_NULL", type: "NULL",
+    result: "v_injected_null", operands: {}, source: makeRecord.source
+  });
+  makeRecord.operands.fields[0].value = "v_injected_null";
+  assert.ok(validateQIR(module).some(item => item.code === "QIR_E_RECORD_FIELD"));
+});
