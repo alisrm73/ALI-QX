@@ -60,6 +60,7 @@ function createQIRExecution(module, options = {}) {
   const globals = new Map(module.globals.map(item => [item.id, UNINITIALIZED]));
   const globalMutability = new Map(module.globals.map(item => [item.id, item.mutable !== false]));
   const initializedGlobals = new Set();
+  const declaredImmutableGlobals = new Set();
   const state = { instructions: 0 };
   const outputs = [];
   const integrationBroker = options.integrationBroker;
@@ -86,6 +87,8 @@ function createQIRExecution(module, options = {}) {
     if (global) {
       if (!globalsById.has(id))
         throw runtimeError("QX_VM_UNKNOWN_GLOBAL", "Unknown global variable: " + id, instruction, frame.context);
+      if (globalMutability.get(id) === false && !declaredImmutableGlobals.has(id))
+        throw runtimeError("QX_VM_IMMUTABLE_DECLARE", "Immutable global must be declared before initialization", instruction, frame.context);
       if (globalMutability.get(id) === false && initializedGlobals.has(id))
         throw runtimeError("QX_VM_IMMUTABLE_WRITE", "Cannot reassign an immutable global", instruction, frame.context);
       globals.set(id, value);
@@ -93,6 +96,8 @@ function createQIRExecution(module, options = {}) {
     } else {
       if (!frame.variables.has(id))
         throw runtimeError("QX_VM_UNKNOWN_LOCAL", "Unknown local variable: " + id, instruction, frame.context);
+      if (frame.mutableVariables.get(id) === false && !frame.declaredImmutableVariables.has(id))
+        throw runtimeError("QX_VM_IMMUTABLE_DECLARE", "Immutable local must be declared before initialization", instruction, frame.context);
       if (frame.mutableVariables.get(id) === false && frame.initializedVariables.has(id))
         throw runtimeError("QX_VM_IMMUTABLE_WRITE", "Cannot reassign an immutable local", instruction, frame.context);
       frame.variables.set(id, value);
@@ -187,8 +192,9 @@ function createQIRExecution(module, options = {}) {
 
     const mutableVariables = new Map(parameterDeclarations.map(instruction => [instruction.operands.variable, instruction.operands.mutable !== false]));
     const initializedVariables = new Set(parameterDeclarations.map(instruction => instruction.operands.variable));
+    const declaredImmutableVariables = new Set();
     parameterDeclarations.forEach((instruction, index) => variables.set(instruction.operands.variable, args[index]));
-    const frame = { variables, values, context, mutableVariables, initializedVariables };
+    const frame = { variables, values, context, mutableVariables, initializedVariables, declaredImmutableVariables };
 
     let blockId = fn.entry_block;
     while (true) {
@@ -212,13 +218,23 @@ function createQIRExecution(module, options = {}) {
             if (op.storage === "global") {
               if (!globalsById.has(op.variable))
                 throw runtimeError("QX_VM_UNKNOWN_GLOBAL", "Unknown global declaration: " + op.variable, instruction, context);
-              if (globalMutability.get(op.variable) === false && initializedGlobals.has(op.variable))
-                throw runtimeError("QX_VM_IMMUTABLE_WRITE", "Cannot redeclare an initialized immutable global", instruction, context);
+              if (globalMutability.get(op.variable) === false) {
+                if (declaredImmutableGlobals.has(op.variable))
+                  throw runtimeError("QX_VM_IMMUTABLE_REDECLARE", "Cannot redeclare an immutable global", instruction, context);
+                if (initializedGlobals.has(op.variable))
+                  throw runtimeError("QX_VM_IMMUTABLE_WRITE", "Cannot redeclare an initialized immutable global", instruction, context);
+                declaredImmutableGlobals.add(op.variable);
+              }
               globals.set(op.variable, UNINITIALIZED);
               if (globalMutability.get(op.variable) !== false) initializedGlobals.delete(op.variable);
             } else if (op.parameter !== true) {
-              if (op.mutable === false && frame.initializedVariables.has(op.variable))
-                throw runtimeError("QX_VM_IMMUTABLE_WRITE", "Cannot redeclare an initialized immutable local", instruction, context);
+              if (op.mutable === false) {
+                if (frame.declaredImmutableVariables.has(op.variable))
+                  throw runtimeError("QX_VM_IMMUTABLE_REDECLARE", "Cannot redeclare an immutable local", instruction, context);
+                if (frame.initializedVariables.has(op.variable))
+                  throw runtimeError("QX_VM_IMMUTABLE_WRITE", "Cannot redeclare an initialized immutable local", instruction, context);
+                frame.declaredImmutableVariables.add(op.variable);
+              }
               variables.set(op.variable, UNINITIALIZED);
               frame.mutableVariables.set(op.variable, op.mutable !== false);
               if (op.mutable !== false) frame.initializedVariables.delete(op.variable);
