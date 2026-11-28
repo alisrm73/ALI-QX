@@ -15,9 +15,9 @@
 
 This document is the single canonical reference for the geometric symbol vocabulary of QX. It records the twelve symbol groups explicitly approved by the project owner, including each symbol's functional name and defined meaning.
 
-**مبدأ حاكم | Governing principle:** الرموز الهندسية هي مفردات لغوية أصلية في QX، وليست زخرفة لأوامر تقليدية. يجب أن تُبنى قواعد اللغة ودعم المحرك لها على هذه المواصفات بعد استكمال قواعد التركيب والتحقق التقني.
+**مبدأ حاكم | Governing principle:** الرموز الهندسية مفردات لغوية أصلية في QX وليست زخرفة لأوامر تقليدية. اعتمد صاحب المشروع `GEOMETRIC-LANGUAGE-GRAMMAR-V1.md` كأساس تركيبي تنفيذي للغة. يحدد الدستور هوية الرمز ووظيفته، وتحدد Grammar V1 البنية النحوية العامة، بينما تبقى دلالات كل رمز وعقوده التنفيذية خاضعة لهذه الوثيقة والقرارات اللاحقة.
 
-The geometric symbols are native QX language tokens, not decorative aliases for conventional commands. QX grammar and engine support must be designed around this specification after composition rules and technical validation are completed.
+The geometric symbols are native QX language tokens, not decorative aliases for conventional commands. The project owner has approved `GEOMETRIC-LANGUAGE-GRAMMAR-V1.md` as the executable syntactic baseline. This constitution defines symbol identity and function; Grammar V1 defines general syntax; symbol-specific semantics and executable contracts remain governed by this specification and subsequent decisions.
 
 ## 2. حدود الاعتماد | Approval scope
 
@@ -25,13 +25,13 @@ The geometric symbols are native QX language tokens, not decorative aliases for 
 - هذا الاعتماد لا يعني أن الرموز أصبحت مدعومة في Lexer أو Parser أو VM أو Web Backend.
 - لا تُخترع وظائف إضافية للرموز ولا تُغيّر معانيها دون موافقة صريحة.
 - أسماء الرموز الإنجليزية أدناه أسماء تعريفية للوظائف؛ الرمز الهندسي هو العلامة اللغوية المعتمدة.
-- لم تُعتمد بعد قواعد ترتيب الرموز، أو الأقواس والفواصل، أو إنهاء التعليمات، أو تركيب التعبيرات، أو أسبقية العمليات. توثّق هذه القواعد في مراجعات لاحقة.
+- قواعد التركيب العامة معتمدة في `QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md` (Grammar V1). يشمل ذلك صيغة الاستدعاء والوسائط والكتل والتداخل والتعبيرات وحدود التعليمات وفق القواعد الموثقة. لا يعني اعتماد Grammar V1 أن كل رمز يقبل كل وسيط أو كتلة أو موضع استخدام دلالياً.
 
 - The twelve groups and 72 symbols below are approved for their **exact displayed form, functional name, and stated meaning**.
 - This approval does not mean the symbols are already supported by the Lexer, Parser, VM, or Web Backend.
 - No additional behavior may be inferred or assigned without explicit approval.
 - The English symbol names are descriptive identifiers; the geometric glyph is the approved language token.
-- Symbol ordering, delimiters, statement termination, expression composition, and operator precedence have not yet been approved.
+- General composition rules are approved in `QX/spec/GEOMETRIC-LANGUAGE-GRAMMAR-V1.md` (Grammar V1), including invocation, arguments, blocks, nesting, expressions, and statement boundaries as documented. Grammar V1 does not mean every symbol semantically accepts every argument, block, or usage position.
 
 ## 3. الأبجدية الهندسية المعتمدة | Approved geometric vocabulary
 
@@ -189,29 +189,31 @@ The current set includes multi-code-point sequences such as `⬢⃝`, `⬣⃝`, 
 
 ## 6. ما لم يُحسم بعد | Open language decisions
 
-هذه الوثيقة تثبت مفردات الرموز ووظائفها فقط. البنود التالية لم تحصل على اعتماد بعد:
+تثبت هذه الوثيقة مفردات الرموز ووظائفها الدستورية. قواعد التركيب العامة معتمدة بصورة مستقلة في Grammar V1، ولا يعاد فتح اعتمادها ضمن هذا السجل. ما يزال غير محسوم ويحتاج عقداً خاصاً بالرمز أو قراراً مستقلاً:
 
-- قواعد تركيب الرموز لتكوين تعليمة كاملة.
-- طريقة تمرير القيم والمعاملات إلى الرمز.
-- حدود الكتل والنطاقات وإنهاء التعليمات.
-- قواعد النصوص والأرقام والقيم الحرفية.
-- التعليقات والمسافات البيضاء.
-- قواعد المقارنة والمنطق والأسبقية.
-- التمثيل الداخلي لكل رمز وربطه بـ AST وQIR.
-- سلوك الأخطاء والرسائل التشخيصية.
-- اختبارات التوافق مع الرموز على المنصات المستهدفة.
+- عدد الوسائط وترتيبها وإلزاميتها ومخططها لكل رمز.
+- أنواع المدخلات ونوع المخرجات أو عدم إنتاج قيمة.
+- قبول الكتل لكل رمز ومحتواها ونطاقها.
+- مواضع الاستخدام الدلالية والسياقات المسموحة.
+- شروط الاستخدام والتحقق والعلاقات والاعتماديات.
+- الآثار الجانبية والصلاحيات وحدود الأمان.
+- التمثيل الدلالي المتخصص وربطه بـ AST وQIR لكل رمز.
+- سلوك VM أو الخلفية المناسبة لكل عملية.
+- الأخطاء الدلالية والرسائل التشخيصية الخاصة بكل رمز.
+- اختبارات العرض والتوافق عبر Android وWindows والمتصفحات وبيئات Node.js.
 
-This document approves the symbol vocabulary and stated meanings only. The following remain open and require separate approval:
+This constitution defines the approved symbol vocabulary and functions. General syntax is separately approved in Grammar V1 and is not reopened here. The following remain unresolved and require a symbol-specific contract or a separate decision:
 
-- Composition rules for complete statements.
-- Passing values and arguments to symbols.
-- Block boundaries, scopes, and statement termination.
-- String, numeric, and literal syntax.
-- Comments and whitespace.
-- Comparison, logic, and precedence rules.
-- Internal representation and mapping to AST and QIR.
-- Error behavior and diagnostics.
-- Cross-platform symbol compatibility tests.
+- Per-symbol argument count, order, requiredness, and schema.
+- Input types and output type, including whether a value is produced.
+- Per-symbol block acceptance, body contents, and scope.
+- Semantic usage positions and permitted contexts.
+- Preconditions, validation, relations, and dependencies.
+- Side effects, permissions, and security boundaries.
+- Specialized semantic AST representation and per-symbol QIR mapping.
+- VM or appropriate backend behavior for each operation.
+- Symbol-specific semantic errors and diagnostics.
+- Rendering and compatibility tests across Android, Windows, browsers, and Node.js environments.
 
 ## 7. سجل الاعتماد | Approval record
 
@@ -231,9 +233,9 @@ This document approves the symbol vocabulary and stated meanings only. The follo
 | 12 — Build & Runtime | 6 | معتمدة — Approved |
 | **الإجمالي | Total** | **72** | **12 مجموعة معتمدة** |
 
-**سجل القرار:** اعتمد صاحب المشروع المجموعات الاثنتي عشرة تباعاً في محادثة بتاريخ 2026-11-28. لا يعني ذلك اعتماد قواعد تركيب اللغة أو إثبات تنفيذ الرموز داخل المحرك.
+**سجل القرار:** اعتمد صاحب المشروع المجموعات الاثنتي عشرة تباعاً بتاريخ 2026-11-28، واعتمد Grammar V1 كأساس تركيبي تنفيذي بموجب التكليف الهندسي الشامل بتاريخ 2026-11-28. لا يعني أي من الاعتمادين أن دلالات الرموز الـ72 أو دعمها في سلسلة التنفيذ قد اكتمل.
 
-**Decision record:** The project owner approved all twelve groups sequentially in the conversation dated 2026-11-28. This does not constitute approval of the language composition grammar or proof that the symbols are implemented in the engine.
+**Decision record:** The project owner approved all twelve groups on 2026-11-28 and separately approved Grammar V1 as the executable syntactic baseline in the comprehensive engineering mandate dated 2026-11-28. Neither approval means the 72 symbols' semantics or end-to-end execution support are complete.
 
 
 ## 8. العلاقة مع المحرك الحالي | Relationship to the current engine
@@ -242,4 +244,4 @@ This document approves the symbol vocabulary and stated meanings only. The follo
 
 صيغة `DOMAIN.COMMAND(values)` هي صيغة الشريحة التنفيذية الحالية فقط، وليست الصياغة الهندسية النهائية. لا يجوز تحويل الرموز إلى هذه الأوامر أو اعتبارها مرادفات لها دون قواعد mapping معتمدة.
 
-تُحدد حالة كل طبقة والبوابات اللازمة لربط الأبجدية بالمحرك في [مصفوفة التوافق والتكامل](QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md). لا تُعد قواعد التركيب معتمدة حتى يوافق عليها صاحب المشروع، ولا يُعلن دعم رمز تنفيذياً قبل اجتياز اختبارات السلسلة الكاملة من الرمز إلى AST وQIR ونتيجة التنفيذ.
+تُحدد حالة كل طبقة والبوابات اللازمة لربط الأبجدية بالمحرك في [مصفوفة التوافق والتكامل](QX/spec/GEOMETRIC-LANGUAGE-ENGINE-COMPATIBILITY.md). Grammar V1 is approved as the general syntactic baseline; any change to its rules requires explicit owner approval. A symbol is not declared executable until it passes the complete tested path from glyph to AST, QIR, and execution result.
