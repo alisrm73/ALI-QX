@@ -98,6 +98,7 @@ GeometricStatement {
   group: canonical-symbol-group,
   args: Expression[],
   body: Statement[] | null,
+  alternate: GeometricStatement | null,
   location: SourceLocation
 }
 ```
