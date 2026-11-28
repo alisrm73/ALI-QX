@@ -13,12 +13,14 @@ function opTree(input) {
     if (!exact(node, ["kind", "id", "type", "version", "props", "children"]) ||
         !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/.test(node.id ?? "") ||
         !["UI.CONTAINER", "UI.TEXT_BLOCK"].includes(node.type) ||
-        node.version !== "1.0.0" || !exact(node.props, []) || !Array.isArray(node.children)) { valid = false; return; }
-    if (node.type === "UI.TEXT_BLOCK" && node.children.some(child => child?.kind !== "text")) valid = false;
+        node.version !== "1.0.0" || !exact(node.props, []) || !Array.isArray(node.children) || ids.has(node.id)) { valid = false; return; }
+    ids.add(node.id);
+    if (node.type === "UI.TEXT_BLOCK" && (node.children.length !== 1 || node.children.some(child => child?.kind !== "text"))) valid = false;
+    if (node.type === "UI.CONTAINER" && node.children.some(child => child?.kind !== "component")) valid = false;
     for (const child of node.children) visit(child, depth + 1);
   };
   if (!exact(input, ["schema", "version", "children"]) || input.schema !== "QX.UI.TREE" || input.version !== "1.0" || !Array.isArray(input.children)) valid = false;
-  else for (const child of input.children) visit(child, 1);
+  else for (const child of input.children) { if (child?.kind !== "component") valid = false; visit(child, 1); }
   return { valid, valueRefs };
 }
 const VALUE_TYPES = new Set(["NUM", "TXT", "BOOL", "LIST", "NULL", "RECORD"]);
@@ -622,8 +624,8 @@ export function validateQIR(module) {
         if (inst.opcode === "MAKE_RECORD") {
           const fields = inst.operands?.fields;
           const names = new Set();
-          if (module.version !== "1.6" || inst.type !== "RECORD" || !Array.isArray(fields) || fields.length > 10000) {
-            report("QIR_E_RECORD_SCHEMA", "MAKE_RECORD requires QIR 1.6, a RECORD result, and a bounded fields array", inst.source);
+          if (!["1.6", "1.7"].includes(module.version) || inst.type !== "RECORD" || !Array.isArray(fields) || fields.length > 10000) {
+            report("QIR_E_RECORD_SCHEMA", "MAKE_RECORD requires QIR 1.6 or later, a RECORD result, and a bounded fields array", inst.source);
           } else {
             for (const field of fields) {
               if (!field || Object.keys(field).sort().join(",") !== "name,value" || typeof field.name !== "string" || !field.name.length || field.name.normalize("NFC") !== field.name || typeof field.value !== "string" || names.has(field.name.normalize("NFC"))) {
