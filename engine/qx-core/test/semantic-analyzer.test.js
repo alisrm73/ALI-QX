@@ -452,7 +452,7 @@ test("keeps RECORD literals out of DATA VALUE and equality contracts", () => {
     'DATA.CREATE(profile, { name: "Ali" })',
     '◉(profile, { name: "Ali" })',
     '⊙(profile, { name: "Ali" })',
-    '⊚(profile, { name: "Ali" })\\nDATA.CREATE(equal, profile == profile)'
+    '⊚(profile, { name: "Ali" })\nDATA.CREATE(equal, profile == profile)'
   ]) {
     const result = check(source);
     assert.equal(result.valid, false, source);
