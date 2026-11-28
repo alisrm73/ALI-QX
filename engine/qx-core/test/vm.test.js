@@ -350,16 +350,12 @@ test("executes inherited QIR 1.1 and 1.2 commands in a QIR 1.5 module", () => {
 test("VM rejects repeated execution of an immutable DECLARE before initialization", () => {
   const module = compile("⊙(fixed, 7)");
   const [declaration, constant, store, ret] = module.initializer.blocks[0].instructions;
-  module.initializer.blocks = [
-    {
-      id: "bb_0",
-      instructions: [
-        declaration,
-        { id: "inst_loop_condition", opcode: "CONST_BOOL", type: "BOOL", result: "v_loop", operands: { value: true }, source: declaration.source },
-        { id: "inst_loop_branch", opcode: "BRANCH", operands: { condition: "v_loop", true_target: "bb_0", false_target: "bb_1" }, source: declaration.source }
-      ]
-    },
-    { id: "bb_1", instructions: [constant, store, ret] }
+  module.initializer.blocks[0].instructions = [
+    declaration,
+    { ...declaration, id: "inst_redeclare_immutable" },
+    constant,
+    store,
+    ret
   ];
   assert.throws(() => runQIR(module), error =>
     error instanceof QXVMError && error.code === "QX_VM_IMMUTABLE_REDECLARE");
