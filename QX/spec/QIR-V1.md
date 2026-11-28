@@ -532,3 +532,18 @@ node --test test/qir.test.js test/vm.test.js test/web-backend.test.js
 تغطي النتائج خفض RECORD والتحقق من QIR 1.6، تنفيذ MAKE_RECORD وFETCH في VM، ثبات ربط RECORD، والتحقق من بناء أصول Web المولدة. المحصلة 119 اختباراً ناجحاً عبر أربعة ملفات اختبار مركزة.
 
 **حدود الإثبات:** لم تتضمن المخرجات إصدار Node.js أو SHA التشغيل. لم يُشغّل `web-backend-runtime.test.js`؛ لذلك لا تثبت هذه النتيجة تشغيل RECORD داخل متصفح أو runtime مولد. كما لم تُشغّل اختبارات Lexer/Parser الخاصة بـRecord Literal ضمن هاتين المجموعتين. هذه ليست مجموعة الاختبارات الكاملة للمشروع.
+
+
+### 17.11 استكمال تحقق RECORD في Lexer/Parser وWeb Runtime — 2026-11-28
+
+على Termux، اجتازت المجموعة:
+
+```bash
+node --test test/geometric-symbol-lexer.test.js test/geometric-symbol-parser.test.js test/lexer-parser.test.js test/lexer-parser-boundaries.test.js test/web-backend-runtime.test.js
+```
+
+**58/58 اختباراً ناجحاً**، 0 فشل، بمدة `1042.396346 ms`. تضمنت المجموعة Lexer/Parser وحدود التحليل، واختبار `browser runtime executes QIR 1.6 immutable RECORD values`.
+
+وبإضافة النتيجتين السابقتين (75/75 Semantic Analyzer وVM، و44/44 QIR وWeb asset generation)، أصبح مجموع التحقق المركّز لمسار RECORD **177/177** عبر ثلاث مجموعات و11 ملف اختبار. لم يظهر إصدار Node.js أو SHA التشغيل في مخرجات المستخدم، وهذه ليست مجموعة الاختبارات الكاملة للمشروع.
+
+هذا يثبت تنفيذ Web Runtime ضمن test harness، ولا يعني نشر التطبيق أو التحقق منه في بيئة إنتاج خارجية، ولا يثبت اكتمال جميع رموز QX الـ72.
