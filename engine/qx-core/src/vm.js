@@ -319,7 +319,7 @@ function createQIRExecution(module, options = {}) {
               values.set(instruction.result, list.filter((_, itemIndex) => itemIndex !== index).map(cloneValue));
               break;
             }
-            if (op.command === "INTEGRATION.REQUEST" && args.length === 3 && ["1.3", "1.4", "1.5", "1.6"].includes(module.version)) {
+            if (op.command === "INTEGRATION.REQUEST" && args.length === 3 && ["1.3", "1.4", "1.5", "1.6", "1.7"].includes(module.version)) {
               if (typeof integrationBroker?.request !== "function")
                 throw runtimeError("QX_VM_INTEGRATION_UNAVAILABLE", "No trusted integration broker was supplied", instruction, context);
               const connector = ensureString(readValue(frame, args[0], instruction), instruction, frame);
@@ -357,7 +357,7 @@ function createQIRExecution(module, options = {}) {
               outputs.push(Object.freeze({ component: "SHOW", value: cloneValue(readValue(frame, args[0], instruction)), source: instruction.source }));
               break;
             }
-            if (op.command === "UI.TEXT" && args.length === 1 && ["1.2", "1.3", "1.4", "1.5", "1.6"].includes(module.version)) {
+            if (op.command === "UI.TEXT" && args.length === 1 && ["1.2", "1.3", "1.4", "1.5", "1.6", "1.7"].includes(module.version)) {
               const value = readValue(frame, args[0], instruction);
               if (typeof value !== "string") throw runtimeError("QX_VM_INVALID_TEXT", "UI.TEXT requires TXT", instruction, context);
               ensureString(value, instruction, frame);
