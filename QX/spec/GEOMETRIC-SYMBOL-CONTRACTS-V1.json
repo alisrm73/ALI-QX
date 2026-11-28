@@ -502,7 +502,7 @@
         "qir": "UNSUPPORTED",
         "vm": "NOT_REACHED",
         "backend": "NOT_REACHED",
-        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED; GROUP2_ARGUMENT_SCHEMA_TESTS_ADDED_NOT_RUN"
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED; TERMUX_GROUP2_ARGUMENT_SCHEMA_TESTS_PASSED_11_OF_11; FAILED_PRE_FIX_RUN_10_OF_11_RECORDED"
       },
       "syntacticRecognition": {
         "grammarV1": "APPROVED",
@@ -583,7 +583,7 @@
         "qir": "UNSUPPORTED",
         "vm": "NOT_REACHED",
         "backend": "NOT_REACHED",
-        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED; GROUP2_ARGUMENT_SCHEMA_TESTS_ADDED_NOT_RUN"
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED; TERMUX_GROUP2_ARGUMENT_SCHEMA_TESTS_PASSED_11_OF_11; FAILED_PRE_FIX_RUN_10_OF_11_RECORDED"
       },
       "syntacticRecognition": {
         "grammarV1": "APPROVED",
@@ -658,7 +658,7 @@
         "qir": "UNSUPPORTED",
         "vm": "NOT_REACHED",
         "backend": "NOT_REACHED",
-        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED; GROUP2_ARGUMENT_SCHEMA_TESTS_ADDED_NOT_RUN"
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED; TERMUX_GROUP2_ARGUMENT_SCHEMA_TESTS_PASSED_11_OF_11; FAILED_PRE_FIX_RUN_10_OF_11_RECORDED"
       },
       "syntacticRecognition": {
         "grammarV1": "APPROVED",
@@ -739,7 +739,7 @@
         "qir": "UNSUPPORTED",
         "vm": "NOT_REACHED",
         "backend": "NOT_REACHED",
-        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED; GROUP2_ARGUMENT_SCHEMA_TESTS_ADDED_NOT_RUN"
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED; TERMUX_GROUP2_ARGUMENT_SCHEMA_TESTS_PASSED_11_OF_11; FAILED_PRE_FIX_RUN_10_OF_11_RECORDED"
       },
       "syntacticRecognition": {
         "grammarV1": "APPROVED",
@@ -821,7 +821,7 @@
         "qir": "UNSUPPORTED",
         "vm": "NOT_REACHED",
         "backend": "NOT_REACHED",
-        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED; GROUP2_ARGUMENT_SCHEMA_TESTS_ADDED_NOT_RUN"
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED; TERMUX_GROUP2_ARGUMENT_SCHEMA_TESTS_PASSED_11_OF_11; FAILED_PRE_FIX_RUN_10_OF_11_RECORDED"
       },
       "syntacticRecognition": {
         "grammarV1": "APPROVED",
@@ -896,7 +896,7 @@
         "qir": "UNSUPPORTED",
         "vm": "NOT_REACHED",
         "backend": "NOT_REACHED",
-        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED; GROUP2_ARGUMENT_SCHEMA_TESTS_ADDED_NOT_RUN"
+        "tests": "LEXER_AND_PARSER_TESTS_PRESENT_NOT_RUN; SYMBOL_SPECIFIC_SEMANTIC_QIR_RUNTIME_TESTS_ABSENT; TERMUX_GROUP2_USAGE_POSITION_TESTS_PASSED_9_OF_9; COMMIT_NOT_CAPTURED_IN_USER_OUTPUT; NODE_VERSION_NOT_CAPTURED; TERMUX_GROUP2_ARGUMENT_SCHEMA_TESTS_PASSED_11_OF_11; FAILED_PRE_FIX_RUN_10_OF_11_RECORDED"
       },
       "syntacticRecognition": {
         "grammarV1": "APPROVED",
@@ -4913,6 +4913,48 @@
         }
       ],
       "includedCoverage": "Approved usage positions for DATA, STORE, FETCH, VALUE, RECORD, and COLLECTION; verifies invalid positions are rejected and unresolved semantic contracts remain blocked from QIR.",
+      "limitations": [
+        "Focused test file only; not evidence that the full Node test suite passed.",
+        "The supplied terminal excerpt did not include git rev-parse HEAD or Node.js version.",
+        "No successful geometric-symbol QIR lowering or VM/backend execution is claimed."
+      ]
+    },
+    {
+      "scope": "engine/qx-core/test/geometric-ast-adapter.test.js only; Group 2 argument schema guard",
+      "branch": "audit/geometric-language-alignment",
+      "commit": "NOT_CAPTURED_IN_USER_OUTPUT",
+      "date": "2026-11-28",
+      "environment": "Termux; Node.js version not included in supplied output",
+      "workingDirectory": "~/.../engine/qx-core",
+      "command": "node --test test/geometric-ast-adapter.test.js",
+      "result": "FAIL",
+      "tests": 11,
+      "passed": 10,
+      "failed": 1,
+      "durationMs": 804.811192,
+      "failure": "Existing nested geometric-block fixture supplied DATA with one StringLiteral argument, conflicting with the approved two-argument Identifier/Expression schema; assertion expected 2 QX3028 diagnostics but received 4.",
+      "repairCommit": "a824bb2bf10e97e794a0ecde13253818877cf57b",
+      "limitations": [
+        "This was a focused test-file run, not the full Node test suite."
+      ]
+    },
+    {
+      "scope": "engine/qx-core/test/geometric-ast-adapter.test.js only; Group 1 and Group 2 geometric AST/semantic guards including exact Group 2 argument schemas",
+      "branch": "audit/geometric-language-alignment",
+      "commit": "NOT_CAPTURED_IN_USER_OUTPUT",
+      "date": "2026-11-28",
+      "environment": "Termux; Node.js version not included in supplied output",
+      "workingDirectory": "~/.../engine/qx-core",
+      "command": "node --test test/geometric-ast-adapter.test.js",
+      "result": "PASS",
+      "tests": 11,
+      "passed": 11,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "durationMs": 769.306538,
+      "includedCoverage": "All 11 tests in geometric-ast-adapter.test.js passed, including nested unresolved geometric blocks, Group 1 statement-only enforcement, Group 2 approved usage positions, exact argument counts and AST node types, invalid arity/type rejection, and continued blocking of unresolved geometric contracts.",
       "limitations": [
         "Focused test file only; not evidence that the full Node test suite passed.",
         "The supplied terminal excerpt did not include git rev-parse HEAD or Node.js version.",
