@@ -1,7 +1,28 @@
 import { resolveCommand } from "./command-registry.js";
 
+function opTree(input) {
+  const valueRefs = []; let nodes = 0, valid = true;
+  const exact = (object, keys) => object && Object.getPrototypeOf(object) === Object.prototype && Object.keys(object).sort().join(",") === keys.slice().sort().join(",");
+  const visit = (node, depth) => {
+    if (++nodes > 1000 || depth > 32 || !node || typeof node !== "object") { valid = false; return; }
+    if (node.kind === "text") {
+      if (!exact(node, ["kind", "valueRef"]) || typeof node.valueRef !== "string" || !/^v_[0-9]+$/.test(node.valueRef)) valid = false;
+      else valueRefs.push(node.valueRef);
+      return;
+    }
+    if (!exact(node, ["kind", "id", "type", "version", "props", "children"]) ||
+        !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/.test(node.id ?? "") ||
+        !["UI.CONTAINER", "UI.TEXT_BLOCK"].includes(node.type) ||
+        node.version !== "1.0.0" || !exact(node.props, []) || !Array.isArray(node.children)) { valid = false; return; }
+    if (node.type === "UI.TEXT_BLOCK" && node.children.some(child => child?.kind !== "text")) valid = false;
+    for (const child of node.children) visit(child, depth + 1);
+  };
+  if (!exact(input, ["schema", "version", "children"]) || input.schema !== "QX.UI.TREE" || input.version !== "1.0" || !Array.isArray(input.children)) valid = false;
+  else for (const child of input.children) visit(child, 1);
+  return { valid, valueRefs };
+}
 const VALUE_TYPES = new Set(["NUM", "TXT", "BOOL", "LIST", "NULL", "RECORD"]);
-const validType = (type, version) => VALUE_TYPES.has(type) && (type !== "RECORD" || version === "1.6");
+const validType = (type, version) => VALUE_TYPES.has(type) && (type !== "RECORD" || ["1.6", "1.7"].includes(version));
 const locationOf = node => {
   const value = node?.location ?? { line: 1, column: 1, offset: 0 };
   return { line: value.line, column: value.column, offset: value.offset };
@@ -323,16 +344,15 @@ class FunctionBuilder {
         return { kind: "component", id: item.args[0].name, type: "UI.CONTAINER", version: "1.0.0", props: {}, children: buildChildren(item.body ?? []) };
       }
       if (item.symbol === "BLOCK") {
-        if (item.args[1]?.type !== "StringLiteral") {
-          fail("QIR_E_UI_DYNAMIC_TEXT_UNSUPPORTED", "Dynamic BLOCK text requires a versioned QIR UI-tree value extension", item.args[1] ?? item);
-        }
-        return { kind: "component", id: item.args[0].name, type: "UI.TEXT_BLOCK", version: "1.0.0", props: {}, children: [{ kind: "text", value: item.args[1].value }] };
+        const content = this.lowerExpression(item.args[1]);
+        if (content.type !== "TXT") fail("QIR_E_UI_TEXT_TYPE", "BLOCK content must produce TXT", item.args[1]);
+        return { kind: "component", id: item.args[0].name, type: "UI.TEXT_BLOCK", version: "1.0.0", props: {}, children: [{ kind: "text", valueRef: content.value }] };
       }
       fail("QIR_E_UNSUPPORTED_AST", "Unsupported child in static UI tree", item);
     });
     const tree = { schema: "QX.UI.TREE", version: "1.0", children: buildChildren(node.body ?? []) };
     const value = this.value();
-    this.emit("CONST_TXT", { value: JSON.stringify(tree) }, "TXT", value, node);
+    this.emit("MAKE_UI_TREE", { tree }, "TXT", value, node);
     this.emit("COMMAND_CALL", { command: "UI.TREE", arguments: [value] }, null, null, node);
   }
   lowerStatement(node) {
@@ -445,6 +465,7 @@ class ModuleLowerer {
     const containsSymbol = (node, symbols) => Array.isArray(node) ? node.some(item => containsSymbol(item, symbols)) : !!node && typeof node === "object" && (node.type === "GeometricStatement" && symbols.includes(node.symbol) || Object.values(node).some(value => containsSymbol(value, symbols)));
     const containsRecordLiteral = node => Array.isArray(node) ? node.some(containsRecordLiteral) : !!node && typeof node === "object" && (node.type === "RecordLiteral" || Object.values(node).some(containsRecordLiteral));
     this.usesRecord = containsSymbol(program, ["RECORD"]) || containsRecordLiteral(program);
+    this.usesStaticUI = containsSymbol(program, ["SCREEN"]);
     this.usesImmutable = this.usesRecord || containsSymbol(program, ["VALUE"]);
     this.collectFunctions();
     this.collectGlobals();
@@ -517,7 +538,7 @@ class ModuleLowerer {
     const usesListOperations = instructions.some(inst => ["DATA.ADD", "DATA.REMOVE"].includes(inst.operands?.command));
     const usesIntegration = instructions.some(inst => inst.operands?.command === "INTEGRATION.REQUEST");
     return {
-      format: "QIR", version: this.usesRecord ? "1.6" : this.usesImmutable ? "1.5" : usesUITree ? "1.4" : usesIntegration ? "1.3" : usesUI ? "1.2" : usesListOperations ? "1.1" : "1.0", module_id: "module_0", unicode_version: "18.0.0",
+      format: "QIR", version: this.usesStaticUI ? "1.7" : this.usesRecord ? "1.6" : this.usesImmutable ? "1.5" : usesUITree ? "1.4" : usesIntegration ? "1.3" : usesUI ? "1.2" : usesListOperations ? "1.1" : "1.0", module_id: "module_0", unicode_version: "18.0.0",
       globals: this.globals, initializer, functions
     };
   }
@@ -539,13 +560,13 @@ export function validateQIR(module) {
   const diagnostics = [];
   const report = (code, message, location = null, extra = {}) =>
     diagnostics.push({ code, severity: "ERROR", message, location, ...extra });
-  if (!module || module.format !== "QIR" || !["1.0", "1.1", "1.2", "1.3", "1.4", "1.5", "1.6"].includes(module.version) || module.unicode_version !== "18.0.0") {
+  if (!module || module.format !== "QIR" || !["1.0", "1.1", "1.2", "1.3", "1.4", "1.5", "1.6", "1.7"].includes(module.version) || module.unicode_version !== "18.0.0") {
     report("QIR_E_SCHEMA", "Invalid QIR module header"); return diagnostics;
   }
   const functions = [module.initializer, ...(module.functions ?? [])];
   const functionIds = new Set(), globalIds = new Set(), globalNames = new Set();
   for (const global of module.globals ?? []) {
-    if (!global?.id || globalIds.has(global.id) || globalNames.has(global.name) || !validType(global.type, module.version) || global.storage !== "global" || ["1.5", "1.6"].includes(module.version) && typeof global.mutable !== "boolean" || !["1.5", "1.6"].includes(module.version) && Object.hasOwn(global, "mutable"))
+    if (!global?.id || globalIds.has(global.id) || globalNames.has(global.name) || !validType(global.type, module.version) || global.storage !== "global" || ["1.5", "1.6", "1.7"].includes(module.version) && typeof global.mutable !== "boolean" || !["1.5", "1.6", "1.7"].includes(module.version) && Object.hasOwn(global, "mutable"))
       report("QIR_E_GLOBAL_SCHEMA", "Invalid or duplicate global declaration");
     globalIds.add(global.id); globalNames.add(global.name);
   }
@@ -593,6 +614,11 @@ export function validateQIR(module) {
           report("QIR_E_CONSTANT_TYPE", "CONST_BOOL requires a boolean and BOOL result", inst.source);
         if (inst.opcode === "CONST_NULL" && (inst.type !== "NULL" || Object.keys(inst.operands).length !== 0))
           report("QIR_E_CONSTANT_TYPE", "CONST_NULL has no operands and produces NULL", inst.source);
+        if (inst.opcode === "MAKE_UI_TREE") {
+          const tree = opTree(inst.operands?.tree);
+          if (module.version !== "1.7" || inst.type !== "TXT" || !tree.valid) report("QIR_E_UI_TREE_SCHEMA", "MAKE_UI_TREE requires QIR 1.7, a TXT result, and a valid bounded tree descriptor", inst.source);
+          else for (const id of tree.valueRefs) if (valueTypes.get(id) !== "TXT") report("QIR_E_UI_TREE_TEXT", "UI tree text references must resolve to TXT values", inst.source);
+        }
         if (inst.opcode === "MAKE_RECORD") {
           const fields = inst.operands?.fields;
           const names = new Set();
@@ -611,17 +637,17 @@ export function validateQIR(module) {
 
         if (inst.opcode === "DECLARE") {
           const { variable, declared_type: type, storage } = inst.operands ?? {};
-          if (!variable || !validType(type, module.version) || !["local", "global"].includes(storage) || ["1.5", "1.6"].includes(module.version) && typeof inst.operands?.mutable !== "boolean" || !["1.5", "1.6"].includes(module.version) && Object.hasOwn(inst.operands ?? {}, "mutable")) report("QIR_E_DECLARE", "Invalid DECLARE", inst.source);
+          if (!variable || !validType(type, module.version) || !["local", "global"].includes(storage) || ["1.5", "1.6", "1.7"].includes(module.version) && typeof inst.operands?.mutable !== "boolean" || !["1.5", "1.6", "1.7"].includes(module.version) && Object.hasOwn(inst.operands ?? {}, "mutable")) report("QIR_E_DECLARE", "Invalid DECLARE", inst.source);
           else if (declaredVariables.has(variable)) report("QIR_E_DUPLICATE_DECLARE", "Variable is declared more than once in a function", inst.source);
           else {
             declaredVariables.add(variable);
             variableTypes.set(variable, type); definedVariables.add(variable);
-            if (storage === "global" && ["1.5", "1.6"].includes(module.version)) {
+            if (storage === "global" && ["1.5", "1.6", "1.7"].includes(module.version)) {
               const descriptor = (module.globals ?? []).find(item => item.id === variable);
               if (!descriptor || descriptor.mutable !== inst.operands.mutable)
                 report("QIR_E_IMMUTABLE_SCHEMA", "Global DECLARE mutability differs from its module descriptor", inst.source);
             }
-            if (["1.5", "1.6"].includes(module.version) && inst.operands.mutable === false) {
+            if (["1.5", "1.6", "1.7"].includes(module.version) && inst.operands.mutable === false) {
               if (immutableDeclarationLocations.has(variable)) {
                 report("QIR_E_IMMUTABLE_DECLARE", "Immutable binding must have exactly one DECLARE instruction", inst.source, { function: fn.id, variable });
               } else {
@@ -645,7 +671,7 @@ export function validateQIR(module) {
           if (fn.return_type !== "NULL" && !hasValue) report("QIR_E_RETURN_TYPE", "Function must return a value", inst.source);
           if (hasValue && valueTypes.has(inst.operands.value) && valueTypes.get(inst.operands.value) !== fn.return_type) report("QIR_E_RETURN_TYPE", "RETURN value type differs from function return type", inst.source);
         }
-        if (!["CONST_NUM","CONST_TXT","CONST_BOOL","CONST_NULL","DECLARE","LOAD","STORE_LOCAL","STORE_GLOBAL","UNARY","BINARY","MAKE_LIST","MAKE_RECORD","CALL","COMMAND_CALL","BRANCH","JUMP","RETURN"].includes(inst.opcode))
+        if (!["CONST_NUM","CONST_TXT","CONST_BOOL","CONST_NULL","DECLARE","LOAD","STORE_LOCAL","STORE_GLOBAL","UNARY","BINARY","MAKE_LIST","MAKE_RECORD","MAKE_UI_TREE","CALL","COMMAND_CALL","BRANCH","JUMP","RETURN"].includes(inst.opcode))
           report("QIR_E_UNKNOWN_OPCODE", "Unknown opcode " + inst.opcode, inst.source);
       }
     }
@@ -762,6 +788,7 @@ export function validateQIR(module) {
         if (inst.opcode === "BINARY") refs.push(op.left, op.right);
         if (inst.opcode === "MAKE_LIST") refs.push(...(op.elements ?? []));
         if (inst.opcode === "MAKE_RECORD") refs.push(...(op.fields ?? []).map(field => field?.value));
+        if (inst.opcode === "MAKE_UI_TREE") refs.push(...opTree(op.tree).valueRefs);
         if (inst.opcode === "CALL" || inst.opcode === "COMMAND_CALL") refs.push(...(op.arguments ?? []));
         if (inst.opcode === "BRANCH") refs.push(op.condition);
         if (inst.opcode === "STORE_LOCAL" || inst.opcode === "STORE_GLOBAL") refs.push(op.value);
@@ -838,18 +865,18 @@ export function validateQIR(module) {
           if (op.command === "DATA.COUNT") {
             if (!argumentsMatch || !resultMatches) report("QIR_E_COMMAND_SIGNATURE", "DATA.COUNT requires its registered signature", inst.source);
           } else if (op.command === "DATA.ADD") {
-            if (!["1.1", "1.2", "1.3", "1.4", "1.5", "1.6"].includes(module.version) || !argumentsMatch || !resultMatches) report("QIR_E_COMMAND_SIGNATURE", "DATA.ADD requires its registered signature in QIR 1.1 or later", inst.source);
+            if (!["1.1", "1.2", "1.3", "1.4", "1.5", "1.6", "1.7"].includes(module.version) || !argumentsMatch || !resultMatches) report("QIR_E_COMMAND_SIGNATURE", "DATA.ADD requires its registered signature in QIR 1.1 or later", inst.source);
           } else if (op.command === "DATA.REMOVE") {
-            if (!["1.1", "1.2", "1.3", "1.4", "1.5", "1.6"].includes(module.version) || !argumentsMatch || !resultMatches) report("QIR_E_COMMAND_SIGNATURE", "DATA.REMOVE requires its registered signature in QIR 1.1 or later", inst.source);
+            if (!["1.1", "1.2", "1.3", "1.4", "1.5", "1.6", "1.7"].includes(module.version) || !argumentsMatch || !resultMatches) report("QIR_E_COMMAND_SIGNATURE", "DATA.REMOVE requires its registered signature in QIR 1.1 or later", inst.source);
           } else if (op.command === "UI.SHOW") {
-            if (!["1.2", "1.3", "1.4", "1.5", "1.6"].includes(module.version) || !argumentsMatch || !resultMatches) report("QIR_E_COMMAND_SIGNATURE", "UI.SHOW requires its registered signature in QIR 1.2 or later", inst.source);
+            if (!["1.2", "1.3", "1.4", "1.5", "1.6", "1.7"].includes(module.version) || !argumentsMatch || !resultMatches) report("QIR_E_COMMAND_SIGNATURE", "UI.SHOW requires its registered signature in QIR 1.2 or later", inst.source);
           } else if (op.command === "UI.TEXT") {
-            if (!["1.2", "1.3", "1.4", "1.5", "1.6"].includes(module.version) || !argumentsMatch || !resultMatches) report("QIR_E_COMMAND_SIGNATURE", "UI.TEXT requires its registered signature in QIR 1.2 or later", inst.source);
+            if (!["1.2", "1.3", "1.4", "1.5", "1.6", "1.7"].includes(module.version) || !argumentsMatch || !resultMatches) report("QIR_E_COMMAND_SIGNATURE", "UI.TEXT requires its registered signature in QIR 1.2 or later", inst.source);
           } else if (op.command === "UI.TREE") {
-            if (!["1.4", "1.5", "1.6"].includes(module.version) || !argumentsMatch || !resultMatches)
+            if (!["1.4", "1.5", "1.6", "1.7"].includes(module.version) || !argumentsMatch || !resultMatches)
               report("QIR_E_COMMAND_SIGNATURE", "UI.TREE requires its registered signature in QIR 1.4", inst.source);
           } else if (op.command === "INTEGRATION.REQUEST") {
-            if (!["1.3", "1.4", "1.5", "1.6"].includes(module.version) || !argumentsMatch || !resultMatches)
+            if (!["1.3", "1.4", "1.5", "1.6", "1.7"].includes(module.version) || !argumentsMatch || !resultMatches)
               report("QIR_E_COMMAND_SIGNATURE", "INTEGRATION.REQUEST requires its registered signature in QIR 1.3 or later", inst.source);
           } else {
             report("QIR_E_COMMAND_NOT_ALLOWED", "Command is not allowed in QIR", inst.source);
@@ -887,7 +914,7 @@ export function validateQIR(module) {
       }
     }
   }
-  if (["1.5", "1.6"].includes(module.version)) {
+  if (["1.5", "1.6", "1.7"].includes(module.version)) {
     for (const global of module.globals ?? []) {
       if (global.mutable !== false) continue;
       const declaration = immutableDeclarationLocations.get(global.id);
@@ -946,7 +973,7 @@ export function validateQIR(module) {
             report("QIR_E_CALL_RESULT", "Value-returning CALL must capture its result", inst.source);
         }
       }
-      if (inst.opcode === "COMMAND_CALL" && !["DATA.COUNT", ...(["1.1", "1.2", "1.3", "1.4", "1.5", "1.6"].includes(module.version) ? ["DATA.ADD", "DATA.REMOVE"] : []), ...(["1.2", "1.3", "1.4", "1.5", "1.6"].includes(module.version) ? ["UI.SHOW", "UI.TEXT"] : []), ...(["1.3", "1.4", "1.5", "1.6"].includes(module.version) ? ["INTEGRATION.REQUEST"] : []), ...(["1.4", "1.5", "1.6"].includes(module.version) ? ["UI.TREE"] : [])].includes(inst.operands?.command))
+      if (inst.opcode === "COMMAND_CALL" && !["DATA.COUNT", ...(["1.1", "1.2", "1.3", "1.4", "1.5", "1.6", "1.7"].includes(module.version) ? ["DATA.ADD", "DATA.REMOVE"] : []), ...(["1.2", "1.3", "1.4", "1.5", "1.6", "1.7"].includes(module.version) ? ["UI.SHOW", "UI.TEXT"] : []), ...(["1.3", "1.4", "1.5", "1.6", "1.7"].includes(module.version) ? ["INTEGRATION.REQUEST"] : []), ...(["1.4", "1.5", "1.6", "1.7"].includes(module.version) ? ["UI.TREE"] : [])].includes(inst.operands?.command))
         report("QIR_E_COMMAND_NOT_ALLOWED", "Command is not allowed by this QIR version", inst.source);
     }
   }
