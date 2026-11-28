@@ -560,8 +560,8 @@ export function validateQIR(module) {
           const { variable, declared_type: type, storage } = inst.operands ?? {};
           if (!variable || !VALUE_TYPES.has(type) || !["local", "global"].includes(storage) || module.version === "1.5" && typeof inst.operands?.mutable !== "boolean" || module.version !== "1.5" && Object.hasOwn(inst.operands ?? {}, "mutable")) report("QIR_E_DECLARE", "Invalid DECLARE", inst.source);
           else if (declaredVariables.has(variable)) report("QIR_E_DUPLICATE_DECLARE", "Variable is declared more than once in a function", inst.source);
-          else declaredVariables.add(variable);
           else {
+            declaredVariables.add(variable);
             variableTypes.set(variable, type); definedVariables.add(variable);
             if (storage === "global" && module.version === "1.5") {
               const descriptor = (module.globals ?? []).find(item => item.id === variable);
