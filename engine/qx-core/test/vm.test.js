@@ -347,7 +347,7 @@ test("executes inherited QIR 1.1 and 1.2 commands in a QIR 1.5 module", () => {
   assert.deepEqual(result.outputs.map(item => [item.component, item.value]), [["TEXT", "ready"]]);
 });
 
-test("VM rejects repeated execution of an immutable DECLARE before initialization", () => {
+test("VM entrypoint rejects duplicate immutable DECLARE before execution", () => {
   const module = compile("⊙(fixed, 7)");
   const [declaration, constant, store, ret] = module.initializer.blocks[0].instructions;
   module.initializer.blocks[0].instructions = [
@@ -358,5 +358,6 @@ test("VM rejects repeated execution of an immutable DECLARE before initializatio
     ret
   ];
   assert.throws(() => runQIR(module), error =>
-    error instanceof QXVMError && error.code === "QX_VM_IMMUTABLE_REDECLARE");
+    error.name === "QIRValidationError" &&
+    error.diagnostics.some(item => item.code === "QIR_E_IMMUTABLE_DECLARE"));
 });
