@@ -188,3 +188,72 @@ test("enforces approved usage positions for the six Group 2 symbols", () => {
       error => error.code === "QIR_E_SEMANTIC_ERRORS");
   }
 });
+
+
+test("enforces exact Group 2 geometric argument counts and AST node types", () => {
+  const validStatements = [
+    ["DATA", '◉(name, 1)'],
+    ["STORE", '◍(target, 1)'],
+    ["VALUE", '⊙(name, 1)'],
+    ["RECORD", '⊚(record, [])'],
+    ["COLLECTION", '⊛(items)']
+  ];
+
+  for (const [name, source] of validStatements) {
+    const ast = parse(source);
+    const semantic = analyze(ast);
+    assert.ok(
+      semantic.diagnostics.some(item =>
+        item.code === "QX3028" && item.message.includes("has no approved semantic contract")
+      ),
+      `${name} with a structurally valid argument schema remains semantically blocked`
+    );
+    assert.equal(
+      semantic.diagnostics.some(item => item.message.includes("expects exactly") || item.message.includes("must be Identifier") || item.message.includes("must be Expression")),
+      false,
+      `${name} should satisfy its approved argument schema`
+    );
+    assert.throws(() => lowerToQIR(ast, semantic),
+      error => error.code === "QIR_E_SEMANTIC_ERRORS");
+  }
+
+  const fetchAst = parse("DATA.CREATE(result, ◌(source))");
+  const fetchSemantic = analyze(fetchAst);
+  assert.ok(fetchSemantic.diagnostics.some(item =>
+    item.code === "QX3028" && item.message.includes("FETCH has no approved semantic contract")
+  ));
+  assert.equal(
+    fetchSemantic.diagnostics.some(item => item.message.includes("FETCH expects exactly") || item.message.includes("FETCH argument")),
+    false
+  );
+  assert.throws(() => lowerToQIR(fetchAst, fetchSemantic),
+    error => error.code === "QIR_E_SEMANTIC_ERRORS");
+});
+
+test("rejects Group 2 geometric calls with incorrect argument arity or AST node types", () => {
+  const invalidCases = [
+    ["DATA", "◉()", "expects exactly 2 argument(s), received 0"],
+    ["STORE", "◍(target)", "expects exactly 2 argument(s), received 1"],
+    ["VALUE", "⊙(1, 2)", "argument 1 must be Identifier"],
+    ["RECORD", "⊚(record, 1, 2)", "expects exactly 2 argument(s), received 3"],
+    ["COLLECTION", "⊛(1)", "argument 1 must be Identifier"]
+  ];
+
+  for (const [name, source, expectedMessage] of invalidCases) {
+    const ast = parse(source);
+    const semantic = analyze(ast);
+    assert.ok(semantic.diagnostics.some(item =>
+      item.code === "QX3028" && item.message.includes(expectedMessage)
+    ), name);
+    assert.throws(() => lowerToQIR(ast, semantic),
+      error => error.code === "QIR_E_SEMANTIC_ERRORS");
+  }
+
+  const fetchAst = parse("DATA.CREATE(result, ◌(1))");
+  const fetchSemantic = analyze(fetchAst);
+  assert.ok(fetchSemantic.diagnostics.some(item =>
+    item.code === "QX3028" && item.message.includes("FETCH argument 1 must be Identifier")
+  ));
+  assert.throws(() => lowerToQIR(fetchAst, fetchSemantic),
+    error => error.code === "QIR_E_SEMANTIC_ERRORS");
+});
