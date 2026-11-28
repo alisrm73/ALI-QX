@@ -791,11 +791,11 @@
         ]
       },
       "inputTypes": "name: Identifier; fields: RecordLiteral. Each field key is a unique Identifier and each field value is a non-NULL supported QX value (NUM, TXT, BOOL, LIST, or RECORD).",
-      "outputType": "RECORD (QIR 1.6 versioned value type).",
+      "outputType": "Generic RECORD value type in QIR 1.6; all records share the same base type and no structural schema-specific type compatibility is enforced in this version.",
       "allowsBody": "FORBIDDEN",
       "allowedContexts": "MODULE_SCOPE_OR_FUNCTION_BODY",
       "preconditions": "The name must be unique in the current scope. Record field names must be unique. Field values must be non-NULL supported QX values. RECORD declarations are immutable.",
-      "validationRules": "Reject duplicate field names, NULL/invalid field values, duplicate binding names, and any attempt to reassign the RECORD binding. RECORD values are distinct from LIST and are never coerced into lists. FETCH may read the whole RECORD value. Field selection and field mutation are not defined in this implementation.",
+      "validationRules": "Reject duplicate field names, NULL/invalid field values, duplicate binding names, and any attempt to reassign the RECORD binding. RECORD values are distinct from LIST and are never coerced into lists. FETCH may read the whole RECORD value. Field selection and field mutation are not defined in this implementation. All RECORD values share the generic RECORD type in QX V1.6; field-shape-specific type compatibility is not enforced.",
       "relations": "FETCH reads the complete RECORD value. RECORD bindings are immutable; STORE cannot reassign them. Records may be passed to and returned from functions. Field selection and field mutation remain unspecified.",
       "astEffect": "GeometricStatement RECORD contains a RecordLiteral expression with ordered named fields. The generic geometric AST node is preserved; no specialized semantic AST node is introduced.",
       "qirLowering": "QIR 1.6: MAKE_RECORD(fields: [{name, value: ValueId}, ...]) produces RECORD, followed by DECLARE mutable=false and exactly one STORE for binding initialization. QIR 1.5 and earlier reject RECORD type and MAKE_RECORD.",
